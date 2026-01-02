@@ -48,7 +48,7 @@ Built for macOS 26 Tahoe with the new Liquid Glass aesthetic — translucent mat
 ### 🔄 File Conversion
 Right-click any file to convert between formats:
 - **Images**: PNG ↔ JPEG, HEIC → JPEG/PNG, TIFF, BMP, GIF
-- **Documents**: Word, Excel, PowerPoint → PDF (requires [Gotenberg](https://gotenberg.dev))
+- **Documents**: Word, Excel, PowerPoint → PDF (works out of the box via Cloudmersive API)
 
 ### 💾 Quick Save
 Right-click any file in the shelf and choose "Save" to quickly save it to a location of your choice.
@@ -60,8 +60,8 @@ Right-click any file in the shelf and choose "Save" to quickly save it to a loca
 
 ### 🔒 Privacy-First
 - No analytics or tracking
-- No network requests (except optional document conversion)
-- All files stay local on your Mac
+- Document conversion uses the secure Cloudmersive API (files are processed in memory and not stored)
+- All other files stay local on your Mac
 
 ## Usage
 
@@ -81,9 +81,9 @@ Right-click any file in the shelf and choose "Save" to quickly save it to a loca
 > xattr -d com.apple.quarantine /Applications/Droppy.app
 > ```
 
-## Document Conversion Setup (Optional)
+## Document Conversion Setup (Local Fallback)
 
-To enable Word/Excel/PowerPoint → PDF conversion, run Gotenberg locally:
+Droppy uses the Cloudmersive API for PDF conversions out of the box. If you prefer to keep everything local or hit the API limits, you can run a local Gotenberg instance as a fallback:
 
 ```bash
 docker run -d -p 3001:3000 gotenberg/gotenberg:8
