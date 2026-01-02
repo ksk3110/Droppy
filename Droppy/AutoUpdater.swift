@@ -27,7 +27,7 @@ class AutoUpdater {
                 try installAndRestart(dmgPath: dmgURL.path)
             } catch {
                 print("AutoUpdater: Installation failed: \(error)")
-                await MainActor.run {
+                _ = await MainActor.run {
                     NSAlert(error: error).runModal()
                 }
             }
