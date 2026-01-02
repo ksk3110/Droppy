@@ -141,7 +141,7 @@ class UpdateChecker: ObservableObject {
         // 1. Copy command to clipboard
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.setString("brew upgrade droppy", forType: .string)
+        pasteboard.setString("brew upgrade iordv/tap/droppy", forType: .string)
         
         // 2. Open Terminal
         if let terminalURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal") {
