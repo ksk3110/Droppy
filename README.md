@@ -117,17 +117,8 @@ brew install --cask iordv/tap/droppy
 
 ## 🆕 What's New
 <!-- CHANGELOG_START -->
-# Features
-- **Simplified Compression**: Removed complex settings. "Auto (Medium)" is now the default.
-- **Photos Target Size**: Right-click images to specify exact MB size.
-- **Smart Size Guard**: Automatically cancels compression if the file doesn't get smaller.
-- **Visual Feedback**: "Shake & Shield" animation confirms optimal compression.
-- **Better Video**: Now uses HEVC 1080p for high-definition, small-size results.
-- **External Displays**: Option to hide the Notch on external monitors.
-
-# Improvements
-- Fixed PDF page orientation issues.
-- Fixed Video compression size increase issues.
+# Fixes
+- **Critical Crash Fix**: Resolved an occasional crash during drag detection (Pasteboard access).
 <!-- CHANGELOG_END -->
 
 ---
