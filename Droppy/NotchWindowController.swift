@@ -12,8 +12,17 @@ import UniformTypeIdentifiers
 
 /// Manages the transparent overlay window positioned at the MacBook notch
 final class NotchWindowController: NSObject, ObservableObject {
-    /// The overlay window
+    /// The notch overlay window
     private var notchWindow: NotchWindow?
+    
+    /// Timer for periodic mouse location checks
+    private var updateTimer: Timer?
+    
+    /// Monitor for mouse movement when window is not key or mouse is outside
+    private var globalMouseMonitor: Any?
+    
+    /// Monitor for mouse movement when window is active
+    private var localMonitor: Any?
     
     /// Shared instance
     static let shared = NotchWindowController()
@@ -24,6 +33,7 @@ final class NotchWindowController: NSObject, ObservableObject {
     
     /// Sets up and shows the notch overlay window
     func setupNotchWindow() {
+        guard notchWindow == nil else { return }
         guard let screen = NSScreen.main else { return }
         
         // Window needs to be wide enough for expanded shelf and tall enough for glow + shelf
@@ -76,20 +86,64 @@ final class NotchWindowController: NSObject, ObservableObject {
         window.orderFrontRegardless()
         
         self.notchWindow = window
+        startMonitors()
     }
     
     /// Closes the notch window
     func closeWindow() {
+        stopMonitors()
         notchWindow?.close()
         notchWindow = nil
+    }
+    
+    /// Starts monitoring mouse events to handle expands/collapses
+    private func startMonitors() {
+        stopMonitors() // Idempotency
+        
+        // Timer for periodic hit test updates (every 30ms)
+        updateTimer = Timer.scheduledTimer(withTimeInterval: 0.03, repeats: true) { [weak self] _ in
+            self?.notchWindow?.updateMouseEventHandling()
+        }
+        
+        // Global monitor catches mouse movement when Droppy is not frontmost
+        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] event in
+            self?.handleMouseEvent(event)
+        }
+        
+        // Local monitor catches movement when mouse is over the Notch window
+        localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved]) { [weak self] event in
+            self?.handleMouseEvent(event)
+            return event
+        }
+    }
+    
+    /// Stops and releases all monitors and timers
+    private func stopMonitors() {
+        updateTimer?.invalidate()
+        updateTimer = nil
+        
+        if let monitor = globalMouseMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalMouseMonitor = nil
+        }
+        
+        if let monitor = localMonitor {
+            NSEvent.removeMonitor(monitor)
+            localMonitor = nil
+        }
+    }
+    
+    /// Routed event handler from monitors
+    private func handleMouseEvent(_ event: NSEvent) {
+        // Only proceed if window is still alive
+        guard let window = notchWindow else { return }
+        window.handleGlobalMouseEvent(event)
     }
 }
 
 // MARK: - Custom Window Configuration
 
 class NotchWindow: NSWindow {
-    private var updateTimer: Timer?
-    private var globalMouseMonitor: Any?
     
     // The notch activation area (centered at top of screen)
     private var notchRect: NSRect {
@@ -115,37 +169,28 @@ class NotchWindow: NSWindow {
         self.level = .statusBar
         self.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
         self.isMovableByWindowBackground = false
-        self.acceptsMouseMovedEvents = true
+        
+        // CRITICAL: Prevent AppKit from injecting its own unstable transform animations
+        self.animationBehavior = .none
+        // Ensure manual memory management is stable
+        self.isReleasedWhenClosed = false
         
         // START with ignoring mouse events - let clicks pass through in idle state
         self.ignoresMouseEvents = true
-        
-        // Set up global mouse monitor to detect when mouse is over notch
-        // This doesn't block events - it receives copies of events
-        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] event in
-            self?.handleGlobalMouseEvent(event)
-        }
-        
-        // Also monitor local events when window is active
-        NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved]) { [weak self] event in
-            self?.handleGlobalMouseEvent(event)
-            return event
-        }
-        
-        // Set up a timer to periodically update ignoresMouseEvents
-        updateTimer = Timer.scheduledTimer(withTimeInterval: 0.03, repeats: true) { [weak self] _ in
-            self?.updateMouseEventHandling()
-        }
+    }
+    
+    /// Track the intended alpha to avoid piling up animations
+    private var targetAlpha: CGFloat = 1.0
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
     deinit {
-        updateTimer?.invalidate()
-        if let monitor = globalMouseMonitor {
-            NSEvent.removeMonitor(monitor)
-        }
+        // Monitors are now managed by NotchWindowController
     }
     
-    private func handleGlobalMouseEvent(_ event: NSEvent) {
+    func handleGlobalMouseEvent(_ event: NSEvent) {
         // Get global mouse position
         let mouseLocation = NSEvent.mouseLocation
         
@@ -173,7 +218,7 @@ class NotchWindow: NSWindow {
         }
     }
     
-    private func updateMouseEventHandling() {
+    func updateMouseEventHandling() {
         let state = DroppyState.shared
         let dragMonitor = DragMonitor.shared
         
@@ -199,12 +244,14 @@ class NotchWindow: NSWindow {
         // (typical for fullscreen games and videos)
         let isFullscreen = screen.visibleFrame.equalTo(screen.frame)
         
-        let targetAlpha: CGFloat = isFullscreen ? 0.0 : 1.0
+        let newTargetAlpha: CGFloat = isFullscreen ? 0.0 : 1.0
         
-        if self.alphaValue != targetAlpha {
+        // Only trigger animation if the TARGET has changed, not just because current alpha is in flux
+        if self.targetAlpha != newTargetAlpha {
+            self.targetAlpha = newTargetAlpha
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.5
-                self.animator().alphaValue = targetAlpha
+                self.animator().alphaValue = newTargetAlpha
             }
         }
     }

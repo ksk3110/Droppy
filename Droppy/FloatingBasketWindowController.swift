@@ -78,6 +78,13 @@ final class FloatingBasketWindowController: NSObject {
         let yPosition = mouseLocation.y - windowHeight / 2
         let newFrame = NSRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
         
+        // Avoid starting a new animation if we are already at or near the target frame
+        // This prevents piling up _NSWindowTransformAnimation objects
+        let currentFrame = panel.frame
+        let deltaX = abs(currentFrame.origin.x - newFrame.origin.x)
+        let deltaY = abs(currentFrame.origin.y - newFrame.origin.y)
+        if deltaX < 1.0 && deltaY < 1.0 { return }
+        
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.2
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
@@ -129,6 +136,11 @@ final class FloatingBasketWindowController: NSObject {
         panel.isMovableByWindowBackground = false
         panel.hidesOnDeactivate = false
         panel.becomesKeyOnlyIfNeeded = true
+        
+        // CRITICAL: Prevent AppKit from injecting its own unstable transform animations
+        panel.animationBehavior = .none
+        // Ensure manual memory management is stable
+        panel.isReleasedWhenClosed = false
         
         // Create SwiftUI view
         let basketView = FloatingBasketView(state: DroppyState.shared)

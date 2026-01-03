@@ -42,17 +42,27 @@ struct DroppyApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Set as accessory app (no dock icon)
-        // Doing this here ensures MenuBarExtra is set up first
         NSApp.setActivationPolicy(.accessory)
         
-        // Start monitoring for drag events
+        // Touch singletons on main thread to ensure proper @AppStorage / UI initialization
+        _ = DroppyState.shared
+        _ = DragMonitor.shared
+        _ = NotchWindowController.shared
+        _ = FloatingBasketWindowController.shared
+        _ = UpdateChecker.shared
+        
+        // Start monitoring for drag events (polling-based, safe)
         DragMonitor.shared.startMonitoring()
         
-        // Setup the notch overlay window
-        NotchWindowController.shared.setupNotchWindow()
-        
-        // Initialize floating basket controller (observes jiggle detection)
-        _ = FloatingBasketWindowController.shared
+        // Setup the notch overlay window if enabled (deferred to ensure NSApp is ready)
+        DispatchQueue.main.async {
+            let enableNotch = UserDefaults.standard.bool(forKey: "enableNotchShelf")
+            // Default to true if not set
+            let isSet = UserDefaults.standard.object(forKey: "enableNotchShelf") != nil
+            if enableNotch || !isSet {
+                NotchWindowController.shared.setupNotchWindow()
+            }
+        }
         
         // Check for updates in background (notify only if update available)
         Task {

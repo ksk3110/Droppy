@@ -6,8 +6,8 @@ struct SettingsView: View {
     @AppStorage("showInMenuBar") private var showInMenuBar = true
     @AppStorage("startAtLogin") private var startAtLogin = false
     @AppStorage("useTransparentBackground") private var useTransparentBackground = false
-    // Beta feature removed - Jiggle is now standard
-    // @AppStorage("showFloatingBasket") private var showFloatingBasket = false
+    @AppStorage("enableNotchShelf") private var enableNotchShelf = true
+    @AppStorage("enableFloatingBasket") private var enableFloatingBasket = true
 
     
     // Background Hover Effect State
@@ -29,8 +29,6 @@ struct SettingsView: View {
                         .tag("General")
                     Label("Display", systemImage: "display")
                         .tag("Display")
-                    Label("What's New", systemImage: "sparkles")
-                        .tag("Changelog")
                     Label("About Droppy", systemImage: "info.circle")
                         .tag("About Droppy")
                 }
@@ -43,8 +41,6 @@ struct SettingsView: View {
                         generalSettings
                     } else if selectedTab == "Display" {
                         displaySettings
-                    } else if selectedTab == "Changelog" {
-                        changelogSettings
                     } else if selectedTab == "About Droppy" {
                         aboutSettings
                     }
@@ -99,6 +95,36 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+
+            Toggle(isOn: $enableNotchShelf) {
+                VStack(alignment: .leading) {
+                    Text("Notch Shelf")
+                    Text("Show the tray at the top of the screen")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .onChange(of: enableNotchShelf) { oldValue, newValue in
+                if newValue {
+                    NotchWindowController.shared.setupNotchWindow()
+                } else {
+                    NotchWindowController.shared.closeWindow()
+                }
+            }
+
+            Toggle(isOn: $enableFloatingBasket) {
+                VStack(alignment: .leading) {
+                    Text("Floating Basket")
+                    Text("Show the basket when jiggling files")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .onChange(of: enableFloatingBasket) { oldValue, newValue in
+                if !newValue {
+                    FloatingBasketWindowController.shared.hideBasket()
+                }
+            }
         } header: {
             Text("General")
         } footer: {
@@ -121,82 +147,7 @@ struct SettingsView: View {
         }
     }
     
-    private var changelogSettings: some View {
-        Section {
-            VStack(alignment: .leading, spacing: 12) {
-                // Header
-                HStack {
-                    Image(systemName: "sparkles")
-                        .font(.title2)
-                        .foregroundStyle(.purple.gradient)
-                    Text("Latest Updates")
-                        .font(.headline)
-                }
-                .padding(.bottom, 4)
-                
-                // Dynamic Content from Release Script
-                ForEach(ChangelogData.current.split(separator: "\n"), id: \.self) { line in
-                    HStack(alignment: .top, spacing: 8) {
-                        Image(systemName: "circle.fill")
-                            .font(.system(size: 4))
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 8)
-                        Text(String(line))
-                            .font(.subheadline)
-                            .foregroundStyle(.primary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                
-                Divider()
-                    .padding(.vertical, 8)
 
-                // Keep the 2.0 Highlight as a "Featured" section
-                Group {
-                    Text("Highlights from 2.0")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-                    
-                    Label("Floating Basket", systemImage: "basket.fill")
-                    Label("Smart Zipping & Rename", systemImage: "pencil.line")
-                    Label("Text Extraction (OCR)", systemImage: "doc.text.viewfinder")
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                
-                Divider()
-                    .padding(.vertical, 8)
-                
-                Group {
-                    Text("Foundation (1.0)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-                    
-                    Label("Notch Shelf", systemImage: "macwindow")
-                    Label("Drag & Drop Staging", systemImage: "hand.draw")
-                    Label("Instant Access", systemImage: "bolt.fill")
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 8)
-        } header: {
-            Text("What's New")
-        }
-    }
-
-struct ChangelogData {
-
-    static let current = """
-    Internal: Hardened release process to ensure 100% reliable updates.
-    New: Menu Bar Only mode (from v2.0.4) is now standard.
-    Fixed: Various stability improvements.
-
-
-    """
-}
     
     private var aboutSettings: some View {
         Section {

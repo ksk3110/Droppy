@@ -41,6 +41,7 @@ final class DragMonitor: ObservableObject {
     
     /// Starts monitoring for drag events
     func startMonitoring() {
+        guard dragCheckTimer == nil else { return }
         dragCheckTimer = Timer.scheduledTimer(withTimeInterval: 0.03, repeats: true) { [weak self] _ in
             self?.checkForActiveDrag()
         }
@@ -128,7 +129,11 @@ final class DragMonitor: ObservableObject {
                     
                     // Use async to avoid blocking the timer
                     DispatchQueue.main.async {
-                        FloatingBasketWindowController.shared.onJiggleDetected()
+                        // Check if basket is enabled before showing
+                        let enabled = UserDefaults.standard.bool(forKey: "enableFloatingBasket")
+                        if enabled || UserDefaults.standard.object(forKey: "enableFloatingBasket") == nil {
+                            FloatingBasketWindowController.shared.onJiggleDetected()
+                        }
                     }
                 }
             }

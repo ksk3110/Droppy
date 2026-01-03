@@ -43,18 +43,7 @@ if [ -n "$NOTES_FILE" ] && [ -f "$NOTES_FILE" ]; then
     # but for simple replacement we might do differently. 
     # Since multiline sed is tricky, we'll use perl which handles this better on macOS.
     
-    # 1. Update SettingsView.swift
-    echo "   - Updating SettingsView.swift..."
-    # We look for `static let current = """` ... `"""` block
-    # Note: We need to escape quote marks in the content string for Swift
-    # Also need to indent content by 4 spaces to match Swift multiline string requirements
-    INDENTED_NOTES=$(echo "$NOTES_CONTENT" | sed 's/^/    /')
-    export SWIFT_CONTENT=$(echo "$INDENTED_NOTES" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g')
-    
-    cd "$MAIN_REPO" || exit
-    perl -0777 -i -pe 's/(\s*)static let current = \"\"\"(.*?)\"\"\"/$1static let current = \"\"\"\n$ENV{SWIFT_CONTENT}\n$1\"\"\"/s' Droppy/SettingsView.swift
-
-    # 2. Update README.md
+    # 1. Update README.md
     echo "   - Updating README.md..."
     # We look for <!-- CHANGELOG_START --> ... <!-- CHANGELOG_END -->
     # For README, we want raw markdown, so we use NOTES_CONTENT directly but need to escape for Perl regex replacement string if it has special vars
@@ -185,10 +174,6 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     cd "$MAIN_REPO" || exit
     git push origin main
     git push origin "v$VERSION"
-
-    echo "-> Pushing Tap Repo..."
-    cd "$TAP_REPO" || exit
-    git push origin main
 
     echo "\n🎉 DONE! Release is live."
     echo "Users can run 'brew upgrade droppy' to get the new version."
