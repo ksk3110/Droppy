@@ -38,10 +38,8 @@ brew install --cask iordv/tap/droppy
 3. Right-click → Open (required for unsigned apps)
 
 <!-- CHANGELOG_START -->
-- **Fix**: Resolved an issue where the notch was visible on external displays even when disabled.
-- **Fix**: Fixed a bug where transparent background mode would show the notch on external displays incorrectly.
-- **Feature**: Added "drag-to-reveal" functionality on external displays – the notch now appears when dragging files or hovering to provide visual drop feedback even when hidden.
-- **Improvement**: Added ASCII art logo to the Homebrew Cask installation message.
+- **Fix**: Resolved a critical race condition crash in `NotchWindowController` where timer callbacks could access the controller during deallocation.
+- **Improvement**: Added a `deinit` to properly stop monitors when the window controller is released.
 <!-- CHANGELOG_END -->
 
 ## Features
