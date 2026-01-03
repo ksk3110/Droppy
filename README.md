@@ -38,11 +38,9 @@ brew install iordv/tap/droppy
 3. Right-click → Open (required for unsigned apps)
 
 <!-- CHANGELOG_START -->
-New: App now runs exclusively in the menu bar (hidden from Dock).
-Fixed: Installation error (SHA mismatch) when installing via Homebrew.
-Fixed: App quitting when closing Settings window
-Fixed: Crash when moving basket during animation
-Fixed: Window memory management stability improvements
+Internal: Hardened release process to ensure 100% reliable updates.
+New: Menu Bar Only mode (from v2.0.4) is now standard.
+Fixed: Various stability improvements.
 <!-- CHANGELOG_END -->
 
 ## Features
