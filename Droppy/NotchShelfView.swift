@@ -557,8 +557,6 @@ struct NotchItemView: View {
     // Removed local isRenaming
     @State private var renamingText = ""
     
-    @AppStorage("compressionMode") private var compressionMode = 1
-    
     var body: some View {
         DraggableArea(
             items: {
@@ -688,12 +686,26 @@ struct NotchItemView: View {
             
             // Compress option - only show for compressible file types
             if FileCompressor.canCompress(fileType: item.fileType) {
-                Button {
-                    compressFile()
-                } label: {
-                    Label("Compress", systemImage: "arrow.down.right.and.arrow.up.left")
+                if item.fileType?.conforms(to: .image) == true {
+                    Menu {
+                        Button("Auto (Medium)") {
+                            compressFile(mode: .preset(.medium))
+                        }
+                        Button("Target Size...") {
+                            compressFile(mode: nil) // Triggers prompt
+                        }
+                    } label: {
+                        Label("Compress", systemImage: "arrow.down.right.and.arrow.up.left")
+                    }
+                    .disabled(isCompressing)
+                } else {
+                    Button {
+                        compressFile(mode: .preset(.medium))
+                    } label: {
+                        Label("Compress", systemImage: "arrow.down.right.and.arrow.up.left")
+                    }
+                    .disabled(isCompressing)
                 }
-                .disabled(isCompressing)
             }
             
             Button {
@@ -822,16 +834,18 @@ struct NotchItemView: View {
     
     // MARK: - Compression
     
-    private func compressFile() {
+    private func compressFile(mode explicitMode: CompressionMode? = nil) {
         guard !isCompressing else { return }
         isCompressing = true
         
         Task {
-            // Determine compression mode from settings
+            // Determine compression mode
             let mode: CompressionMode
             
-            if compressionMode == 3 && item.fileType?.conforms(to: .image) == true {
-                // Ask for target size
+            if let explicit = explicitMode {
+                mode = explicit
+            } else {
+                // No explicit mode means request Target Size (for images)
                 guard let currentSize = FileCompressor.fileSize(url: item.url) else {
                     await MainActor.run { isCompressing = false }
                     return
@@ -847,10 +861,6 @@ struct NotchItemView: View {
                 }
                 
                 mode = .targetSize(bytes: targetBytes)
-            } else {
-                // Use preset quality
-                let quality = CompressionQuality(rawValue: compressionMode) ?? .medium
-                mode = .preset(quality)
             }
             
             if let compressedURL = await FileCompressor.shared.compress(url: item.url, mode: mode) {
