@@ -38,8 +38,7 @@ brew install --cask iordv/tap/droppy
 3. Right-click → Open (required for unsigned apps)
 
 <!-- CHANGELOG_START -->
-- **New Feature**: Added 'Open With...' context menu option. You can now right-click any item in the shelf or basket and choose a specific application to open it with.
-- **Improvement**: Native 'Open With' behavior ensures all compatible applications on your Mac are automatically discovered and displayed.
+- **Fix**: Resolved persistent crash in NotchWindow.updateMouseEventHandling() by adding validity checks to prevent accessing deallocated window during timer callbacks.
 <!-- CHANGELOG_END -->
 
 ## Features
