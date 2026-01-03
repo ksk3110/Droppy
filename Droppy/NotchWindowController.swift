@@ -181,6 +181,7 @@ class NotchWindow: NSWindow {
         // - Shelf is expanded (need to interact with items)
         // - User is hovering over notch (need click to open)
         // - Files are being dragged (need to accept drops)
+        // Note: Basket being visible doesn't block notch - they work independently
         let shouldAcceptEvents = state.isExpanded || state.isMouseHovering || dragMonitor.isDragging || state.isDropTargeted
         
         if self.ignoresMouseEvents == shouldAcceptEvents {

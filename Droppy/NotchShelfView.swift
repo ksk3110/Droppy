@@ -24,6 +24,9 @@ struct NotchShelfView: View {
     @State private var initialSelection: Set<UUID> = []
     @State private var itemFrames: [UUID: CGRect] = [:]
     
+    // Global rename state
+    @State private var renamingItemId: UUID?
+    
     // Background Hover Effect State
     @State private var hoverLocation: CGPoint = .zero
     @State private var isBgHovering: Bool = false
@@ -53,8 +56,7 @@ struct NotchShelfView: View {
                 .background {
                     if useTransparentBackground {
                         Color.clear
-                            .glassEffect(.regular)
-                            .clipShape(NotchShape(bottomRadius: state.isExpanded ? 20 : 16))
+                            .liquidGlass(shape: NotchShape(bottomRadius: state.isExpanded ? 20 : 16))
                     }
                 }
                 .overlay {
@@ -117,15 +119,6 @@ struct NotchShelfView: View {
                 }
             }
         }
-        // Conversion complete toast
-        .overlay(alignment: .bottom) {
-            if state.pendingConversion != nil {
-                conversionToast
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .padding(.bottom, 60)
-            }
-        }
-        .animation(.spring(response: 0.35, dampingFraction: 0.7), value: state.pendingConversion != nil)
         .coordinateSpace(name: "shelfContainer")
         .onContinuousHover(coordinateSpace: .named("shelfContainer")) { phase in
             switch phase {
@@ -245,83 +238,6 @@ struct NotchShelfView: View {
             )
             .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
     }
-    
-    // MARK: - Conversion Toast
-    
-    private var conversionToast: some View {
-        HStack(spacing: 12) {
-            // Success icon
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 24))
-                .foregroundStyle(.green)
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Conversion complete!")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
-                
-                if let pending = state.pendingConversion {
-                    Text(pending.filename)
-                        .font(.system(size: 11))
-                        .foregroundColor(.white.opacity(0.7))
-                        .lineLimit(1)
-                }
-            }
-            
-            Spacer()
-            
-            // Save to Downloads button
-            Button {
-                saveToDownloads()
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.down.circle.fill")
-                        .font(.system(size: 14))
-                    Text("Save")
-                        .font(.system(size: 13, weight: .semibold))
-                }
-                .foregroundColor(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(
-                    Capsule()
-                        .fill(Color.blue)
-                )
-            }
-            .buttonStyle(.plain)
-            
-            // Dismiss button
-            Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    state.pendingConversion = nil
-                }
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.white.opacity(0.6))
-                    .padding(6)
-                    .background(Circle().fill(Color.white.opacity(0.1)))
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-        .background(indicatorBackground)
-        .frame(maxWidth: 380)
-    }
-    
-    private func saveToDownloads() {
-        guard let pending = state.pendingConversion else { return }
-        
-        if let savedURL = FileConverter.saveToDownloads(pending.tempURL) {
-            // Reveal in Finder for convenience
-            NSWorkspace.shared.selectFile(savedURL.path, inFileViewerRootedAtPath: savedURL.deletingLastPathComponent().path)
-        }
-        
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-            state.pendingConversion = nil
-        }
-    }
 
     // MARK: - Expanded Content
     
@@ -380,6 +296,7 @@ struct NotchShelfView: View {
                     .contentShape(Rectangle())
                     .onTapGesture {
                         state.deselectAll()
+                        renamingItemId = nil
                     }
                     // Moved Marquee Drag Gesture HERE so it doesn't conflict with dragging items
                     .gesture(
@@ -429,6 +346,7 @@ struct NotchShelfView: View {
                                 NotchItemView(
                                     item: item,
                                     state: state,
+                                    renamingItemId: $renamingItemId,
                                     onRemove: {
                                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                             state.removeItem(item)
@@ -580,14 +498,19 @@ extension NotchShelfView {
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(
-                    state.isDropTargeted ? Color.blue : Color.white.opacity(0.15),
-                    style: StrokeStyle(lineWidth: 1.5, lineCap: .round, dash: [6, 8], dashPhase: dropZoneDashPhase)
+                    state.isDropTargeted ? Color.blue : Color.white.opacity(0.2),
+                    style: StrokeStyle(
+                        lineWidth: state.isDropTargeted ? 2 : 1.5,
+                        lineCap: .round,
+                        dash: [6, 8],
+                        dashPhase: dropZoneDashPhase
+                    )
                 )
         )
         .padding(EdgeInsets(top: 0, leading: 20, bottom: 20, trailing: 20))
         .onAppear {
-            withAnimation(.linear(duration: 30).repeatForever(autoreverses: false)) {
-                dropZoneDashPhase -= 280 // Multiple of 14 (6+8)
+            withAnimation(.linear(duration: 25).repeatForever(autoreverses: false)) {
+                dropZoneDashPhase -= 280 // Multiple of 14 (6+8) for smooth loop
             }
         }
     }
@@ -599,11 +522,18 @@ extension NotchShelfView {
 struct NotchItemView: View {
     let item: DroppedItem
     let state: DroppyState
+    @Binding var renamingItemId: UUID?
     let onRemove: () -> Void
     
     @State private var thumbnail: NSImage?
     @State private var isHovering = false
     @State private var isConverting = false
+    @State private var isExtractingText = false
+    @State private var isCreatingZIP = false
+    @State private var isPoofing = false
+    @State private var pendingConvertedItem: DroppedItem?
+    // Removed local isRenaming
+    @State private var renamingText = ""
     
     var body: some View {
         DraggableArea(
@@ -638,77 +568,20 @@ struct NotchItemView: View {
             },
             selectionSignature: state.selectedItems.hashValue
         ) {
-            VStack(spacing: 6) {
-                ZStack(alignment: .topTrailing) {
-                    // Thumbnail container
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(state.selectedItems.contains(item.id) ? Color.blue.opacity(0.3) : Color.white.opacity(0.1))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .stroke(state.selectedItems.contains(item.id) ? Color.blue : Color.clear, lineWidth: 2)
-                        )
-                        .frame(width: 60, height: 60)
-                        .overlay {
-                            Group {
-                                if let thumbnail = thumbnail {
-                                    Image(nsImage: thumbnail)
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                } else {
-                                    Image(nsImage: item.icon)
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                }
-                            }
-                            .frame(width: 44, height: 44)
-                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                            .opacity(isConverting ? 0.5 : 1.0)
-                        }
-                        .overlay {
-                            if isConverting {
-                                ProgressView()
-                                    .scaleEffect(0.6)
-                                    .tint(.white)
-                            }
-                        }
-                    
-                    // Remove button on hover
-                    if isHovering {
-                        Button(action: onRemove) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.red.opacity(0.9))
-                                    .frame(width: 20, height: 20)
-                                Image(systemName: "xmark")
-                                    .font(.system(size: 9, weight: .bold))
-                                    .foregroundColor(.white)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .offset(x: 6, y: -6)
-                        .transition(.scale.combined(with: .opacity))
-                    }
-                }
-                
-                // Filename
-                Text(item.name)
-                    .font(.system(size: 10, weight: state.selectedItems.contains(item.id) ? .bold : .medium))
-                    .foregroundColor(state.selectedItems.contains(item.id) ? .white : .white.opacity(0.85))
-                    .lineLimit(1)
-                    .frame(width: 68) // Slightly wider
-                    .padding(.horizontal, 4)
-                    .background(
-                        state.selectedItems.contains(item.id) ?
-                        Capsule().fill(Color.blue) :
-                        Capsule().fill(Color.clear)
-                    )
-            }
-            .padding(4)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(isHovering && !state.selectedItems.contains(item.id) ? Color.white.opacity(0.1) : Color.clear)
+            NotchItemContent(
+                item: item,
+                state: state,
+                onRemove: onRemove,
+                thumbnail: thumbnail,
+                isHovering: isHovering,
+                isConverting: isConverting,
+                isExtractingText: isExtractingText,
+                isPoofing: $isPoofing,
+                pendingConvertedItem: $pendingConvertedItem,
+                renamingItemId: $renamingItemId,
+                renamingText: $renamingText,
+                onRename: performRename
             )
-            .scaleEffect(isHovering ? 1.05 : 1.0)
         .frame(width: 76, height: 96)
         .background {
             GeometryReader { geo in
@@ -737,11 +610,7 @@ struct NotchItemView: View {
                 Label("Open", systemImage: "arrow.up.forward.square")
             }
             
-            Button {
-                item.revealInFinder()
-            } label: {
-                Label("Reveal in Finder", systemImage: "folder")
-            }
+
             
             Button {
                 item.saveToDownloads()
@@ -767,6 +636,34 @@ struct NotchItemView: View {
                 }
             }
             
+            // OCR Option
+            if item.fileType?.conforms(to: .image) == true || item.fileType?.conforms(to: .pdf) == true {
+                Button {
+                    extractText()
+                } label: {
+                    Label("Extract Text", systemImage: "text.viewfinder")
+                }
+            }
+            
+            // Create ZIP option
+            Divider()
+            
+            Button {
+                createZIPFromSelection()
+            } label: {
+                Label("Create ZIP", systemImage: "doc.zipper")
+            }
+            .disabled(isCreatingZIP)
+            
+            // Rename option (single item only)
+            if state.selectedItems.count <= 1 {
+                Button {
+                    startRenaming()
+                } label: {
+                    Label("Rename", systemImage: "pencil")
+                }
+            }
+            
             Divider()
             
             Button(role: .destructive, action: {
@@ -785,20 +682,46 @@ struct NotchItemView: View {
     }
     }
     
+    // MARK: - OCR
+    
+    private func extractText() {
+        guard !isExtractingText else { return }
+        isExtractingText = true
+        
+        Task {
+            do {
+                let text = try await OCRService.shared.extractText(from: item.url)
+                await MainActor.run {
+                    isExtractingText = false
+                    OCRWindowController.shared.show(with: text)
+                }
+            } catch {
+                await MainActor.run {
+                    isExtractingText = false
+                    OCRWindowController.shared.show(with: "Error extracting text: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+    
     // MARK: - Conversion
     
     private func convertFile(to format: ConversionFormat) {
+        guard !isConverting else { return }
         isConverting = true
         
         Task {
             if let convertedURL = await FileConverter.convert(item.url, to: format) {
-                // Set pending conversion for download prompt
-                let filename = convertedURL.lastPathComponent
+                // Create new DroppedItem from converted file
+                let newItem = DroppedItem(url: convertedURL)
+                
                 await MainActor.run {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        state.pendingConversion = (tempURL: convertedURL, filename: filename)
-                    }
                     isConverting = false
+                    pendingConvertedItem = newItem
+                    // Trigger poof animation
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        isPoofing = true
+                    }
                 }
             } else {
                 await MainActor.run {
@@ -806,6 +729,75 @@ struct NotchItemView: View {
                 }
             }
         }
+    }
+    
+    // MARK: - ZIP Creation
+    
+    private func createZIPFromSelection() {
+        guard !isCreatingZIP else { return }
+        
+        // Determine items to include: selected items or just this item
+        let itemsToZip: [DroppedItem]
+        if state.selectedItems.isEmpty || (state.selectedItems.count == 1 && state.selectedItems.contains(item.id)) {
+            itemsToZip = [item]
+        } else {
+            itemsToZip = state.items.filter { state.selectedItems.contains($0.id) }
+        }
+        
+        isCreatingZIP = true
+        
+        Task {
+            // Generate archive name based on item count
+            let archiveName = itemsToZip.count == 1 
+                ? itemsToZip[0].url.deletingPathExtension().lastPathComponent
+                : "Archive (\(itemsToZip.count) items)"
+            
+            if let zipURL = await FileConverter.createZIP(from: itemsToZip, archiveName: archiveName) {
+                let newItem = DroppedItem(url: zipURL)
+                
+                await MainActor.run {
+                    isCreatingZIP = false
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        state.replaceItems(itemsToZip, with: newItem)
+                    }
+                    // Auto-start renaming the new zip file
+                    renamingItemId = newItem.id
+                }
+            } else {
+                await MainActor.run {
+                    isCreatingZIP = false
+                }
+                print("ZIP creation failed")
+            }
+        }
+    }
+    
+    // MARK: - Rename
+    
+    private func startRenaming() {
+        // Set the text to filename without extension for easier editing
+        renamingItemId = item.id
+    }
+    
+    private func performRename() {
+        let trimmedName = renamingText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else {
+            print("Rename: Empty name, cancelling")
+            renamingItemId = nil
+            return
+        }
+        
+        print("Rename: Attempting to rename '\(item.name)' to '\(trimmedName)'")
+        
+        if let renamedItem = item.renamed(to: trimmedName) {
+            print("Rename: Success! New item: \(renamedItem.name)")
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                state.replaceItem(item, with: renamedItem)
+            }
+        } else {
+            print("Rename: Failed - renamed() returned nil")
+        }
+        renamingItemId = nil
     }
 }
 
@@ -848,3 +840,232 @@ struct ItemFramePreferenceKey: PreferenceKey {
 }
 
 
+
+// MARK: - Notch Item Content
+private struct NotchItemContent: View {
+    let item: DroppedItem
+    let state: DroppyState
+    let onRemove: () -> Void
+    let thumbnail: NSImage?
+    let isHovering: Bool
+    let isConverting: Bool
+    let isExtractingText: Bool
+    @Binding var isPoofing: Bool
+    @Binding var pendingConvertedItem: DroppedItem?
+    @Binding var renamingItemId: UUID?
+    @Binding var renamingText: String
+    let onRename: () -> Void
+    
+    private var isSelected: Bool {
+        state.selectedItems.contains(item.id)
+    }
+    
+    var body: some View {
+        VStack(spacing: 6) {
+            ZStack(alignment: .topTrailing) {
+                // Thumbnail container
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(isSelected ? Color.blue.opacity(0.3) : Color.white.opacity(0.1))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
+                    )
+                    .frame(width: 60, height: 60)
+                    .overlay {
+                        Group {
+                            if let thumbnail = thumbnail {
+                                Image(nsImage: thumbnail)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            } else {
+                                Image(nsImage: item.icon)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                            }
+                        }
+                        .frame(width: 44, height: 44)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .opacity((isConverting || isExtractingText) ? 0.5 : 1.0)
+                    }
+                    .overlay {
+                        if isConverting || isExtractingText {
+                            ProgressView()
+                                .scaleEffect(0.6)
+                                .tint(.white)
+                        }
+                    }
+                
+                // Remove button on hover
+                if isHovering && !isPoofing && renamingItemId != item.id {
+                    Button(action: onRemove) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.red.opacity(0.9))
+                                .frame(width: 20, height: 20)
+                            Image(systemName: "xmark")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .offset(x: 6, y: -6)
+                    .transition(.scale.combined(with: .opacity))
+                }
+            }
+            
+            // Filename or rename text field
+            if renamingItemId == item.id {
+                RenameTextField(
+                    text: $renamingText,
+                    // Pass a binding derived from the ID check
+                    isRenaming: Binding(
+                        get: { renamingItemId == item.id },
+                        set: { if !$0 { renamingItemId = nil } }
+                    ),
+                    onRename: onRename
+                )
+                .onAppear {
+                    renamingText = item.url.deletingPathExtension().lastPathComponent
+                }
+            } else {
+                Text(item.name)
+                    .font(.system(size: 10, weight: isSelected ? .bold : .medium))
+                    .foregroundColor(isSelected ? .white : .white.opacity(0.85))
+                    .lineLimit(1)
+                    .frame(width: 68)
+                    .padding(.horizontal, 4)
+                    .background(
+                        isSelected ?
+                        Capsule().fill(Color.blue) :
+                        Capsule().fill(Color.clear)
+                    )
+            }
+        }
+        .padding(4)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(isHovering && !isSelected ? Color.white.opacity(0.1) : Color.clear)
+        )
+        .scaleEffect(isHovering && !isPoofing ? 1.05 : 1.0)
+        .poofEffect(isPoofing: $isPoofing) {
+            // Replace item when poof completes
+            if let newItem = pendingConvertedItem {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    state.replaceItem(item, with: newItem)
+                }
+                pendingConvertedItem = nil
+            }
+        }
+    }
+}
+
+// MARK: - Rename Text Field with Auto-Select and Animated Dotted Border
+private struct RenameTextField: View {
+    @Binding var text: String
+    @Binding var isRenaming: Bool
+    let onRename: () -> Void
+    
+    @State private var dashPhase: CGFloat = 0
+    
+    var body: some View {
+        AutoSelectTextField(
+            text: $text,
+            onSubmit: onRename,
+            onCancel: { isRenaming = false }
+        )
+        .font(.system(size: 11, weight: .medium))
+        .frame(width: 72)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(Color.black.opacity(0.3))
+        )
+        // Animated dotted blue outline
+        .overlay(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(
+                    Color.accentColor.opacity(0.8),
+                    style: StrokeStyle(
+                        lineWidth: 1.5,
+                        lineCap: .round,
+                        dash: [3, 3],
+                        dashPhase: dashPhase
+                    )
+                )
+        )
+        .onAppear {
+            // Animate the marching ants
+            withAnimation(.linear(duration: 0.5).repeatForever(autoreverses: false)) {
+                dashPhase = 6
+            }
+        }
+    }
+}
+
+// MARK: - Auto-Select Text Field (NSViewRepresentable)
+private struct AutoSelectTextField: NSViewRepresentable {
+    @Binding var text: String
+    let onSubmit: () -> Void
+    let onCancel: () -> Void
+    
+    func makeNSView(context: Context) -> NSTextField {
+        let textField = NSTextField()
+        textField.delegate = context.coordinator
+        textField.isBordered = false
+        textField.drawsBackground = false
+        textField.backgroundColor = .clear
+        textField.textColor = .white
+        textField.font = .systemFont(ofSize: 11, weight: .medium)
+        textField.alignment = .center
+        textField.focusRingType = .none
+        textField.stringValue = text
+        
+        // Make it the first responder and select all text after a brief delay
+        DispatchQueue.main.async {
+            textField.window?.makeFirstResponder(textField)
+            textField.selectText(nil)
+            textField.currentEditor()?.selectedRange = NSRange(location: 0, length: textField.stringValue.count)
+        }
+        
+        return textField
+    }
+    
+    func updateNSView(_ nsView: NSTextField, context: Context) {
+        // Only update if text changed externally
+        if nsView.stringValue != text {
+            nsView.stringValue = text
+        }
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, NSTextFieldDelegate {
+        let parent: AutoSelectTextField
+        
+        init(_ parent: AutoSelectTextField) {
+            self.parent = parent
+        }
+        
+        func controlTextDidChange(_ notification: Notification) {
+            if let textField = notification.object as? NSTextField {
+                parent.text = textField.stringValue
+            }
+        }
+        
+        func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+            if commandSelector == #selector(NSResponder.insertNewline(_:)) {
+                // Enter pressed - submit
+                parent.onSubmit()
+                return true
+            } else if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
+                // Escape pressed - cancel
+                parent.onCancel()
+                return true
+            }
+            return false
+        }
+    }
+}

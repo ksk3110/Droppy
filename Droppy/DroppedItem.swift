@@ -136,6 +136,55 @@ struct DroppedItem: Identifiable, Hashable, Transferable {
         }
     }
     
+    /// Renames the file and returns a new DroppedItem with the updated URL
+    /// Returns nil if rename failed
+    func renamed(to newName: String) -> DroppedItem? {
+        let fileManager = FileManager.default
+        let directory = url.deletingLastPathComponent()
+        
+        // Ensure we keep the correct extension if user doesn't provide one
+        var finalName = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let currentExtension = url.pathExtension
+        let newExtension = (finalName as NSString).pathExtension
+        
+        if newExtension.isEmpty && !currentExtension.isEmpty {
+            finalName = finalName + "." + currentExtension
+        }
+        
+        let newURL = directory.appendingPathComponent(finalName)
+        
+        print("DroppedItem.renamed: From '\(url.lastPathComponent)' to '\(finalName)'")
+        print("DroppedItem.renamed: Old URL: \(url.path)")
+        print("DroppedItem.renamed: New URL: \(newURL.path)")
+        
+        // Don't rename if it's the same name
+        if newURL.path == url.path {
+            print("DroppedItem.renamed: Same name, no change needed")
+            return nil
+        }
+        
+        // Check if destination already exists
+        if fileManager.fileExists(atPath: newURL.path) {
+            print("DroppedItem.renamed: Cannot rename - file already exists: \(finalName)")
+            return nil
+        }
+        
+        // Check if source exists
+        if !fileManager.fileExists(atPath: url.path) {
+            print("DroppedItem.renamed: Cannot rename - source file not found: \(url.path)")
+            return nil
+        }
+        
+        do {
+            try fileManager.moveItem(at: url, to: newURL)
+            print("DroppedItem.renamed: Success! Renamed to \(finalName)")
+            return DroppedItem(url: newURL)
+        } catch {
+            print("DroppedItem.renamed: Failed to rename: \(error.localizedDescription)")
+            return nil
+        }
+    }
+    
     // MARK: - Hashable
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)

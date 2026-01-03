@@ -19,15 +19,28 @@ final class DragMonitor: ObservableObject {
     /// The current mouse location during drag
     @Published private(set) var dragLocation: CGPoint = .zero
     
+    /// Whether a jiggle gesture was detected during drag (triggers basket)
+    @Published private(set) var didJiggle = false
+    
     private var dragCheckTimer: Timer?
     private var dragStartChangeCount: Int = 0
     private var dragActive = false
+    
+    // Jiggle detection state
+    private var lastDragLocation: CGPoint = .zero
+    private var lastDragDirection: CGPoint = .zero
+    private var directionChanges: [Date] = []
+    private let jiggleThreshold: Int = 3
+    private let jiggleTimeWindow: TimeInterval = 0.5
+    
+    // Flags to prevent duplicate notifications
+    private var jiggleNotified = false
+    private var dragEndNotified = false
     
     private init() {}
     
     /// Starts monitoring for drag events
     func startMonitoring() {
-        // Monitor the drag pasteboard for content
         dragCheckTimer = Timer.scheduledTimer(withTimeInterval: 0.03, repeats: true) { [weak self] _ in
             self?.checkForActiveDrag()
         }
@@ -39,38 +52,88 @@ final class DragMonitor: ObservableObject {
         dragCheckTimer = nil
     }
     
+    /// Resets jiggle state (called after basket is shown or drag ends)
+    func resetJiggle() {
+        didJiggle = false
+        jiggleNotified = false
+        directionChanges.removeAll()
+        lastDragDirection = .zero
+    }
+    
     private func checkForActiveDrag() {
         let dragPasteboard = NSPasteboard(name: .drag)
         let currentChangeCount = dragPasteboard.changeCount
         let mouseIsDown = NSEvent.pressedMouseButtons & 1 != 0
         
-        // Detect drag START: pasteboard change count increased and mouse is down
+        // Detect drag START
         if currentChangeCount != dragStartChangeCount && mouseIsDown {
             let hasContent = dragPasteboard.types?.isEmpty == false
             if hasContent && !dragActive {
-                // New drag started
                 dragActive = true
                 dragStartChangeCount = currentChangeCount
-                DispatchQueue.main.async { [weak self] in
-                    self?.isDragging = true
-                    self?.dragLocation = NSEvent.mouseLocation
+                resetJiggle()
+                dragEndNotified = false
+                lastDragLocation = NSEvent.mouseLocation
+                isDragging = true
+                dragLocation = NSEvent.mouseLocation
+            }
+        }
+        
+        // Update location while dragging
+        if dragActive && mouseIsDown {
+            let currentLocation = NSEvent.mouseLocation
+            dragLocation = currentLocation
+            detectJiggle(currentLocation: currentLocation)
+            lastDragLocation = currentLocation
+        }
+        
+        // Detect drag END
+        if !mouseIsDown && dragActive {
+            dragActive = false
+            isDragging = false
+            dragEndNotified = true
+            
+            // Notify controller that drag ended - this will handle auto-hiding if empty
+            FloatingBasketWindowController.shared.onDragEnded()
+            
+            resetJiggle()
+        }
+    }
+    
+    private func detectJiggle(currentLocation: CGPoint) {
+        let dx = currentLocation.x - lastDragLocation.x
+        let dy = currentLocation.y - lastDragLocation.y
+        let magnitude = sqrt(dx * dx + dy * dy)
+        
+        guard magnitude > 5 else { return }
+        
+        let currentDirection = CGPoint(x: dx / magnitude, y: dy / magnitude)
+        
+        if lastDragDirection != .zero {
+            let dot = currentDirection.x * lastDragDirection.x + currentDirection.y * lastDragDirection.y
+            
+            if dot < -0.3 {
+                let now = Date()
+                directionChanges.append(now)
+                directionChanges = directionChanges.filter { now.timeIntervalSince($0) < jiggleTimeWindow }
+                
+                if directionChanges.count >= jiggleThreshold && !jiggleNotified {
+                    didJiggle = true
+                    jiggleNotified = true
+                    
+                    // Allow re-notifying after a delay (to move basket)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                        self?.jiggleNotified = false
+                    }
+                    
+                    // Use async to avoid blocking the timer
+                    DispatchQueue.main.async {
+                        FloatingBasketWindowController.shared.onJiggleDetected()
+                    }
                 }
             }
         }
         
-        // Keep updating location while drag is active
-        if dragActive && mouseIsDown {
-            DispatchQueue.main.async { [weak self] in
-                self?.dragLocation = NSEvent.mouseLocation
-            }
-        }
-        
-        // Detect drag END: mouse released
-        if !mouseIsDown && dragActive {
-            dragActive = false
-            DispatchQueue.main.async { [weak self] in
-                self?.isDragging = false
-            }
-        }
+        lastDragDirection = currentDirection
     }
 }

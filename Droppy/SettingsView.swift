@@ -6,6 +6,7 @@ struct SettingsView: View {
     @AppStorage("showInMenuBar") private var showInMenuBar = true
     @AppStorage("startAtLogin") private var startAtLogin = false
     @AppStorage("useTransparentBackground") private var useTransparentBackground = false
+    @AppStorage("showFloatingBasket") private var showFloatingBasket = false
     
     // Background Hover Effect State
     @State private var hoverLocation: CGPoint = .zero
@@ -26,6 +27,8 @@ struct SettingsView: View {
                         .tag("General")
                     Label("Display", systemImage: "display")
                         .tag("Display")
+                    Label("Beta Features", systemImage: "flask")
+                        .tag("Beta Features")
                     Label("About Droppy", systemImage: "info.circle")
                         .tag("About Droppy")
                 }
@@ -38,6 +41,8 @@ struct SettingsView: View {
                         generalSettings
                     } else if selectedTab == "Display" {
                         displaySettings
+                    } else if selectedTab == "Beta Features" {
+                        betaSettings
                     } else if selectedTab == "About Droppy" {
                         aboutSettings
                     }
@@ -111,6 +116,23 @@ struct SettingsView: View {
             }
         } header: {
             Text("Display")
+        }
+    }
+    
+    private var betaSettings: some View {
+        Section {
+            Toggle(isOn: $showFloatingBasket) {
+                VStack(alignment: .leading) {
+                    Text("Floating Basket")
+                    Text("Jiggle the trackpad while dragging to show a floating drop zone")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } header: {
+            Text("Beta Features")
+        } footer: {
+            Text("These features are experimental and may change or be removed.")
         }
     }
     

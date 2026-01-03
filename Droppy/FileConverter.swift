@@ -367,6 +367,89 @@ class FileConverter {
         }
     }
     
+    // MARK: - ZIP Creation
+    
+    /// Creates a ZIP archive from multiple files
+    /// Returns the URL of the created ZIP file (in temp directory), or nil if creation failed
+    static func createZIP(from items: [DroppedItem], archiveName: String? = nil) async -> URL? {
+        guard !items.isEmpty else { return nil }
+        
+        let tempDirectory = FileManager.default.temporaryDirectory
+        let zipName = archiveName ?? "Archive"
+        let zipFilename = zipName + ".zip"
+        let zipURL = uniqueURL(for: tempDirectory.appendingPathComponent(zipFilename))
+        
+        // Create a temporary work directory to hold file copies
+        let workDir = tempDirectory.appendingPathComponent(UUID().uuidString)
+        
+        do {
+            try FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
+        } catch {
+            print("FileConverter: Failed to create work directory: \(error)")
+            return nil
+        }
+        
+        // Copy files to work directory (handles files from different locations)
+        var filenames: [String] = []
+        for item in items {
+            var destFilename = item.name
+            var destURL = workDir.appendingPathComponent(destFilename)
+            
+            // Handle duplicate filenames within the archive
+            var counter = 1
+            while FileManager.default.fileExists(atPath: destURL.path) {
+                let name = item.url.deletingPathExtension().lastPathComponent
+                let ext = item.url.pathExtension
+                destFilename = "\(name)_\(counter).\(ext)"
+                destURL = workDir.appendingPathComponent(destFilename)
+                counter += 1
+            }
+            
+            do {
+                try FileManager.default.copyItem(at: item.url, to: destURL)
+                filenames.append(destFilename)
+            } catch {
+                print("FileConverter: Failed to copy file for ZIP: \(error)")
+                // Continue with other files
+            }
+        }
+        
+        guard !filenames.isEmpty else {
+            try? FileManager.default.removeItem(at: workDir)
+            return nil
+        }
+        
+        // Use macOS built-in zip command
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+        process.currentDirectoryURL = workDir
+        process.arguments = ["-r", zipURL.path] + filenames
+        
+        // Suppress output
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        
+        do {
+            try process.run()
+            process.waitUntilExit()
+            
+            // Cleanup work directory
+            try? FileManager.default.removeItem(at: workDir)
+            
+            if process.terminationStatus == 0 {
+                print("FileConverter: Successfully created ZIP: \(zipURL.lastPathComponent)")
+                return zipURL
+            } else {
+                print("FileConverter: zip command failed with status \(process.terminationStatus)")
+            }
+        } catch {
+            print("FileConverter: Failed to run zip command: \(error)")
+            try? FileManager.default.removeItem(at: workDir)
+        }
+        
+        return nil
+    }
+    
     // MARK: - Helpers
     
     /// Generates a unique URL if the file already exists

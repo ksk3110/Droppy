@@ -25,8 +25,12 @@ struct DroppyApp: App {
     
     var body: some Scene {
         Settings {
-            SettingsView()
-                .containerBackground(.clear, for: .window)
+            if #available(macOS 15.0, *) {
+                SettingsView()
+                    .containerBackground(.clear, for: .window)
+            } else {
+                SettingsView()
+            }
         }
         
         MenuBarExtra("Droppy", systemImage: "tray.and.arrow.down.fill", isInserted: $showInMenuBar) {
@@ -59,6 +63,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Setup the notch overlay window
         NotchWindowController.shared.setupNotchWindow()
+        
+        // Initialize floating basket controller (observes jiggle detection)
+        _ = FloatingBasketWindowController.shared
         
         // Check for updates in background (notify only if update available)
         Task {

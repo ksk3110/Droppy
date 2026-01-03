@@ -88,7 +88,8 @@ class DraggableAreaView<Content: View>: NSView, NSDraggingSource {
         if let mouseDown = mouseDownEvent {
             if abs(event.locationInWindow.x - mouseDown.locationInWindow.x) < 5 &&
                abs(event.locationInWindow.y - mouseDown.locationInWindow.y) < 5 {
-                onTap(event.modifierFlags)
+                // Use NSEvent.modifierFlags class property for reliable detection in non-activating panels
+                onTap(NSEvent.modifierFlags)
             }
         }
         mouseDownEvent = nil
