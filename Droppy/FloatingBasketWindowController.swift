@@ -85,11 +85,11 @@ final class FloatingBasketWindowController: NSObject {
         let deltaY = abs(currentFrame.origin.y - newFrame.origin.y)
         if deltaX < 1.0 && deltaY < 1.0 { return }
         
-        NSAnimationContext.runAnimationGroup { context in
+        NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.2
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            panel.animator().setFrame(newFrame, display: true)
-        }
+            panel.setFrame(newFrame, display: true)
+        }, completionHandler: nil)
     }
     
     /// Shows the basket near the current mouse location
@@ -170,11 +170,11 @@ final class FloatingBasketWindowController: NSObject {
         panel.orderFrontRegardless()
         
         // Smooth fade-in animation
-        NSAnimationContext.runAnimationGroup { context in
+        NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.25
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            panel.animator().alphaValue = 1.0
-        }
+            panel.alphaValue = 1.0
+        }, completionHandler: nil)
         
         basketWindow = panel
         isShowingOrHiding = false
@@ -193,7 +193,7 @@ final class FloatingBasketWindowController: NSObject {
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.2
             context.timingFunction = CAMediaTimingFunction(name: .easeIn)
-            panel.animator().alphaValue = 0
+            panel.alphaValue = 0
         }, completionHandler: { [weak self] in
             panel.orderOut(nil)
             self?.basketWindow = nil

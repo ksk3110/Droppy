@@ -1,4 +1,4 @@
-New: Added "Hide Notch on External Displays" setting in Display preferences.
-Visual: The simulated notch is now hidden by default on external monitors when enabled.
-Stability: Improved NotchShelfView rendering logic and display detection.
-Binary consistency and automated updates fully active.
+Stability (v2.1.4): Hardened window animations to eliminate rare `objc_release` crashes.
+Fixed: Refactored animation logic to bypass unstable background DisplayLink threads.
+Unified: All window transitions now use main-thread safe synchronization.
+Maintenance: Continuous improvement for the rock-solid Droppy experience.

@@ -249,10 +249,15 @@ class NotchWindow: NSWindow {
         // Only trigger animation if the TARGET has changed, not just because current alpha is in flux
         if self.targetAlpha != newTargetAlpha {
             self.targetAlpha = newTargetAlpha
-            NSAnimationContext.runAnimationGroup { context in
+            
+            // Use NSAnimationContext directly on the main thread without the animator() proxy.
+            // The animator() proxy can spin up background threads (DisplayLink) that are
+            // unstable during high-frequency checks or window lifecycle changes.
+            NSAnimationContext.runAnimationGroup({ context in
                 context.duration = 0.5
-                self.animator().alphaValue = newTargetAlpha
-            }
+                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                self.alphaValue = newTargetAlpha
+            }, completionHandler: nil)
         }
     }
     
