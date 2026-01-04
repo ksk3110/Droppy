@@ -107,8 +107,10 @@ class ClipboardManager: ObservableObject {
     func startMonitoring() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            self?.checkForChanges()
-            self?.checkPermission()
+            autoreleasepool {
+                self?.checkForChanges()
+                self?.checkPermission()
+            }
         }
     }
     

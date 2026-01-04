@@ -43,7 +43,9 @@ final class DragMonitor: ObservableObject {
     func startMonitoring() {
         guard dragCheckTimer == nil else { return }
         dragCheckTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
-            self?.checkForActiveDrag()
+            autoreleasepool {
+                self?.checkForActiveDrag()
+            }
         }
     }
     
