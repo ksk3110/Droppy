@@ -1,20 +1,18 @@
-# Droppy v2.6.0-beta 🚀
+# Droppy v2.6.1 🔍
 
-This is a massive update introducing the highly anticipated **Clipboard Manager (Beta)**! 
+The **Clipboard Manager** gets a major upgrade in this release with search and organization superpowers!
 
-### 📋 New Feature: Clipboard Manager (Beta)
-Droppy is no longer just for files. It's now your ultimate productivity sidekick.
-- **Visual History**: See a rich preview of text, images, files, and URLs you've copied.
-- **Smart Search**: Find exactly what you need in your clipboard history instantly.
-- **Multi-Selection & Dragging**: Select multiple entries and drag them out as files or back into the shelf/basket.
-- **Direct Paste**: Paste any item directly into your current active window with a single click.
-- **Renaming**: Give your clipboard entries custom names to keep things organized.
-- **Favorites**: Star your most-used snippets for quick access.
-- **Silky Smooth Navigation**: Enhanced scrolling and keyboard support for a premium feel.
+### 🔍 Search Everything
+- **Search Bar**: Press `Cmd+F` or click the search icon to reveal the new liquid-style search bar.
+- **Instant Filtering**: Filter your clipboard history by title, content, or app source in real-time.
+- **Beautiful UI**: Enjoy the same premium "glassy" aesthetics and animations as the rest of the app.
 
-### ✨ Improvements & Fixes
-- **Refined UI**: Increased the clipboard window size (720x480) for better visibility and a more spacious layout.
-- **Deep Integration**: The clipboard manager works beautifully with the existing Shelf and Basket. Drag anything from your history directly into Droppy's stashing zones.
-- **Performance Polish**: Optimized many background operations for an even Snappier™ experience.
+### ⭐️ Smart Favorites
+- **Pin to Top**: Favorited items now automatically stick to the top of your list, even when filtering.
+- **Sticky Navigation**: Filter your results but keep your most important clips within reach.
 
-Enjoy the new flow! 🥳
+### ⚙️ UI Polish
+- **Settings Refinement**: The History Limit input now features a responsive animated border and crisp auto-selection behavior.
+- **Responsive Animations**: Improved hover and focus states throughout the Clipboard Manager.
+
+Enjoy the polish! ✨
