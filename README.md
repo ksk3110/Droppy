@@ -137,15 +137,15 @@ brew install --cask iordv/tap/droppy
 
 ## 🆕 What's New
 <!-- CHANGELOG_START -->
-# Droppy v2.6.5 🩹
+# Droppy v2.6.6 🩹
 
-Polishing the Clipboard Manager experience.
+Final stability patch for the Notch Window.
 
-### ✨ Improvements
-- **Smart Deduplication**: Copying an item that's already in your history now moves it to the top instead of creating a duplicate.
-- **Metadata Persistence**: If you've favorited or renamed an item, these settings are preserved when you copy it again. Your "API Key" stays named "API Key" even if you re-copy it! 🧠
+### 🛠 Fixes
+- **Crash Resolved**: Removed the fade animation when hiding/showing the notch in full-screen apps. This eliminates a complex `CoreAnimation` transaction crash ("NSDisplayCycleFlush") that affected some users.
+- **Improved**: The notch now snaps instantly to hidden/visible state when entering full-screen apps, which is safer and cleaner.
 
-Enjoy the cleaner history! 🧹
+This addresses the `stepTransactionFlush` crash log newly reported. 🛡️
 <!-- CHANGELOG_END -->
 
 ---

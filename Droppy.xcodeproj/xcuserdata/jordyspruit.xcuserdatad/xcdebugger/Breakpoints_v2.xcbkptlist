@@ -22,6 +22,14 @@
                   moduleName = "libobjc.A.dylib"
                   usesParentBreakpointCondition = "Yes">
                </Location>
+               <Location
+                  uuid = "5BFCB9BB-B4A9-40FD-8BE6-C047C2BD6F96 - 93103593adc761e9"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "*0x187e54148"
+                  usesParentBreakpointCondition = "Yes">
+               </Location>
             </Locations>
          </BreakpointContent>
       </BreakpointProxy>
