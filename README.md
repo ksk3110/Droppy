@@ -5,8 +5,8 @@
 <h1 align="center">Droppy</h1>
 
 <p align="center">
-  <strong>The ultimate drag-and-drop file shelf for macOS.</strong><br>
-  <em>"It feels like it should have been there all along."</em><br>
+  <strong>The ultimate productivity tool for macOS.</strong><br>
+  <em>Notch Shelf • Floating Basket • Clipboard Manager</em><br>
   <br>
   Designed with ❤️ and pixel-perfect polish. Now featuring a <strong>stunning new App Icon</strong> and a <strong>custom Menu Bar stencil</strong>.
 </p>
@@ -28,7 +28,13 @@
 
 ## What is Droppy?
 
-Droppy provides a **temporary file shelf** that lives in your Mac's notch. Drag files to the top of your screen or **"jiggle"** your mouse to summon a floating basket anywhere. It's the perfect holding zone when moving files between apps, spaces, or folders.
+Droppy reimagines productivity on macOS by combining three essential tools into one seamless experience:
+
+1.  **Notch Shelf**: A sleek holding zone hidden in your webcam notch.
+2.  **Floating Basket**: Summon a drop zone anywhere with a quick mouse jiggle.
+3.  **Clipboard Manager**: A powerful history tool with OCR, favorites, and instant search.
+
+It's the perfect bridge between your apps, spaces, and workflow.
 
 ---
 
