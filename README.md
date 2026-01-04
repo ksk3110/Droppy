@@ -27,7 +27,7 @@
 
 Droppy provides a **temporary shelf** for your files. Drag files to the top of your screen (the Notch) or "jiggle" your mouse to summon a Basket right where you are. It's the perfect holding zone when moving files between apps, spaces, or folders.
 
-🚀 **Version 2.7.4 is here!** Introducing the **Liquid Update** with a custom redesign, fixed stability, and refined aesthetics!
+🚀 **Version 2.9.0 is here!** Introducing the **Clipboard Overhaul** with low-level hotkey support, full keyboard navigation, and multi-item capture!
 
 ---
 
@@ -41,7 +41,7 @@ Droppy provides a **temporary shelf** for your files. Drag files to the top of y
 |**📉 Smart Compression**|Right-click to compress Images, PDFs, and Videos. Now with **Size Guard** 🛡️ to prevent bloat.|
 |**⚡️ Fast Actions**|Convert images/docs, extract text (OCR), zip, or rename directly in the shelf.|
 |**🖥️ Multi-Monitor**|Works beautifully on external displays. Auto-hides on fullscreen games/videos.|
-|**📋 Clipboard Manager**|A powerful liquid history. Search, **Edit**, Rename, Favorite, and Drag & Drop.|
+|**📋 Clipboard Manager**|A powerful liquid history. Full **Keyboard Navigation** (Arrows/Enter), **Secure Input Support**, and multi-item capture.|
 
 ---
 
@@ -65,12 +65,13 @@ Droppy provides a **temporary shelf** for your files. Drag files to the top of y
 - **Poof**: The file is moved (or copied) and vanishes from the shelf.
 
 ### 4. Clipboard Magic 📋
-- **Summon**: Press `Cmd + Shift + Space` (default) to bring up your clipboard history.
+- **Summon**: Press `Cmd + Shift + Space` (default). Now works in **Password Fields** and Terminal thanks to our new low-level input engine.
+- **Keyboard Navigation**: Use **Arrow Keys** to browse and **Enter** to paste instantly.
+- **Multi-Item Support**: Copy multiple files, photos, or text snippets—Droppy captures them all simultaneously.
 - **Search & Rename**: Type to search, or right-click to rename entries for better organization.
-- **Multi-Drag**: Select multiple items and drag them directly into the Notch, Basket, or any other app.
 - **Direct Paste**: Click "Paste" on any item to send it immediately to your last active window.
-- **Edit Content**: Click the **Pencil** icon on any text item to edit it directly. The UI morphs into a focused editor.
-- **Smart Drag**: Drag items from the clipboard directly to the Shelf or other apps.
+- **Edit Content**: Click the **Pencil** icon on any text item to edit it directly—the UI morphs into a focused editor.
+- **Fade Animation**: Dismiss the window with a smooth, fluid fade.
 
 ---
 
@@ -139,14 +140,20 @@ brew install --cask iordv/tap/droppy
 
 ## 🆕 What's New
 <!-- CHANGELOG_START -->
-Hotfix Release
-
-Fixes:
-- Fixed clipboard history not loading after update (backwards compatibility)
-- Fixed crash in NotchWindow related to objc_release
+Clipboard Engine Overhaul (v2.9.0)
 
 Features:
-- Password entries now show a key icon in clipboard history
+- New high-performance Clipboard Engine using IOHIDManager.
+- Full Keyboard Navigation: Use Arrows and Enter to navigate/paste.
+- Global Hotkey is now compatible with Secure Input (password fields).
+- Multi-item capture: Copy multiple files or photos simultaneously.
+- Smooth Fade-Out animation for the clipboard window.
+- Enhanced password manager exclusion logic.
+
+Fixes:
+- Fixed keyboard navigation being blocked in the clipboard UI.
+- Fixed clipboard window "popping" out of existence without animation.
+- Improved focus management to avoid stealing focus unnecessarily.
 <!-- CHANGELOG_END -->
 
 ---
