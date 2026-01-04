@@ -716,10 +716,18 @@ struct ClipboardItemRow: View {
             
             Spacer()
             
-            if item.isFavorite && !isRenaming {
-                Image(systemName: "star.fill")
-                    .foregroundStyle(.yellow)
-                    .font(.system(size: 10))
+            // Status icons (key + star)
+            HStack(spacing: 4) {
+                if item.isConcealed && !isRenaming {
+                    Image(systemName: "key.fill")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 10))
+                }
+                if item.isFavorite && !isRenaming {
+                    Image(systemName: "star.fill")
+                        .foregroundStyle(.yellow)
+                        .font(.system(size: 10))
+                }
             }
         }
         .padding(8)

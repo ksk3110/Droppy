@@ -254,11 +254,12 @@ class NotchWindow: NSWindow {
     }
     
     func updateMouseEventHandling() {
-        // Early exit if window is being deallocated
-        guard isValid else { return }
+        // Early exit if window is being deallocated or not on main thread
+        guard isValid, Thread.isMainThread else { return }
         
-        let state = DroppyState.shared
-        let dragMonitor = DragMonitor.shared
+        // Capture state references safely
+        guard let state = Optional(DroppyState.shared),
+              let dragMonitor = Optional(DragMonitor.shared) else { return }
         
         // Window should accept mouse events when:
         // - Shelf is expanded (need to interact with items)

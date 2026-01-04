@@ -18,7 +18,40 @@ struct ClipboardItem: Identifiable, Codable, Hashable {
     var date: Date = Date()
     var sourceApp: String?
     var isFavorite: Bool = false
+    var isConcealed: Bool = false // Password/sensitive content
     var customTitle: String? // User-defined title for easy finding
+    
+    // Custom Codable for backwards compatibility
+    enum CodingKeys: String, CodingKey {
+        case id, type, content, imageData, date, sourceApp, isFavorite, isConcealed, customTitle
+    }
+    
+    init(id: UUID = UUID(), type: ClipboardType, content: String? = nil, imageData: Data? = nil, 
+         date: Date = Date(), sourceApp: String? = nil, isFavorite: Bool = false, 
+         isConcealed: Bool = false, customTitle: String? = nil) {
+        self.id = id
+        self.type = type
+        self.content = content
+        self.imageData = imageData
+        self.date = date
+        self.sourceApp = sourceApp
+        self.isFavorite = isFavorite
+        self.isConcealed = isConcealed
+        self.customTitle = customTitle
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        type = try container.decode(ClipboardType.self, forKey: .type)
+        content = try container.decodeIfPresent(String.self, forKey: .content)
+        imageData = try container.decodeIfPresent(Data.self, forKey: .imageData)
+        date = try container.decode(Date.self, forKey: .date)
+        sourceApp = try container.decodeIfPresent(String.self, forKey: .sourceApp)
+        isFavorite = try container.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
+        isConcealed = try container.decodeIfPresent(Bool.self, forKey: .isConcealed) ?? false // Default for old data
+        customTitle = try container.decodeIfPresent(String.self, forKey: .customTitle)
+    }
     
     var title: String {
         // Use custom title if set
@@ -195,30 +228,30 @@ class ClipboardManager: ObservableObject {
     private func extractItem(from pasteboard: NSPasteboard) -> ClipboardItem? {
         let app = NSWorkspace.shared.frontmostApplication?.localizedName
         
+        // Check if content is concealed (password)
+        let concealedType = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
+        let isConcealed = pasteboard.types?.contains(concealedType) == true
+        
         // 1. Check for URL
         if let urlStr = pasteboard.string(forType: .URL) {
-            return ClipboardItem(type: .url, content: urlStr, sourceApp: app)
+            return ClipboardItem(type: .url, content: urlStr, sourceApp: app, isConcealed: isConcealed)
         }
         
         // 2. Check for File URL
         if let fileURLVal = pasteboard.propertyList(forType: .fileURL) as? String,
            let url = URL(string: fileURLVal) {
-             return ClipboardItem(type: .file, content: url.path, sourceApp: app)
+             return ClipboardItem(type: .file, content: url.path, sourceApp: app, isConcealed: isConcealed)
         }
         
         // 3. Check for Text
         if let str = pasteboard.string(forType: .string) {
-            return ClipboardItem(type: .text, content: str, sourceApp: app)
+            return ClipboardItem(type: .text, content: str, sourceApp: app, isConcealed: isConcealed)
         }
         
         // 4. Check for Image
         if let image = NSImage(pasteboard: pasteboard),
            let tiff = image.tiffRepresentation {
-             // Compress/Resize for storage? For now, raw.
-             // Warning: This can be memory heavy.
-             // Let's store a small thumbnail or just the full data if small?
-             // For beta, let's keep it simple but be careful.
-             return ClipboardItem(type: .image, imageData: tiff, sourceApp: app)
+             return ClipboardItem(type: .image, imageData: tiff, sourceApp: app, isConcealed: isConcealed)
         }
         
         return nil
