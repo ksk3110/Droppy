@@ -53,6 +53,24 @@ class ClipboardManager: ObservableObject {
     @Published var showPasteFeedback: Bool = false
     @AppStorage("enableClipboardBeta") var isEnabled: Bool = false
     @AppStorage("clipboardHistoryLimit") var historyLimit: Int = 50
+    @AppStorage("excludedClipboardApps") private var excludedAppsData: Data = Data()
+    @AppStorage("skipConcealedClipboard") var skipConcealedContent: Bool = false // User opt-in to skip passwords
+    
+    /// Set of bundle identifiers to exclude from clipboard history
+    var excludedApps: Set<String> {
+        get {
+            guard !excludedAppsData.isEmpty,
+                  let decoded = try? JSONDecoder().decode(Set<String>.self, from: excludedAppsData) else {
+                return []
+            }
+            return decoded
+        }
+        set {
+            if let encoded = try? JSONEncoder().encode(newValue) {
+                excludedAppsData = encoded
+            }
+        }
+    }
     
     private var lastChangeCount: Int
     private var timer: Timer?
@@ -132,8 +150,23 @@ class ClipboardManager: ObservableObject {
         
         lastChangeCount = currentCount
         
-        // Extract content
+        // Check if source app is excluded
+        if let bundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
+           excludedApps.contains(bundleID) {
+            return // Skip recording from excluded apps
+        }
+        
         let pasteboard = NSPasteboard.general
+        
+        // Check for concealed/password content
+        if skipConcealedContent {
+            let concealedType = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
+            if pasteboard.types?.contains(concealedType) == true {
+                return // Skip passwords and other concealed content
+            }
+        }
+        
+        // Extract content
         let bestItem = extractItem(from: pasteboard)
         
         if var item = bestItem {
@@ -287,5 +320,23 @@ class ClipboardManager: ObservableObject {
         if let index = history.firstIndex(where: { $0.id == item.id }) {
             history[index].content = newContent
         }
+    }
+    
+    // MARK: - App Exclusion Management
+    
+    func addExcludedApp(_ bundleID: String) {
+        var apps = excludedApps
+        apps.insert(bundleID)
+        excludedApps = apps
+    }
+    
+    func removeExcludedApp(_ bundleID: String) {
+        var apps = excludedApps
+        apps.remove(bundleID)
+        excludedApps = apps
+    }
+    
+    func isAppExcluded(_ bundleID: String) -> Bool {
+        excludedApps.contains(bundleID)
     }
 }

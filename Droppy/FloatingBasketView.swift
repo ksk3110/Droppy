@@ -249,12 +249,15 @@ struct FloatingBasketView: View {
                             .font(.system(size: 10, weight: .semibold))
                     }
                     .foregroundColor(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
                     .background(Color.blue.opacity(isShelfButtonHovering ? 1.0 : 0.8))
-                    .clipShape(Capsule())
-                    .scaleEffect(isShelfButtonHovering ? 1.05 : 1.0)
-                    .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isShelfButtonHovering)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                    )
+                    .scaleEffect(isShelfButtonHovering ? 1.02 : 1.0)
                 }
                 .buttonStyle(.plain)
                 .onHover { isHovering in
@@ -268,13 +271,16 @@ struct FloatingBasketView: View {
                     closeBasket()
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.secondary.opacity(isCloseButtonHovering ? 1.0 : 0.6))
-                        .padding(8)
-                        .background(Color.white.opacity(isCloseButtonHovering ? 0.25 : 0.1))
-                        .clipShape(Circle())
-                        .scaleEffect(isCloseButtonHovering ? 1.1 : 1.0)
-                        .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isCloseButtonHovering)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(isCloseButtonHovering ? .primary : .secondary)
+                        .frame(width: 32, height: 32)
+                        .background(Color.white.opacity(isCloseButtonHovering ? 0.2 : 0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        )
+                        .scaleEffect(isCloseButtonHovering ? 1.05 : 1.0)
                 }
                 .buttonStyle(.plain)
                 .onHover { isHovering in

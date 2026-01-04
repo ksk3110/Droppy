@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ClipboardManagerView: View {
     @ObservedObject var manager = ClipboardManager.shared
+    @AppStorage("useTransparentBackground") private var useTransparentBackground = false
     @State private var hoverLocation: CGPoint = .zero
     @State private var isBgHovering: Bool = false
     @State private var selectedItems: Set<UUID> = []
@@ -17,6 +18,7 @@ struct ClipboardManagerView: View {
     @State private var searchText = ""
     @State private var isSearchVisible = false
     @FocusState private var isSearchFocused: Bool
+
     
     /// Helper to get selected items as array, respecting visual order
     private var selectedItemsArray: [ClipboardItem] {
@@ -61,7 +63,13 @@ struct ClipboardManagerView: View {
             previewPane
         }
         .frame(minWidth: 720, maxWidth: .infinity, minHeight: 480, maxHeight: .infinity)
-        .background(Color.black)
+        .background(useTransparentBackground ? Color.clear : Color.black)
+        .background {
+            if useTransparentBackground {
+                Color.clear
+                    .liquidGlass(shape: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            }
+        }
         .overlay { HexagonDotsEffect(mouseLocation: hoverLocation, isHovering: isBgHovering, coordinateSpaceName: "clipboardContainer") }
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Color.white.opacity(0.15), lineWidth: 1))

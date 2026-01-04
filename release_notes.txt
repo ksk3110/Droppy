@@ -1,13 +1,12 @@
-# Droppy v2.7.4: The Liquid Update 🌊
+Clipboard Manager - Production Ready!
 
-This release introduces a completely redesigned, custom-built Update Screen that matches the premium "Liquid Glass" aesthetic of Droppy.
+Features:
+- Clipboard Manager moved out of Beta into dedicated settings tab
+- App Exclusions: Exclude specific apps from clipboard history (Settings → Clipboard → Excluded Apps)
+- Skip Passwords: Optional toggle to skip recording passwords from password managers
+- New Clipboard tab in Settings with proper production UI
 
-### ✨ New Features & Improvements:
-- **Custom Update Window**: A borderless, interactive glass window with dynamic Hexagon background effects, replacing the standard macOS update prompts.
-- **Refined Clipboard Empty States**: New "Scissors" and "Document" iconography for the Clipboard Manager when no items are present or selected.
-- **Enhanced Markdown Support**: Release notes now render beautifully with support for bold, italics, lists, and quotes, ensuring you're always informed about what's new.
-- **Silky Smooth Animations**: Unified hover and interaction physics across all windows for a more cohesive experience.
-
-> "Design is not just what it looks like and feels like. Design is how it works." - Steve Jobs
-
-Enjoy the most fluid Droppy experience yet! 🚀
+Improvements:
+- Removed Beta section from Settings
+- Cleaner app picker with proper icon filtering
+- All settings persist across restarts and reboots

@@ -1066,14 +1066,16 @@ struct NotchControlButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 10, weight: .bold))
-                .frame(width: 12, height: 12)
-                .foregroundColor(.white.opacity(isHovering ? 1.0 : 0.6))
-                .padding(8)
-                .background(Color.white.opacity(isHovering ? 0.25 : 0.1))
-                .clipShape(Circle())
-                .scaleEffect(isHovering ? 1.1 : 1.0)
-                .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isHovering)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(isHovering ? .primary : .secondary)
+                .frame(width: 32, height: 32)
+                .background(Color.white.opacity(isHovering ? 0.2 : 0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
+                .scaleEffect(isHovering ? 1.05 : 1.0)
         }
         .buttonStyle(.plain)
         .onHover { mirroring in

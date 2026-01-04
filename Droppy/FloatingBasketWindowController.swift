@@ -218,7 +218,7 @@ class BasketDragContainer: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         
-        var types: [NSPasteboard.PasteboardType] = [.fileURL, .URL]
+        var types: [NSPasteboard.PasteboardType] = [.fileURL, .URL, .string]
         types.append(contentsOf: NSFilePromiseReceiver.readableDraggedTypes.map { NSPasteboard.PasteboardType($0) })
         registerForDraggedTypes(types)
     }
@@ -279,6 +279,29 @@ class BasketDragContainer: NSView {
         if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty {
             DroppyState.shared.addBasketItems(from: urls)
             return true
+        }
+        
+        // Handle plain text drops - create a .txt file
+        if let text = pasteboard.string(forType: .string), !text.isEmpty {
+            // Create a temp directory for text files
+            let dropLocation = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("DroppyDrops-\(UUID().uuidString)")
+            try? FileManager.default.createDirectory(at: dropLocation, withIntermediateDirectories: true, attributes: nil)
+            
+            // Generate a timestamped filename
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH-mm-ss"
+            let timestamp = formatter.string(from: Date())
+            let filename = "Text \(timestamp).txt"
+            let fileURL = dropLocation.appendingPathComponent(filename)
+            
+            do {
+                try text.write(to: fileURL, atomically: true, encoding: .utf8)
+                DroppyState.shared.addBasketItems(from: [fileURL])
+                return true
+            } catch {
+                print("Error saving text file: \(error)")
+                return false
+            }
         }
         
         return false

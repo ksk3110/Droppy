@@ -32,14 +32,13 @@ struct SettingsView: View {
                 List(selection: $selectedTab) {
                     Label("General", systemImage: "gear")
                         .tag("General")
+                    Label("Clipboard", systemImage: "doc.on.clipboard")
+                        .tag("Clipboard")
                     Label("Display", systemImage: "display")
                         .tag("Display")
 
                     Label("About Droppy", systemImage: "info.circle")
                         .tag("About Droppy")
-                        
-                    Label("Beta", systemImage: "testtube.2")
-                        .tag("Beta")
                 }
                 .navigationTitle("Settings")
                 // Fix: Use compatible background modifer
@@ -48,13 +47,13 @@ struct SettingsView: View {
                 Form {
                     if selectedTab == "General" {
                         generalSettings
+                    } else if selectedTab == "Clipboard" {
+                        clipboardSettings
                     } else if selectedTab == "Display" {
                         displaySettings
 
                     } else if selectedTab == "About Droppy" {
                         aboutSettings
-                    } else if selectedTab == "Beta" {
-                        betaSettings
                     }
                 }
                 .formStyle(.grouped)
@@ -208,10 +207,12 @@ struct SettingsView: View {
         }
     }
     
-    // MARK: - Beta
-    @AppStorage("enableClipboardBeta") private var enableClipboardBeta = false
+    // MARK: - Clipboard
+    @AppStorage("enableClipboardBeta") private var enableClipboard = false
     @AppStorage("clipboardHistoryLimit") private var clipboardHistoryLimit = 50
     @State private var currentShortcut: SavedShortcut?
+    @State private var showAppPicker: Bool = false
+    @ObservedObject private var clipboardManager = ClipboardManager.shared
     
     // Custom Persistence for struct
     private func loadShortcut() {
@@ -228,15 +229,15 @@ struct SettingsView: View {
         if let s = shortcut, let encoded = try? JSONEncoder().encode(s) {
             UserDefaults.standard.set(encoded, forKey: "clipboardShortcut")
             // Update active monitor
-            if enableClipboardBeta {
+            if enableClipboard {
                  ClipboardWindowController.shared.startMonitoringShortcut()
             }
         }
     }
     
-    private var betaSettings: some View {
+    private var clipboardSettings: some View {
         Section {
-            Toggle(isOn: $enableClipboardBeta) {
+            Toggle(isOn: $enableClipboard) {
                 VStack(alignment: .leading) {
                     Text("Clipboard Manager")
                     Text("History with Preview")
@@ -244,7 +245,7 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .onChange(of: enableClipboardBeta) { oldValue, newValue in
+            .onChange(of: enableClipboard) { oldValue, newValue in
                 if newValue {
                     // Check for Accessibility Permissions
                     let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
@@ -266,7 +267,7 @@ struct SettingsView: View {
                 }
             }
             
-            if enableClipboardBeta {
+            if enableClipboard {
                 HStack {
                     Text("Global Shortcut")
                     Spacer()
@@ -317,18 +318,172 @@ struct SettingsView: View {
                 .onChange(of: clipboardHistoryLimit) { _, _ in
                     ClipboardManager.shared.enforceHistoryLimit()
                 }
+                
+                // Skip passwords toggle
+                Toggle(isOn: $clipboardManager.skipConcealedContent) {
+                    VStack(alignment: .leading) {
+                        Text("Skip Passwords")
+                        Text("Don't record passwords from password managers")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                
+                // MARK: - Excluded Apps Section
+                excludedAppsSection
             }
         } header: {
-            Text("Beta Features")
+            Text("Clipboard")
         } footer: {
-            Text("Experimental features. Shortcuts may conflict with other apps. Requires Accessibility/Input Monitoring permissions for strict global shortcuts.")
+            Text("Requires Accessibility permissions to paste. Shortcuts may conflict with other apps.")
         }
         .onAppear {
             loadShortcut()
         }
     }
+    
+    // MARK: - Excluded Apps Section
+    private var excludedAppsSection: some View {
+        Section {
+            // List of excluded apps
+            ForEach(Array(clipboardManager.excludedApps).sorted(), id: \.self) { bundleID in
+                HStack(spacing: 12) {
+                    // App icon
+                    if let appPath = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+                        Image(nsImage: NSWorkspace.shared.icon(forFile: appPath.path))
+                            .resizable()
+                            .frame(width: 24, height: 24)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                    } else {
+                        Image(systemName: "app.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 24, height: 24)
+                    }
+                    
+                    // App name
+                    VStack(alignment: .leading) {
+                        Text(appName(for: bundleID))
+                            .font(.body)
+                        Text(bundleID)
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                    
+                    Spacer()
+                    
+                    // Remove button
+                    Button {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            clipboardManager.removeExcludedApp(bundleID)
+                        }
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.vertical, 4)
+            }
+            
+            // Add app button
+            Button {
+                showAppPicker = true
+            } label: {
+                HStack {
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundStyle(.blue)
+                    Text("Add App...")
+                        .foregroundStyle(.primary)
+                }
+            }
+            .buttonStyle(.plain)
+            .popover(isPresented: $showAppPicker, arrowEdge: .bottom) {
+                appPickerView
+            }
+        } header: {
+            Text("Excluded Apps")
+        } footer: {
+            Text("Clipboard entries from these apps won't be recorded. Useful for password managers.")
+        }
+    }
+    
+    // MARK: - App Picker View
+    private var appPickerView: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Select App to Exclude")
+                .font(.headline)
+                .padding()
+            
+            Divider()
+            
+            ScrollView {
+                LazyVStack(spacing: 2) {
+                    ForEach(runningApps, id: \.bundleIdentifier) { app in
+                        Button {
+                            if let bundleID = app.bundleIdentifier {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    clipboardManager.addExcludedApp(bundleID)
+                                }
+                                showAppPicker = false
+                            }
+                        } label: {
+                            HStack(spacing: 12) {
+                                if let icon = app.icon {
+                                    Image(nsImage: icon)
+                                        .resizable()
+                                        .frame(width: 28, height: 28)
+                                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                                }
+                                
+                                VStack(alignment: .leading) {
+                                    Text(app.localizedName ?? "Unknown")
+                                        .font(.body)
+                                        .foregroundStyle(.primary)
+                                    if let bundleID = app.bundleIdentifier {
+                                        Text(bundleID)
+                                            .font(.caption2)
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                }
+                                
+                                Spacer()
+                                
+                                if let bundleID = app.bundleIdentifier,
+                                   clipboardManager.isAppExcluded(bundleID) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.vertical, 8)
+            }
+            .frame(width: 320, height: 300)
+        }
+        .background(.ultraThinMaterial)
+    }
+    
+    // MARK: - Helper Properties
+    private var runningApps: [NSRunningApplication] {
+        NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular && $0.bundleIdentifier != nil && $0.icon != nil }
+            .sorted { ($0.localizedName ?? "") < ($1.localizedName ?? "") }
+    }
+    
+    private func appName(for bundleID: String) -> String {
+        if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+            return FileManager.default.displayName(atPath: appURL.path)
+        }
+        return bundleID
+    }
 }
-
 // MARK: - Launch Handler
 
 struct LaunchAtLoginManager {
