@@ -231,7 +231,11 @@ class ClipboardManager: ObservableObject {
             // Insert in REVERSE order so the first item in pasteboard (index 0) ends up at the TOP of history
             for var item in newItems.reversed() {
                 // Check if this item already exists in history
-                if let index = self.history.firstIndex(where: { $0.content == item.content && $0.type == item.type }) {
+                if let index = self.history.firstIndex(where: { 
+                    $0.type == item.type && 
+                    $0.content == item.content &&
+                    $0.imageData == item.imageData
+                }) {
                     // It exists!
                     // 1. Preserve user customizations (Favorite status, Custom Title)
                     let existing = self.history[index]

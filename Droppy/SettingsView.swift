@@ -151,7 +151,7 @@ struct SettingsView: View {
             Toggle(isOn: $useTransparentBackground) {
                 VStack(alignment: .leading) {
                     Text("Transparent Background")
-                    Text("Make the shelf and notch transparent")
+                    Text("Make the shelf, notch, clipboard and notifications transparent")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -192,7 +192,21 @@ struct SettingsView: View {
             }
             .padding(.vertical, 8)
             
+            
             LabeledContent("Developer", value: "Jordy Spruit")
+            
+            if let downloads = downloadCount {
+                LabeledContent {
+                    Text("\(downloads) Users")
+                } label: {
+                    VStack(alignment: .leading) {
+                        Text("Downloads")
+                        Text("We do NOT store personal data. We ONLY track the total amount of downloads.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
             
             Button {
                 UpdateChecker.shared.checkAndNotify()
@@ -205,7 +219,16 @@ struct SettingsView: View {
         } header: {
             Text("About")
         }
+        .onAppear {
+            Task {
+                if let count = try? await AnalyticsService.shared.fetchDownloadCount() {
+                    downloadCount = count
+                }
+            }
+        }
     }
+    
+    @State private var downloadCount: Int?
     
     // MARK: - Clipboard
     @AppStorage("enableClipboardBeta") private var enableClipboard = false

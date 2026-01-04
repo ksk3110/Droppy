@@ -53,6 +53,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _ = ClipboardManager.shared
         _ = ClipboardWindowController.shared
         
+        // Start analytics (anonymous launch tracking)
+        AnalyticsService.shared.logAppLaunch()
+        
         // Start monitoring for drag events (polling-based, safe)
         DragMonitor.shared.startMonitoring()
         
