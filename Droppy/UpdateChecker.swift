@@ -111,31 +111,10 @@ class UpdateChecker: ObservableObject {
         return false
     }
     
-    /// Show update alert to user
-    func showUpdateAlert() {
-        guard updateAvailable, let version = latestVersion else { return }
-        
-        let alert = NSAlert()
-        alert.messageText = "Update Available"
-        alert.informativeText = "Droppy \(version) is available. You are currently using \(currentVersion)."
-        
-        if releaseNotes != nil {
-            alert.informativeText += "\n\nWhat's new:\n\(releaseNotes!.prefix(200))..."
-        }
-        
-        alert.informativeText += "\n\nThe app will update and restart automatically."
-        
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "Update & Restart")
-        alert.addButton(withTitle: "Later")
-        
-        let response = alert.runModal()
-        
-        if response == .alertFirstButtonReturn {
-            if let url = downloadURL {
-                AutoUpdater.shared.installUpdate(from: url)
-            }
-        }
+    /// Show update window to user
+    func showUpdateWindow() {
+        guard updateAvailable, latestVersion != nil else { return }
+        UpdateWindowController.shared.showWindow()
     }
     
     // Removed old update methods as they are replaced by AutoUpdater
@@ -145,7 +124,7 @@ class UpdateChecker: ObservableObject {
         Task {
             await checkForUpdates()
             if updateAvailable {
-                showUpdateAlert()
+                showUpdateWindow()
             } else {
                 showUpToDateAlert()
             }

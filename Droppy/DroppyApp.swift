@@ -77,7 +77,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task {
             await UpdateChecker.shared.checkForUpdates()
             if UpdateChecker.shared.updateAvailable {
-                UpdateChecker.shared.showUpdateAlert()
+                UpdateChecker.shared.showUpdateWindow()
             }
         }
     }
