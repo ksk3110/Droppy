@@ -41,6 +41,12 @@ final class DragMonitor: ObservableObject {
     
     /// Starts monitoring for drag events
     func startMonitoring() {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.startMonitoring()
+            }
+            return
+        }
         guard dragCheckTimer == nil else { return }
         dragCheckTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
             self?.checkForActiveDrag()

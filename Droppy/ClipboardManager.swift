@@ -198,6 +198,12 @@ class ClipboardManager: ObservableObject {
     }
     
     func startMonitoring() {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.startMonitoring()
+            }
+            return
+        }
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             autoreleasepool {
