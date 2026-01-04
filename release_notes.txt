@@ -1,4 +1,6 @@
-# Droppy v2.7.0: The Liquid Clipboard & Iron-Clad Stability 🌊🛡️
+# Droppy v2.7.1: Editor Polish & Critical Fixes 🛠️
+
+*This release reinforces v2.7.0 with critical stability improvements.*
 
 This release marks a major milestone for Droppy, bringing the **Clipboard Manager** to full maturity and introducing significant architectural improvements for stability.
 
