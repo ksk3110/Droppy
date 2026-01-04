@@ -1291,7 +1291,7 @@ struct ClipboardPreviewView: View {
 }
 
 // MARK: - RTF Helper
-private func rtfToAttributedString(_ data: Data) throws -> AttributedString {
+nonisolated private func rtfToAttributedString(_ data: Data) throws -> AttributedString {
     let nsAttr = try NSAttributedString(
         data: data,
         options: [.documentType: NSAttributedString.DocumentType.rtf],
