@@ -136,16 +136,26 @@ brew install --cask iordv/tap/droppy
 
 ## 🆕 What's New
 <!-- CHANGELOG_START -->
-# v2.6.0-beta
-- **Clipboard Manager (Beta)**: A rich, searchable history of your clipboard. Supports text, images, files, and URLs.
-- **Deep Integration**: Drag clipboard items directly into the shelf or basket.
-- **Direct Paste**: Paste history items instantly into other apps.
-- **Enhanced UI**: Increased clipboard window size (720x480) and widened sidebars for a more premium experience.
-- **Silky Smooth Navigation**: Refined scrolling physics and keyboard control.
+# Droppy v2.6.0-beta 🚀
 
-# v2.5.0
-- **Non-blocking Moves**: Moving large files to network drives/NAS is now buttery smooth. Droppy handles the heavy lifting in the background so you can keep working instantly.
-- **Bug Fixes**: Reliably opens the "Choose Folder" dialog every time.
+This is a massive update introducing the highly anticipated **Clipboard Manager (Beta)**! 
+
+### 📋 New Feature: Clipboard Manager (Beta)
+Droppy is no longer just for files. It's now your ultimate productivity sidekick.
+- **Visual History**: See a rich preview of text, images, files, and URLs you've copied.
+- **Smart Search**: Find exactly what you need in your clipboard history instantly.
+- **Multi-Selection & Dragging**: Select multiple entries and drag them out as files or back into the shelf/basket.
+- **Direct Paste**: Paste any item directly into your current active window with a single click.
+- **Renaming**: Give your clipboard entries custom names to keep things organized.
+- **Favorites**: Star your most-used snippets for quick access.
+- **Silky Smooth Navigation**: Enhanced scrolling and keyboard support for a premium feel.
+
+### ✨ Improvements & Fixes
+- **Refined UI**: Increased the clipboard window size (720x480) for better visibility and a more spacious layout.
+- **Deep Integration**: The clipboard manager works beautifully with the existing Shelf and Basket. Drag anything from your history directly into Droppy's stashing zones.
+- **Performance Polish**: Optimized many background operations for an even Snappier™ experience.
+
+Enjoy the new flow! 🥳
 <!-- CHANGELOG_END -->
 
 ---
