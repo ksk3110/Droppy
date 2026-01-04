@@ -107,11 +107,13 @@ final class NotchWindowController: NSObject, ObservableObject {
         
         // Timer for periodic hit test updates (every 50ms)
         updateTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] timer in
-            guard let self = self, let window = self.notchWindow, window.isValid else {
-                timer.invalidate()
-                return
+            autoreleasepool {
+                guard let self = self, let window = self.notchWindow, window.isValid else {
+                    timer.invalidate()
+                    return
+                }
+                window.updateMouseEventHandling()
             }
-            window.updateMouseEventHandling()
         }
         
         // Global monitor catches mouse movement when Droppy is not frontmost
