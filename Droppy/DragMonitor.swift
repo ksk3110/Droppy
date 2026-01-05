@@ -25,6 +25,7 @@ final class DragMonitor: ObservableObject {
     private var isMonitoring = false
     private var dragStartChangeCount: Int = 0
     private var dragActive = false
+    private var eventMonitors: [Any] = []
     
     // Jiggle detection state
     private var lastDragLocation: CGPoint = .zero
@@ -43,27 +44,69 @@ final class DragMonitor: ObservableObject {
     func startMonitoring() {
         guard !isMonitoring else { return }
         isMonitoring = true
-        monitorLoop()
+        
+        // Monitor for drag starts and movements
+        let dragMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDragged]) { [weak self] event in
+            self?.handleDragEvent(event)
+        }
+        
+        // Monitor for drag ends (mouse up)
+        let mouseUpMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] event in
+            self?.handleMouseUp(event)
+        }
+        
+        if let dm = dragMonitor { eventMonitors.append(dm) }
+        if let mum = mouseUpMonitor { eventMonitors.append(mum) }
     }
     
     /// Stops monitoring for drag events
     func stopMonitoring() {
         isMonitoring = false
+        for monitor in eventMonitors {
+            NSEvent.removeMonitor(monitor)
+        }
+        eventMonitors.removeAll()
     }
     
-    private func monitorLoop() {
-        guard isMonitoring else { return }
-        
-        // CRITICAL: Only access NSEvent class properties if we're truly on the main thread
-        // and not during system event dispatch to avoid race conditions with HID event decoding
-        if Thread.isMainThread {
-            checkForActiveDrag()
+    private func handleDragEvent(_ event: NSEvent) {
+        autoreleasepool {
+            let currentMouseLocation = NSEvent.mouseLocation
+            let dragPasteboard = NSPasteboard(name: .drag)
+            let currentChangeCount = dragPasteboard.changeCount
+            
+            // Detect drag START
+            if currentChangeCount != dragStartChangeCount {
+                let hasContent = (dragPasteboard.types?.count ?? 0) > 0
+                if hasContent && !dragActive {
+                    dragActive = true
+                    dragStartChangeCount = currentChangeCount
+                    resetJiggle()
+                    dragEndNotified = false
+                    lastDragLocation = currentMouseLocation
+                    isDragging = true
+                }
+            }
+            
+            // Update location while dragging
+            if dragActive {
+                dragLocation = currentMouseLocation
+                detectJiggle(currentLocation: currentMouseLocation)
+                lastDragLocation = currentMouseLocation
+            }
         }
+    }
+    
+    private func handleMouseUp(_ event: NSEvent) {
+        guard dragActive else { return }
         
-        // Increased interval from 50ms to 100ms to reduce collision chance with system event processing
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.10) { [weak self] in
-            self?.monitorLoop()
-        }
+        dragActive = false
+        isDragging = false
+        dragEndNotified = true
+        
+        // Notify controller that drag ended
+        FloatingBasketWindowController.shared.onDragEnded()
+        
+        resetJiggle()
     }
     
     /// Resets jiggle state (called after basket is shown or drag ends)
@@ -74,57 +117,6 @@ final class DragMonitor: ObservableObject {
         lastDragDirection = .zero
     }
 
-    private func checkForActiveDrag() {
-        autoreleasepool {
-            // SAFETY: Cache NSEvent class properties immediately to minimize
-            // repeated access during HID event system contention
-            let mouseIsDown = NSEvent.pressedMouseButtons & 1 != 0
-            let currentMouseLocation = NSEvent.mouseLocation
-            
-            // Optimization: If mouse is not down and we are not tracking a drag, 
-            // return early to avoid unnecessary NSPasteboard allocation/release (which caused crashes)
-            if !mouseIsDown && !dragActive {
-                return
-            }
-
-            // Retrieve pasteboard handle locally to ensure validity
-            let dragPasteboard = NSPasteboard(name: .drag)
-            let currentChangeCount = dragPasteboard.changeCount
-            
-            // Detect drag START
-            if currentChangeCount != dragStartChangeCount && mouseIsDown {
-                let hasContent = (dragPasteboard.types?.count ?? 0) > 0
-                if hasContent && !dragActive {
-                    dragActive = true
-                    dragStartChangeCount = currentChangeCount
-                    resetJiggle()
-                    dragEndNotified = false
-                    lastDragLocation = currentMouseLocation
-                    isDragging = true
-                    dragLocation = currentMouseLocation
-                }
-            }
-            
-            // Update location while dragging (use cached value)
-            if dragActive && mouseIsDown {
-                dragLocation = currentMouseLocation
-                detectJiggle(currentLocation: currentMouseLocation)
-                lastDragLocation = currentMouseLocation
-            }
-            
-            // Detect drag END
-            if !mouseIsDown && dragActive {
-                dragActive = false
-                isDragging = false
-                dragEndNotified = true
-                
-                // Notify controller that drag ended
-                FloatingBasketWindowController.shared.onDragEnded()
-                
-                resetJiggle()
-            }
-        }
-    }
     
     private func detectJiggle(currentLocation: CGPoint) {
         let dx = currentLocation.x - lastDragLocation.x

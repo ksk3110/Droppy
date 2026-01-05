@@ -29,6 +29,9 @@ final class FloatingBasketWindowController: NSObject {
     /// Set once when basket appears to avoid layout recalculations
     private(set) var shouldExpandUpward: Bool = true
     
+    /// For debouncing movement animations
+    private var lastMovementTime: Date = .distantPast
+    
     private override init() {
         super.init()
     }
@@ -61,6 +64,11 @@ final class FloatingBasketWindowController: NSObject {
     
     /// Moves the basket to the current mouse location
     private func moveBasketToMouse() {
+        // Debounce: ignore movements happening too rapidly (within 150ms)
+        let now = Date()
+        guard now.timeIntervalSince(lastMovementTime) > 0.15 else { return }
+        lastMovementTime = now
+
         guard let panel = basketWindow else { return }
         
         let mouseLocation = NSEvent.mouseLocation
