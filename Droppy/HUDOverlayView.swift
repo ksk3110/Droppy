@@ -155,10 +155,12 @@ struct MediaHUDView: View {
     }
 }
 
-/// Simple progress slider (non-interactive, just displays progress)
+/// Progress slider that matches LiquidSlider aesthetics (non-interactive)
 struct ProgressSlider: View {
     var progress: CGFloat
     var accentColor: Color
+    
+    private let height: CGFloat = 6
     
     /// Safe progress value - guards against NaN and infinity
     private var safeProgress: CGFloat {
@@ -171,26 +173,78 @@ struct ProgressSlider: View {
     
     var body: some View {
         GeometryReader { geo in
+            let width = geo.size.width
+            let filledWidth = safeProgress * width
+            
             ZStack(alignment: .leading) {
-                // Track background
+                // Track background - concave glass well (matches LiquidSlider)
                 Capsule()
-                    .fill(Color.white.opacity(0.15))
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        Capsule()
+                            .fill(Color.white.opacity(0.05))
+                    )
+                    // Concave lighting: shadow on top, highlight on bottom
+                    .overlay(
+                        Capsule()
+                            .stroke(
+                                LinearGradient(
+                                    stops: [
+                                        .init(color: .black.opacity(0.3), location: 0),
+                                        .init(color: .clear, location: 0.3),
+                                        .init(color: .white.opacity(0.2), location: 1.0)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                lineWidth: 0.5
+                            )
+                    )
+                    .frame(height: height)
                 
-                // Progress fill - use safe width calculation
-                if geo.size.width > 0 && safeProgress > 0 {
+                // Filled portion - gradient with glow (matches LiquidSlider)
+                if width > 0 && safeProgress > 0 {
                     Capsule()
                         .fill(
                             LinearGradient(
-                                colors: [accentColor.opacity(0.8), accentColor],
-                                startPoint: .leading,
-                                endPoint: .trailing
+                                colors: [
+                                    accentColor,
+                                    accentColor.opacity(0.6)
+                                ],
+                                startPoint: .trailing,
+                                endPoint: .leading
                             )
                         )
-                        .frame(width: geo.size.width * safeProgress)
+                        .frame(width: max(height, filledWidth), height: height)
+                        // Inner glow
+                        .overlay(
+                            Capsule()
+                                .stroke(
+                                    LinearGradient(
+                                        stops: [
+                                            .init(color: .white.opacity(0.6), location: 0),
+                                            .init(color: .clear, location: 0.5)
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    lineWidth: 0.5
+                                )
+                        )
+                        // Glow shadow
+                        .shadow(
+                            color: accentColor.opacity(0.3),
+                            radius: 4,
+                            x: 2,
+                            y: 0
+                        )
                         .animation(.spring(response: 0.25, dampingFraction: 0.8), value: safeProgress)
                 }
             }
+            .frame(height: height)
+            .frame(maxHeight: .infinity, alignment: .center)
         }
+        .frame(height: height)
     }
 }
 

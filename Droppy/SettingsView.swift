@@ -820,51 +820,78 @@ class ClickSelectingTextField: NSTextField {
 }
 
 // MARK: - Feature Preview GIF Component
+import WebKit
+
 struct FeaturePreviewGIF: View {
     let url: String
-    @State private var isLoaded = false
     
     var body: some View {
-        AsyncImage(url: URL(string: url)) { phase in
-            switch phase {
-            case .empty:
+        AnimatedGIFView(url: url)
+            .frame(height: 200)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.white.opacity(0.05))
-                    .frame(height: 160)
-                    .overlay(
-                        ProgressView()
-                            .scaleEffect(0.8)
+                    .strokeBorder(
+                        LinearGradient(
+                            stops: [
+                                .init(color: .white.opacity(0.4), location: 0),
+                                .init(color: .white.opacity(0.1), location: 0.5),
+                                .init(color: .black.opacity(0.2), location: 1)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
                     )
-            case .success(let image):
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(maxHeight: 200)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(
-                                LinearGradient(
-                                    stops: [
-                                        .init(color: .white.opacity(0.4), location: 0),
-                                        .init(color: .white.opacity(0.1), location: 0.5),
-                                        .init(color: .black.opacity(0.2), location: 1)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1
-                            )
-                    )
-                    .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
-                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
-            case .failure:
-                EmptyView()
-            @unknown default:
-                EmptyView()
-            }
-        }
-        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isLoaded)
-        .padding(.vertical, 8)
+            )
+            .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+            .padding(.vertical, 8)
     }
+}
+
+/// NSViewRepresentable wrapper for WKWebView to display animated GIFs
+struct AnimatedGIFView: NSViewRepresentable {
+    let url: String
+    
+    func makeNSView(context: Context) -> WKWebView {
+        let webView = WKWebView()
+        webView.setValue(false, forKey: "drawsBackground")
+        
+        // Load GIF with auto-play, centered, and fitting in container
+        let html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                * { margin: 0; padding: 0; }
+                html, body {
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    background: transparent;
+                    overflow: hidden;
+                }
+                img {
+                    max-width: 100%;
+                    max-height: 100%;
+                    object-fit: contain;
+                    border-radius: 16px;
+                }
+            </style>
+        </head>
+        <body>
+            <img src="\(url)" alt="Preview">
+        </body>
+        </html>
+        """
+        
+        webView.loadHTMLString(html, baseURL: nil)
+        return webView
+    }
+    
+    func updateNSView(_ nsView: WKWebView, context: Context) {}
 }
