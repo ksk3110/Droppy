@@ -823,16 +823,20 @@ class ClickSelectingTextField: NSTextField {
 
 struct FeaturePreviewGIF: View {
     let url: String
-    var maxHeight: CGFloat = 160  // Reduced from 200
+    var maxHeight: CGFloat = 180
     
     var body: some View {
         AnimatedGIFView(url: url)
-            .frame(height: maxHeight)
+            .aspectRatio(contentMode: .fit)
+            .frame(maxWidth: 400, maxHeight: maxHeight)
             .frame(maxWidth: .infinity, alignment: .center)
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            // Removed white border overlay - cleaner look
-            .shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 3)
-            .padding(.vertical, 6)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
+            )
+            .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+            .padding(.vertical, 8)
     }
 }
 
