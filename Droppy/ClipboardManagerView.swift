@@ -459,11 +459,15 @@ struct ClipboardManagerView: View {
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent("DroppyClipboard", isDirectory: true)
         try? FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
         
+        // Use a short unique suffix from UUID to prevent filename collisions when
+        // multiple items with the same title are dragged together
+        let uniqueSuffix = String(item.id.uuidString.prefix(8))
+        
         switch item.type {
         case .text:
             if let content = item.content {
-                // Create a .txt file
-                let fileName = sanitizeFileName(item.title) + ".txt"
+                // Create a .txt file with unique suffix
+                let fileName = sanitizeFileName(item.title) + "_\(uniqueSuffix).txt"
                 let fileURL = tempDir.appendingPathComponent(fileName)
                 do {
                     try content.write(to: fileURL, atomically: true, encoding: .utf8)
@@ -474,8 +478,8 @@ struct ClipboardManagerView: View {
             }
         case .url:
             if let content = item.content {
-                // Create a .webloc file for URLs
-                let fileName = sanitizeFileName(item.title) + ".webloc"
+                // Create a .webloc file for URLs with unique suffix
+                let fileName = sanitizeFileName(item.title) + "_\(uniqueSuffix).webloc"
                 let fileURL = tempDir.appendingPathComponent(fileName)
                 let plist = ["URL": content]
                 do {
@@ -492,8 +496,8 @@ struct ClipboardManagerView: View {
             }
         case .image:
             if let data = item.imageData {
-                // Determine format and create appropriate file
-                let fileName = sanitizeFileName(item.title)
+                // Determine format and create appropriate file with unique suffix
+                let fileName = sanitizeFileName(item.title) + "_\(uniqueSuffix)"
                 let fileURL: URL
                 
                 // Check if it's PNG or use PNG as default

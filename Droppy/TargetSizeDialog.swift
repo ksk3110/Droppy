@@ -180,9 +180,11 @@ struct TargetSizeDialogView: View {
                     .opacity(targetBytes == nil || targetBytes! >= currentSize ? 0.5 : 1.0)
                 }
             }
-            .padding(24)
+            .padding(.horizontal, 24)
+            .padding(.top, 22)
+            .padding(.bottom, 24)
         }
-        .frame(width: 340, height: 290)
+        .frame(width: 340, height: 268)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .background(Color.clear)
         .coordinateSpace(name: "compressDialog")
@@ -335,7 +337,7 @@ class TargetSizeDialogController {
             )
             
             let windowWidth: CGFloat = 340
-            let windowHeight: CGFloat = 290
+            let windowHeight: CGFloat = 268
             
             // Use custom CompressPanel that can become key (like BasketPanel)
             let panel = CompressPanel(
@@ -348,7 +350,8 @@ class TargetSizeDialogController {
             panel.isOpaque = false
             panel.backgroundColor = .clear
             panel.hasShadow = false // We handle shadow in SwiftUI
-            panel.level = .floating
+            // Position above basket panel (.popUpMenu + 1), so use +2
+            panel.level = NSWindow.Level(Int(NSWindow.Level.popUpMenu.rawValue) + 2)
             panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
             panel.isMovableByWindowBackground = true
             panel.hidesOnDeactivate = false

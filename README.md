@@ -163,16 +163,14 @@ brew install --cask iordv/tap/droppy
 
 ## 🆕 What's New
 <!-- CHANGELOG_START -->
-# Droppy v4.4.0
+# Droppy v4.4.1
 
 ## Improvements
-- **Redesigned Update Window**: Now matches Settings window styling with proper title bar, compact size, and refined layout
-- **Performance Optimizations**: Removed CPU-intensive HexagonDotsEffect and hover scale animations from multiple views
-- **Window Drag Fixes**: Fixed issue where dragging buttons or clipboard entries would move the entire window
+- **Compress Dialog Window**: Now appears on top of all other windows including the basket
+- **Compress Dialog Padding**: Consistent padding between dashed outline and content (matches basket styling)
 
 ## Fixes
-- **Clipboard Drag Behavior**: Dragging clipboard entries now only drags out the content as a file, no longer moves window
-- **Settings/Update Window Buttons**: Buttons no longer trigger window drag when clicked and dragged
+- **Multi-File Clipboard Drag**: Fixed issue where dragging multiple selected clipboard items to basket/shelf only pasted one item (files with same name were overwriting each other)
 <!-- CHANGELOG_END -->
 
 ---
