@@ -14,6 +14,8 @@ struct SettingsView: View {
     @AppStorage("enableHUDReplacement") private var enableHUDReplacement = true
     @AppStorage("showMediaPlayer") private var showMediaPlayer = true
     @AppStorage("autoFadeMediaHUD") private var autoFadeMediaHUD = true
+    @AppStorage("autoShrinkShelf") private var autoShrinkShelf = true
+    @AppStorage("autoShrinkDelay") private var autoShrinkDelay = 5  // Seconds
 
 
     
@@ -262,6 +264,42 @@ struct SettingsView: View {
                 }
             } header: {
                 Text("Display")
+            }
+            
+            Section {
+                Toggle(isOn: $autoShrinkShelf) {
+                    VStack(alignment: .leading) {
+                        Text("Auto-Shrink Shelf")
+                        Text("Automatically collapse the shelf after inactivity")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                
+                if autoShrinkShelf {
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("Delay")
+                            Text("Seconds until the shelf shrinks back")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Picker("", selection: $autoShrinkDelay) {
+                            Text("3s").tag(3)
+                            Text("5s").tag(5)
+                            Text("10s").tag(10)
+                            Text("15s").tag(15)
+                            Text("30s").tag(30)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 200)
+                    }
+                }
+            } header: {
+                Text("Shelf Behavior")
+            } footer: {
+                Text("The shelf will automatically collapse when the mouse hasn't hovered over it for the specified time.")
             }
             
             Section {

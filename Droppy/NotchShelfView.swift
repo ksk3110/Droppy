@@ -8,9 +8,10 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-// Wrapper to silence deprecation warning - standardShareMenuItem doesn't work in SwiftUI context menus
-@available(macOS, deprecated: 13.0)
-private func getSharingServices(for items: [Any]) -> [NSSharingService] {
+// Use a wrapper function to silence the deprecation warning
+// The deprecated API is the ONLY way to properly show share services in SwiftUI context menus
+@available(macOS, deprecated: 13.0, message: "NSSharingService.sharingServices is deprecated but required for context menu integration")
+private func sharingServicesForItems(_ items: [Any]) -> [NSSharingService] {
     NSSharingService.sharingServices(forItems: items)
 }
 
@@ -23,6 +24,8 @@ struct NotchShelfView: View {
     @AppStorage("enableHUDReplacement") private var enableHUDReplacement = true
     @AppStorage("showMediaPlayer") private var showMediaPlayer = true
     @AppStorage("autoFadeMediaHUD") private var autoFadeMediaHUD = true
+    @AppStorage("autoShrinkShelf") private var autoShrinkShelf = true
+    @AppStorage("autoShrinkDelay") private var autoShrinkDelay = 5  // Seconds
     
     // HUD State - Use @ObservedObject for singletons (they manage their own lifecycle)
     @ObservedObject private var volumeManager = VolumeManager.shared
@@ -36,6 +39,8 @@ struct NotchShelfView: View {
     @State private var hudIsVisible = false
     @State private var mediaHUDFadedOut = false  // Tracks if media HUD has auto-faded
     @State private var mediaFadeWorkItem: DispatchWorkItem?
+    @State private var autoShrinkWorkItem: DispatchWorkItem?  // Timer for auto-shrinking shelf
+    @State private var isHoveringExpandedContent = false  // Tracks if mouse is over the expanded shelf
     @State private var isSongTransitioning = false  // Temporarily hide media during song transitions
     
     
@@ -280,6 +285,17 @@ struct NotchShelfView: View {
                 startMediaFadeTimer()
             }
         }
+        // MARK: - Auto-Shrink Timer Observers
+        .onChange(of: state.isExpanded) { wasExpanded, isExpanded in
+            if isExpanded && !wasExpanded {
+                // Shelf just expanded - start auto-shrink timer
+                startAutoShrinkTimer()
+            } else if !isExpanded {
+                // Shelf collapsed - cancel any pending timer and reset hover state
+                cancelAutoShrinkTimer()
+                isHoveringExpandedContent = false
+            }
+        }
         // HUD is now embedded in the notch content (see ZStack above)
     }
     
@@ -337,6 +353,39 @@ struct NotchShelfView: View {
         }
         mediaFadeWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 5.0, execute: workItem)
+    }
+    
+    // MARK: - Auto-Shrink Timer
+    
+    /// Starts the auto-shrink timer when the shelf is expanded
+    private func startAutoShrinkTimer() {
+        guard autoShrinkShelf && state.isExpanded else { return }
+        
+        // Cancel any existing timer
+        autoShrinkWorkItem?.cancel()
+        
+        // Start timer to auto-shrink shelf
+        let workItem = DispatchWorkItem { [self] in
+            // Only shrink if still expanded and not hovering over the content
+            guard state.isExpanded && !isHoveringExpandedContent && !state.isDropTargeted else { return }
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                state.isExpanded = false
+                state.isMouseHovering = false  // Reset hover state to go directly to regular notch
+            }
+        }
+        autoShrinkWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + Double(autoShrinkDelay), execute: workItem)
+    }
+    
+    /// Resets the auto-shrink timer (called when mouse enters the notch area)
+    private func resetAutoShrinkTimer() {
+        autoShrinkWorkItem?.cancel()
+        startAutoShrinkTimer()
+    }
+    
+    /// Cancels the auto-shrink timer (called when hovering over the notch)
+    private func cancelAutoShrinkTimer() {
+        autoShrinkWorkItem?.cancel()
     }
     
     // MARK: - Glow Effect
@@ -511,6 +560,17 @@ struct NotchShelfView: View {
             }
             .animation(.spring(response: 0.35, dampingFraction: 0.7), value: state.isDropTargeted)
             .animation(.spring(response: 0.35, dampingFraction: 0.7), value: musicManager.isPlaying)
+        }
+        .onHover { isHovering in
+            // Track hover state for the auto-shrink timer
+            isHoveringExpandedContent = isHovering
+            
+            // Reset auto-shrink timer when hovering over expanded content (including media player)
+            if isHovering {
+                cancelAutoShrinkTimer()
+            } else {
+                startAutoShrinkTimer()
+            }
         }
     }
     
@@ -977,9 +1037,9 @@ struct NotchItemView: View {
                 }
             }
             
-            // Share submenu with system sharing services
+            // Share submenu - positions correctly relative to context menu
             Menu {
-                ForEach(getSharingServices(for: [item.url]), id: \.title) { service in
+                ForEach(sharingServicesForItems([item.url]), id: \.title) { service in
                     Button {
                         service.perform(withItems: [item.url])
                     } label: {

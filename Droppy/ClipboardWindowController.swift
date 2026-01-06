@@ -297,7 +297,8 @@ class ClipboardWindowController: NSObject, NSWindowDelegate {
         }
         
         // 3. Permission Check & Prompt
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+        // Wait 3.5 seconds to allow IOHIDManager retry logic (up to 3s) to complete first
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [weak self] in
             self?.checkPermissions()
         }
     }

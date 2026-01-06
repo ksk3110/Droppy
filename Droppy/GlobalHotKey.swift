@@ -96,6 +96,9 @@ class GlobalHotKey {
     
     // MARK: - IOHIDManager
     
+    /// UserDefaults key for caching successful Input Monitoring grants
+    private static let inputMonitoringGrantedKey = "inputMonitoringGranted"
+    
     private func setupIOHIDManager() {
         let manager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
         hidManager = manager
@@ -112,12 +115,39 @@ class GlobalHotKey {
         IOHIDManagerRegisterInputValueCallback(manager, HandleIOHIDValueCallback, context)
         IOHIDManagerScheduleWithRunLoop(manager, CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue)
         
+        // Try opening with retry logic to handle TCC subsystem delays
+        tryOpenHIDManager(attempt: 1, maxAttempts: 4)
+    }
+    
+    /// Retry opening IOHIDManager with exponential backoff.
+    /// TCC subsystem sometimes fails to respond correctly during early app startup,
+    /// even when Input Monitoring is already granted.
+    private func tryOpenHIDManager(attempt: Int, maxAttempts: Int) {
+        guard let manager = hidManager else { return }
+        
         let openRet = IOHIDManagerOpen(manager, IOOptionBits(kIOHIDOptionsTypeNone))
         if openRet == kIOReturnSuccess {
-            print("✅ GlobalHotKey: IOHIDManager Monitoring Active")
+            print("✅ GlobalHotKey: IOHIDManager Monitoring Active (attempt \(attempt))")
             self.isInputMonitoringActive = true
+            // Cache for future launches to avoid redundant prompts
+            UserDefaults.standard.set(true, forKey: Self.inputMonitoringGrantedKey)
+        } else if attempt < maxAttempts {
+            // TCC subsystem may not be ready yet - retry with increasing delay
+            let delay = Double(attempt) * 0.5  // 0.5s, 1.0s, 1.5s
+            print("⚠️ GlobalHotKey: IOHIDManager open failed (attempt \(attempt)), retrying in \(delay)s...")
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                self?.tryOpenHIDManager(attempt: attempt + 1, maxAttempts: maxAttempts)
+            }
         } else {
-            print("⚠️ GlobalHotKey: IOHIDManager Setup Failed (Result: \(openRet))")
+            // All retries exhausted - check if we have a cached grant
+            if UserDefaults.standard.bool(forKey: Self.inputMonitoringGrantedKey) {
+                // Permission was granted before, assume temporary TCC delay
+                print("⚠️ GlobalHotKey: IOHIDManager failed but cached grant exists - assuming TCC delay")
+                self.isInputMonitoringActive = true
+            } else {
+                print("❌ GlobalHotKey: IOHIDManager Setup Failed (Result: \(openRet)) - No cached grant")
+                self.isInputMonitoringActive = false
+            }
         }
     }
     

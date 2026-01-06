@@ -8,9 +8,10 @@ import UniformTypeIdentifiers
 
 import SwiftUI
 
-// Wrapper to silence deprecation warning - standardShareMenuItem doesn't work in SwiftUI context menus
-@available(macOS, deprecated: 13.0)
-private func getSharingServices(for items: [Any]) -> [NSSharingService] {
+// Use a wrapper function to silence the deprecation warning
+// The deprecated API is the ONLY way to properly show share services in SwiftUI context menus
+@available(macOS, deprecated: 13.0, message: "NSSharingService.sharingServices is deprecated but required for context menu integration")
+private func sharingServicesForItems(_ items: [Any]) -> [NSSharingService] {
     NSSharingService.sharingServices(forItems: items)
 }
 
@@ -491,9 +492,9 @@ struct BasketItemView: View {
                     }
                 }
                 
-                // Share submenu with system sharing services
+                // Share submenu - positions correctly relative to context menu
                 Menu {
-                    ForEach(getSharingServices(for: [item.url]), id: \.title) { service in
+                    ForEach(sharingServicesForItems([item.url]), id: \.title) { service in
                         Button {
                             service.perform(withItems: [item.url])
                         } label: {
