@@ -1295,20 +1295,36 @@ struct NotchControlButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(isHovering ? .primary : .secondary)
-                .frame(width: 32, height: 32)
-                .background(Color.white.opacity(isHovering ? 0.2 : 0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(isHovering ? .white : .secondary)
+                .frame(width: 36, height: 36)
+                .background {
+                    // Liquid Glass style: translucent material with depth
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                        .opacity(isHovering ? 1.0 : 0.8)
+                }
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    // Specular highlight on top edge
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: .white.opacity(isHovering ? 0.4 : 0.2), location: 0),
+                                    .init(color: .white.opacity(0.05), location: 0.5),
+                                    .init(color: .clear, location: 1)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 0.5
+                        )
                 )
         }
         .buttonStyle(.plain)
-        .onHover { mirroring in
+        .onHover { hovering in
             withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
-                isHovering = mirroring
+                isHovering = hovering
             }
         }
     }
