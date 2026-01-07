@@ -117,13 +117,13 @@ Drag files out of the shelf and drop into any app — email, Discord, Photoshop,
 ### 🆕 Media Player
 *Full Now Playing controls embedded right in your notch. Buttery smooth animations.*
 <p align="center">
-  <img src="https://i.postimg.cc/wM52HXm6/Schermopname2026-01-05om21-48-08-ezgif-com-video-to-gif-converter.gif" alt="Media Player Preview" width="100%">
+  <img src="https://i.postimg.cc/SKjDMGrP/Schermopname2026-01-07om15-17-29-ezgif-com-video-to-gif-converter.gif" alt="Media Player Preview" width="100%">
 </p>
 
 ### 🆕 Volume & Brightness HUD
 *Beautiful overlays that replace the ugly system HUDs. Animated icons and smooth transitions.*
 <p align="center">
-  <img src="https://i.postimg.cc/hG22QtJ8/Schermopname2026-01-05om19-08-22-ezgif-com-video-to-gif-converter.gif" alt="HUD Preview" width="100%">
+  <img src="https://i.postimg.cc/qqQ3wPMV/Schermopname2026-01-07om15-20-48-ezgif-com-video-to-gif-converter.gif" alt="HUD Preview" width="100%">
 </p>
 
 ---
@@ -195,7 +195,7 @@ brew install --cask iordv/tap/droppy
 - Fixed hover state management
 
 ## Requirements
-- Requires macOS 15.0 (Sequoia) or later
+- Requires macOS 14.0 (Sonoma) or later
 <!-- CHANGELOG_END -->
 
 ---
