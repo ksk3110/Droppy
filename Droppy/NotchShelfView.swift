@@ -281,8 +281,8 @@ struct NotchShelfView: View {
                 
                 if state.isExpanded && enableNotchShelf {
                     expandedShelfContent
-                        // Use simple opacity transition to reduce animation overhead
-                        .transition(.opacity.animation(.spring(response: 0.3, dampingFraction: 0.8)))
+                        // Scale + opacity transition matches the HUD's smooth shrinking effect
+                        .transition(.scale(scale: 0.85).combined(with: .opacity).animation(.spring(response: 0.3, dampingFraction: 0.8)))
                         .frame(width: expandedWidth, height: currentExpandedHeight)
                         .animation(.spring(response: 0.35, dampingFraction: 0.7), value: currentExpandedHeight)
                         .clipShape(NotchShape(bottomRadius: 20))
