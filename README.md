@@ -191,43 +191,27 @@ brew install --cask iordv/tap/droppy
 
 ## 🆕 What's New
 <!-- CHANGELOG_START -->
-# Version 4.9.2 - Integrations Update
+# Droppy v4.9.3 - Integrations Update
 
-## 🆕 New Features
+## 🔌 New Integrations Tab
+- Dedicated **Integrations** tab in Settings for cleaner organization
+- One-click install buttons for Alfred and Raycast
 
-### 🗂️ Finder Services (Built-in)
-- **Right-click integration** - "Add to Droppy Shelf" and "Add to Droppy Basket" in Finder's Services menu
-- **No installation needed** - Works automatically, just right-click files
-- **Toggle in Settings** - Enable/disable in Settings → Features
+## 🛠️ Alfred Workflow Fix
+- Fixed Alfred 5 compatibility (was showing "incompatible workflow" error)
+- Changed to Universal Actions trigger for proper integration
+- Actions now appear in Alfred's → menu correctly
 
-### 🔷 Raycast Extension
-- **Raycast commands** - "Add to Droppy Shelf" and "Add to Droppy Basket"
-- **Download from GitHub** - Import into Raycast → Extensions
-- **Official icon** in Settings
-
----
-
-# Version 4.9.1 - Alfred Hotfix
+## 🔧 Raycast Extension
+- Bundled extension installs to `~/.config/raycast/extensions/droppy`
+- Smooth one-click installation from Settings
 
 ## 🐛 Bug Fixes
-- Fixed "workflow is invalid or corrupted" error
-- Fixed script crash with special characters in filenames
+- **Fixed permission prompts after reboot** - No longer prompts for Accessibility when already granted
+- Cleaned up Settings organization
 
 ---
-
-# Version 4.9 - Alfred Integration
-
-## 🆕 New Features
-
-### 🔮 Alfred Integration
-- **Push files to Droppy from Alfred** - Select files in Finder, invoke Alfred, send to Droppy
-- **Two file actions** - "Add to Droppy Shelf" or "Add to Droppy Basket"
-- **One-click install** - Settings → Features → Install in Alfred
-- **URL scheme support** - `droppy://add?target=shelf&path=/path/to/file`
-
----
-
-*Settings → Features now has Finder, Alfred, and Raycast integrations!*
+*Full changelog at https://github.com/iordv/Droppy/releases*
 <!-- CHANGELOG_END -->
 
 ---
