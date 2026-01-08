@@ -1,0 +1,41 @@
+{
+    "$schema": "https://www.raycast.com/schemas/extension.json",
+    "name": "droppy",
+    "title": "Droppy",
+    "description": "Add files to Droppy Shelf or Basket",
+    "icon": "icon.png",
+    "author": "iordv",
+    "categories": [
+        "Productivity",
+        "Applications"
+    ],
+    "license": "MIT",
+    "commands": [
+        {
+            "name": "add-to-shelf",
+            "title": "Add to Droppy Shelf",
+            "description": "Add selected files to the Droppy notch shelf",
+            "mode": "no-view"
+        },
+        {
+            "name": "add-to-basket",
+            "title": "Add to Droppy Basket",
+            "description": "Add selected files to the Droppy floating basket",
+            "mode": "no-view"
+        }
+    ],
+    "dependencies": {
+        "@raycast/api": "^1.64.0"
+    },
+    "devDependencies": {
+        "@raycast/eslint-config": "^1.0.8",
+        "@types/node": "20.10.4",
+        "typescript": "^5.3.3"
+    },
+    "scripts": {
+        "build": "ray build -e dist",
+        "dev": "ray develop",
+        "fix-lint": "ray lint --fix",
+        "lint": "ray lint"
+    }
+}

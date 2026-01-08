@@ -44,6 +44,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Set as accessory app (no dock icon)
         NSApp.setActivationPolicy(.accessory)
         
+        // Register Finder Services (right-click menu integration)
+        let serviceProvider = ServiceProvider()
+        NSApp.servicesProvider = serviceProvider
+        // Enable Finder services by default on first launch
+        if UserDefaults.standard.object(forKey: "enableFinderServices") == nil {
+            UserDefaults.standard.set(true, forKey: "enableFinderServices")
+        }
+        
         // Register for URL scheme events (droppy://)
         NSAppleEventManager.shared().setEventHandler(
             self,

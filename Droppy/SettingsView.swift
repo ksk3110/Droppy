@@ -21,6 +21,7 @@ struct SettingsView: View {
     @AppStorage("debounceMediaChanges") private var debounceMediaChanges = false  // Delay media HUD for rapid changes
     @AppStorage("autoShrinkShelf") private var autoShrinkShelf = true
     @AppStorage("autoShrinkDelay") private var autoShrinkDelay = 3  // Seconds (1-10)
+    @AppStorage("enableFinderServices") private var enableFinderServices = true
 
 
     
@@ -36,6 +37,7 @@ struct SettingsView: View {
     @State private var hoverAbout = false
     @State private var isCoffeeHovering = false
     @State private var isAlfredHovering = false
+    @State private var isRaycastHovering = false
     @State private var scrollOffset: CGFloat = 0
     
     var body: some View {
@@ -391,6 +393,22 @@ struct SettingsView: View {
                 Text("Requires Accessibility permissions to intercept media keys.")
             }
             
+            // MARK: Finder Services
+            Section {
+                Toggle(isOn: $enableFinderServices) {
+                    VStack(alignment: .leading) {
+                        Text("Finder Right-Click Menu")
+                        Text("Add \"Add to Droppy Shelf\" and \"Add to Droppy Basket\" to Finder's Services menu")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Text("Finder Integration")
+            } footer: {
+                Text("Right-click files → Services → Add to Droppy")
+            }
+            
             // MARK: Alfred Integration
             Section {
                 VStack(alignment: .leading, spacing: 12) {
@@ -445,9 +463,74 @@ struct SettingsView: View {
                 }
                 .padding(.vertical, 8)
             } header: {
-                Text("Integrations")
+                Text("Alfred Integration")
             } footer: {
                 Text("Requires Alfred 4+ with Powerpack.")
+            }
+            
+            // MARK: Raycast Integration
+            Section {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .top, spacing: 14) {
+                        // Raycast Icon (bundled locally for instant loading)
+                        Image("RaycastIcon")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 44, height: 44)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Raycast Integration")
+                                .font(.headline)
+                            
+                            Text("Select files in Finder and push them to Droppy with Raycast commands. Works with or without files selected.")
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            
+                            Button {
+                                // Open the bundled Raycast extension folder
+                                if let bundlePath = Bundle.main.resourcePath,
+                                   let raycastURL = Bundle.main.url(forResource: "Raycast", withExtension: nil, subdirectory: "../Integrations") {
+                                    NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: raycastURL.path)
+                                } else {
+                                    // Fallback: open GitHub releases
+                                    if let url = URL(string: "https://github.com/iordv/Droppy/tree/main/Integrations/Raycast") {
+                                        NSWorkspace.shared.open(url)
+                                    }
+                                }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Text("Open Extension Folder")
+                                        .fontWeight(.semibold)
+                                    Image(systemName: "folder.fill")
+                                        .font(.caption.weight(.semibold))
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .background(Color.orange.opacity(isRaycastHovering ? 1.0 : 0.8))
+                                .foregroundStyle(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .onHover { hovering in
+                                withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                                    isRaycastHovering = hovering
+                                }
+                            }
+                            .padding(.top, 4)
+                        }
+                    }
+                }
+                .padding(.vertical, 8)
+            } header: {
+                Text("Raycast Integration")
+            } footer: {
+                Text("Import the extension folder in Raycast → Extensions.")
             }
         }
     }
