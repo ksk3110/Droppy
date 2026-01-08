@@ -169,15 +169,16 @@ brew install --cask iordv/tap/droppy
 
 ## 🆕 What's New
 <!-- CHANGELOG_START -->
-# Version 4.8.5 - USB Audio Compatibility
+# Version 4.8.6 - USB Audio Speed Fix
 
-## � Improvements
+## 🔧 Improvements
 
-### 🔊 Improved USB Audio Device Compatibility
-- **Force-unmute before volume change** - Some USB devices get stuck in muted state
-- **osascript fallback** - Uses the same volume control method as macOS
+### 🔊 Faster Volume Control for USB Audio Devices
+- **Debounced volume changes** - Rapid key presses now coalesce to single operation
+- **Eliminated delay buildup** - Previous 1-3 second delays from queue buildup are gone
+- **50ms smart debounce** - Waits for rapid presses to stop before applying final volume
 
-Note: Some USB audio devices (like certain Jabra models) have firmware-level volume locking that cannot be controlled via software. If your device doesn't respond to system volume controls when Droppy is closed either, this is a hardware/firmware limitation.
+This specifically improves volume control speed when using virtual audio routing (like BlackHole) with USB speakers.
 <!-- CHANGELOG_END -->
 
 ---
