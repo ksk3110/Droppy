@@ -44,7 +44,7 @@ Drop files into your notch. Shake your mouse to summon a floating basket. Access
 | 🧺 | **Floating Basket** | Jiggle your mouse while dragging to summon a basket anywhere on screen |
 | 📋 | **Clipboard Manager** | Full history with search, favorites, OCR text extraction, and drag-out support |
 | 🎵 | **Media Player** | Now Playing controls in your notch with album art and seek slider |
-| 🔊 | **Custom HUDs** | Beautiful volume, brightness, and battery overlays that replace system HUDs |
+| 🔊 | **Custom HUDs** | Beautiful volume, brightness, battery, and Caps Lock overlays that replace system HUDs |
 | 🔮 | **Alfred Integration** | Push files to Droppy from Alfred with a quick action |
 
 ### Power Features
@@ -54,6 +54,7 @@ Drop files into your notch. Shake your mouse to summon a floating basket. Access
 | 📦 | **Move To...** | Send files directly to saved folder locations (like your NAS) |
 | 📉 | **Smart Compression** | Compress images, PDFs, and videos with auto or target size options |
 | ⚡ | **Fast Actions** | Convert images, extract text (OCR), create ZIPs, rename — all from the shelf |
+| 🙈 | **Auto-Hide Basket** | Basket slides to screen edge when idle, peeks out on hover |
 | 🖥️ | **Multi-Monitor** | Works on external displays with smart fullscreen detection |
 | 🏝️ | **Dynamic Island** | Non-notch Macs get a beautiful floating pill interface |
 
