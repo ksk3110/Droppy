@@ -49,47 +49,77 @@ struct BatteryHUDView: View {
         }
     }
     
+    /// Whether we're in Dynamic Island mode
+    private var isDynamicIslandMode: Bool {
+        guard let screen = NSScreen.main else { return true }
+        let hasNotch = screen.safeAreaInsets.top > 0
+        let useDynamicIsland = UserDefaults.standard.object(forKey: "useDynamicIslandStyle") as? Bool ?? true
+        let forceTest = UserDefaults.standard.bool(forKey: "forceDynamicIslandTest")
+        return (!hasNotch || forceTest) && useDynamicIsland
+    }
+    
     var body: some View {
         VStack(alignment: .center, spacing: 0) {
-            // Main HUD: Two wings separated by the notch space
-            // Same layout pattern as MediaHUDView
-            HStack(spacing: 0) {
-                // Left wing: Battery icon aligned toward outer edge
-                // Padding matches bottom spacing (~8px from edge)
-                HStack {
+            if isDynamicIslandMode {
+                // DYNAMIC ISLAND: Compact horizontal layout
+                HStack(spacing: 10) {
+                    // Battery icon
                     Image(systemName: batteryIcon)
-                        .font(.system(size: 18, weight: .semibold))  // Same as volume/brightness
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(accentColor)
                         .symbolEffect(.pulse, options: .repeating, value: batteryManager.isCharging)
                         .contentTransition(.symbolEffect(.replace))
                         .symbolVariant(.fill)
-                        .frame(width: 26, height: 26)  // Same frame as volume/brightness
-                        .shadow(color: accentColor.opacity(0.4), radius: batteryManager.isCharging ? 6 : 0)
-                        .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
-                    Spacer(minLength: 0)
-                }
-                .padding(.leading, 8)  // Match bottom spacing
-                .frame(width: wingWidth)
-                
-                // Camera notch area (spacer)
-                Spacer()
-                    .frame(width: notchWidth)
-                
-                // Right wing: Percentage aligned toward outer edge
-                // Padding matches bottom spacing (~8px from edge)
-                HStack {
-                    Spacer(minLength: 0)
+                        .frame(width: 18, height: 18)
+                        .shadow(color: accentColor.opacity(0.4), radius: batteryManager.isCharging ? 4 : 0)
+                    
+                    // Percentage
                     Text("\(batteryManager.batteryLevel)%")
-                        .font(.system(size: 15, weight: .semibold))  // Same as volume/brightness
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(accentColor)
                         .monospacedDigit()
                         .contentTransition(.numericText(value: Double(batteryManager.batteryLevel)))
-                        .animation(.spring(response: 0.2, dampingFraction: 0.8), value: batteryManager.batteryLevel)
                 }
-                .padding(.trailing, 8)  // Match bottom spacing
-                .frame(width: wingWidth)
+                .padding(.horizontal, 12)
+                .frame(height: notchHeight)
+            } else {
+                // NOTCH MODE: Two wings separated by the notch space
+                HStack(spacing: 0) {
+                    // Left wing: Battery icon
+                    HStack {
+                        Image(systemName: batteryIcon)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(accentColor)
+                            .symbolEffect(.pulse, options: .repeating, value: batteryManager.isCharging)
+                            .contentTransition(.symbolEffect(.replace))
+                            .symbolVariant(.fill)
+                            .frame(width: 26, height: 26)
+                            .shadow(color: accentColor.opacity(0.4), radius: batteryManager.isCharging ? 6 : 0)
+                            .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.leading, 8)
+                    .frame(width: wingWidth)
+                    
+                    // Camera notch area (spacer)
+                    Spacer()
+                        .frame(width: notchWidth)
+                    
+                    // Right wing: Percentage
+                    HStack {
+                        Spacer(minLength: 0)
+                        Text("\(batteryManager.batteryLevel)%")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(accentColor)
+                            .monospacedDigit()
+                            .contentTransition(.numericText(value: Double(batteryManager.batteryLevel)))
+                            .animation(.spring(response: 0.2, dampingFraction: 0.8), value: batteryManager.batteryLevel)
+                    }
+                    .padding(.trailing, 8)
+                    .frame(width: wingWidth)
+                }
+                .frame(height: notchHeight)
             }
-            .frame(height: notchHeight) // Match physical notch for proper vertical centering
         }
     }
 }

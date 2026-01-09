@@ -13,6 +13,8 @@ struct SettingsView: View {
     @AppStorage("showDropIndicator") private var showDropIndicator = true
     @AppStorage("hideNotchOnExternalDisplays") private var hideNotchOnExternalDisplays = false
     @AppStorage("hideNotchFromScreenshots") private var hideNotchFromScreenshots = false
+    @AppStorage("useDynamicIslandStyle") private var useDynamicIslandStyle = true  // Default: true for non-notch
+    @AppStorage("externalDisplayUseDynamicIsland") private var externalDisplayUseDynamicIsland = true  // External display mode
     
     // HUD and Media Player settings
     @AppStorage("enableHUDReplacement") private var enableHUDReplacement = true
@@ -42,6 +44,12 @@ struct SettingsView: View {
     @State private var isFinderHovering = false
     @State private var isIntroHovering = false
     @State private var scrollOffset: CGFloat = 0
+    
+    /// Detects if the current screen has a physical notch
+    private var hasPhysicalNotch: Bool {
+        guard let screen = NSScreen.main else { return false }
+        return screen.safeAreaInsets.top > 0
+    }
     
     var body: some View {
         ZStack {
@@ -150,6 +158,12 @@ struct SettingsView: View {
         }
         // Apply transparent material or solid black
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
+        // CRITICAL: Always use dark color scheme to ensure text is readable
+        // In both solid black and transparent material modes, we need light text
+        .preferredColorScheme(.dark)
+        // Force complete view rebuild when transparency mode changes
+        // This fixes the issue where background doesn't update immediately
+        .id(useTransparentBackground)
     }
     
     // MARK: - Sidebar Button Helper
@@ -244,7 +258,7 @@ struct SettingsView: View {
                 }
                 
                 if enableNotchShelf {
-                    FeaturePreviewGIF(url: "https://i.postimg.cc/jqkPwkRp/Schermopname2026-01-05om22-04-43-ezgif-com-video-to-gif-converter.gif")
+                    NotchShelfPreview()
                 }
 
                 Toggle(isOn: $enableFloatingBasket) {
@@ -262,7 +276,7 @@ struct SettingsView: View {
                 }
                 
                 if enableFloatingBasket {
-                    FeaturePreviewGIF(url: "https://i.postimg.cc/dtHH09fB/Schermopname2026-01-05om22-01-22-ezgif-com-video-to-gif-converter.gif")
+                    FloatingBasketPreview()
                 }
             } header: {
                 Text("Drop Zones")
@@ -295,7 +309,7 @@ struct SettingsView: View {
                     }
                     
                     if showMediaPlayer {
-                        FeaturePreviewGIF(url: "https://i.postimg.cc/SKjDMGrP/Schermopname2026-01-07om15-17-29-ezgif-com-video-to-gif-converter.gif")
+                        MediaPlayerPreview()
                         
                         Toggle(isOn: $autoFadeMediaHUD) {
                             VStack(alignment: .leading) {
@@ -367,7 +381,7 @@ struct SettingsView: View {
                 }
                 
                 if enableHUDReplacement {
-                    FeaturePreviewGIF(url: "https://i.postimg.cc/qqQ3wPMV/Schermopname2026-01-07om15-20-48-ezgif-com-video-to-gif-converter.gif")
+                    VolumeHUDPreview()
                 }
                 
                 Toggle(isOn: $enableBatteryHUD) {
@@ -391,7 +405,7 @@ struct SettingsView: View {
                 }
                 
                 if enableBatteryHUD {
-                    FeaturePreviewGIF(url: "https://i.postimg.cc/Fznd6bvv/Schermopname2026-01-07om22-36-08-ezgif-com-video-to-gif-converter.gif")
+                    BatteryHUDPreview()
                 }
             } header: {
                 Text("System HUDs")
@@ -541,8 +555,90 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                
+                // Show external display mode picker when not hidden
+                if !hideNotchOnExternalDisplays {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("External Display Style")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        
+                        HStack(spacing: 12) {
+                            DisplayModeButton(
+                                title: "Notch",
+                                isSelected: !externalDisplayUseDynamicIsland,
+                                icon: {
+                                    UShape()
+                                        .fill(!externalDisplayUseDynamicIsland ? Color.blue : Color.white.opacity(0.5))
+                                        .frame(width: 60, height: 18)
+                                }
+                            ) {
+                                externalDisplayUseDynamicIsland = false
+                            }
+                            
+                            DisplayModeButton(
+                                title: "Dynamic Island",
+                                isSelected: externalDisplayUseDynamicIsland,
+                                icon: {
+                                    Capsule()
+                                        .fill(externalDisplayUseDynamicIsland ? Color.blue : Color.white.opacity(0.5))
+                                        .frame(width: 50, height: 16)
+                                }
+                            ) {
+                                externalDisplayUseDynamicIsland = true
+                            }
+                        }
+                    }
+                    .padding(.top, 4)
+                }
             } header: {
                 Text("Visual Style")
+            }
+            
+            // MARK: Display Mode (Non-notch displays only)
+            if !hasPhysicalNotch {
+                Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Display Mode")
+                            .font(.headline)
+                        
+                        Text("Choose how Droppy appears at the top of your screen")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        
+                        // Mode picker with visual icons
+                        HStack(spacing: 12) {
+                            // Notch Mode option
+                            DisplayModeButton(
+                                title: "Notch",
+                                isSelected: !useDynamicIslandStyle,
+                                icon: {
+                                    UShape()
+                                        .fill(!useDynamicIslandStyle ? Color.blue : Color.white.opacity(0.5))
+                                        .frame(width: 60, height: 18) // Wider notch shape
+                                }
+                            ) {
+                                useDynamicIslandStyle = false
+                            }
+                            
+                            // Dynamic Island Mode option
+                            DisplayModeButton(
+                                title: "Dynamic Island",
+                                isSelected: useDynamicIslandStyle,
+                                icon: {
+                                    Capsule()
+                                        .fill(useDynamicIslandStyle ? Color.blue : Color.white.opacity(0.5))
+                                        .frame(width: 50, height: 16)
+                                }
+                            ) {
+                                useDynamicIslandStyle = true
+                            }
+                        }
+                    }
+                    .padding(.vertical, 8)
+                } header: {
+                    Text("Display Mode")
+                }
             }
             
             // MARK: Shelf Behavior
@@ -599,7 +695,7 @@ struct SettingsView: View {
                 }
                 
                 if showOpenShelfIndicator {
-                    FeaturePreviewImage(url: "https://i.postimg.cc/8CcLwcLd/image.png")
+                    OpenShelfIndicatorPreview()
                 }
                 
                 Toggle(isOn: $showDropIndicator) {
@@ -612,7 +708,7 @@ struct SettingsView: View {
                 }
                 
                 if showDropIndicator {
-                    FeaturePreviewImage(url: "https://i.postimg.cc/RhL3vxcz/image.png")
+                    DropIndicatorPreview()
                 }
                 
                 Toggle(isOn: $hideNotchFromScreenshots) {
@@ -821,7 +917,7 @@ struct SettingsView: View {
             }
             
             if enableClipboard {
-                FeaturePreviewGIF(url: "https://i.postimg.cc/Kvc9c2Kr/Schermopname2026-01-06om18-05-02-ezgif-com-video-to-gif-converter.gif")
+                ClipboardPreview()
                 
                 HStack {
                     Text("Global Shortcut")
@@ -1221,7 +1317,6 @@ struct FeaturePreviewImage: View {
 }
 
 /// Native NSImageView-based GIF display (crash-safe, no WebKit)
-/// Checks GIFPreloader's cache first for instant display in Settings
 struct AnimatedGIFView: NSViewRepresentable {
     let url: String
     
@@ -1255,23 +1350,18 @@ struct AnimatedGIFView: NSViewRepresentable {
         // Store imageView reference for loading
         context.coordinator.imageView = imageView
         
-        // INSTANT: Check if image is already pre-loaded in cache
-        if let cachedImage = GIFPreloader.shared.getCachedImage(for: url) {
-            imageView.image = cachedImage
-        } else {
-            // Fallback: Load GIF data asynchronously (for non-preloaded images)
-            if let gifURL = URL(string: url) {
-                Task {
-                    do {
-                        let (data, _) = try await URLSession.shared.data(from: gifURL)
-                        if let image = NSImage(data: data) {
-                            await MainActor.run {
-                                context.coordinator.imageView?.image = image
-                            }
+        // Load GIF data asynchronously
+        if let gifURL = URL(string: url) {
+            Task {
+                do {
+                    let (data, _) = try await URLSession.shared.data(from: gifURL)
+                    if let image = NSImage(data: data) {
+                        await MainActor.run {
+                            context.coordinator.imageView?.image = image
                         }
-                    } catch {
-                        print("GIF load failed: \(error)")
                     }
+                } catch {
+                    print("GIF load failed: \(error)")
                 }
             }
         }
@@ -1293,65 +1383,6 @@ struct AnimatedGIFView: NSViewRepresentable {
     }
 }
 
-// MARK: - GIF Pre-loader
-/// Pre-loads all feature preview GIFs at app launch so they're instantly ready in Settings
-/// Maintains an in-memory NSImage cache for zero-latency display
-class GIFPreloader {
-    static let shared = GIFPreloader()
-    
-    /// Thread-safe image cache (URL string -> decoded NSImage)
-    private var imageCache: [String: NSImage] = [:]
-    private let cacheLock = NSLock()
-    
-    /// All preview GIF URLs (MUST match URLs in SettingsView)
-    private let gifURLs = [
-        // Notch Shelf
-        "https://i.postimg.cc/jqkPwkRp/Schermopname2026-01-05om22-04-43-ezgif-com-video-to-gif-converter.gif",
-        // Floating Basket
-        "https://i.postimg.cc/dtHH09fB/Schermopname2026-01-05om22-01-22-ezgif-com-video-to-gif-converter.gif",
-        // Media Player
-        "https://i.postimg.cc/SKjDMGrP/Schermopname2026-01-07om15-17-29-ezgif-com-video-to-gif-converter.gif",
-        // HUDs
-        "https://i.postimg.cc/qqQ3wPMV/Schermopname2026-01-07om15-20-48-ezgif-com-video-to-gif-converter.gif",
-        // Clipboard Manager (CRITICAL: was missing!)
-        "https://i.postimg.cc/Kvc9c2Kr/Schermopname2026-01-06om18-05-02-ezgif-com-video-to-gif-converter.gif"
-    ]
-    
-    private init() {}
-    
-    /// Retrieve a pre-loaded image from cache (instant, no network)
-    func getCachedImage(for urlString: String) -> NSImage? {
-        cacheLock.lock()
-        defer { cacheLock.unlock() }
-        return imageCache[urlString]
-    }
-    
-    /// Call this at app launch to pre-fetch and decode all GIFs into memory
-    func preloadAll() {
-        for urlString in gifURLs {
-            guard let url = URL(string: urlString) else { continue }
-            
-            let request = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad)
-            URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-                guard let self = self, let data = data else { return }
-                
-                // Decode image on background thread
-                if let image = NSImage(data: data) {
-                    self.cacheLock.lock()
-                    self.imageCache[urlString] = image
-                    self.cacheLock.unlock()
-                }
-                
-                // Also store in URLCache as a backup
-                if let response = response {
-                    let cachedResponse = CachedURLResponse(response: response, data: data)
-                    URLCache.shared.storeCachedResponse(cachedResponse, for: request)
-                }
-            }.resume()
-        }
-    }
-}
-
 // MARK: - Scroll Offset Preference Key
 struct ScrollOffsetPreferenceKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
@@ -1359,3 +1390,743 @@ struct ScrollOffsetPreferenceKey: PreferenceKey {
         value = nextValue()
     }
 }
+
+// MARK: - U-Shape for Notch Icon Preview
+/// Simple U-shape for notch mode icon in settings picker
+struct UShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let radius: CGFloat = 6
+        
+        // Start top-left
+        path.move(to: CGPoint(x: 0, y: 0))
+        // Down left side
+        path.addLine(to: CGPoint(x: 0, y: rect.height - radius))
+        // Bottom-left corner
+        path.addQuadCurve(
+            to: CGPoint(x: radius, y: rect.height),
+            control: CGPoint(x: 0, y: rect.height)
+        )
+        // Across bottom
+        path.addLine(to: CGPoint(x: rect.width - radius, y: rect.height))
+        // Bottom-right corner
+        path.addQuadCurve(
+            to: CGPoint(x: rect.width, y: rect.height - radius),
+            control: CGPoint(x: rect.width, y: rect.height)
+        )
+        // Up right side
+        path.addLine(to: CGPoint(x: rect.width, y: 0))
+        
+        return path
+    }
+}
+
+// MARK: - Display Mode Button
+/// Reusable button for Notch/Dynamic Island mode selection with hover and press animations
+struct DisplayModeButton<Icon: View>: View {
+    let title: String
+    let isSelected: Bool
+    @ViewBuilder let icon: () -> Icon
+    let action: () -> Void
+    
+    @State private var isHovering = false
+    @State private var isPressed = false
+    
+    var body: some View {
+        Button(action: {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                action()
+            }
+        }) {
+            VStack(spacing: 8) {
+                // Icon preview area
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(isSelected ? Color.blue.opacity(0.3) : Color.white.opacity(0.1))
+                        .frame(width: 100, height: 50)
+                    
+                    icon()
+                }
+                
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(isSelected ? .primary : .secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? Color.blue.opacity(0.15) : Color.clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .strokeBorder(
+                                isSelected ? Color.blue.opacity(0.5) : 
+                                    (isHovering ? Color.white.opacity(0.3) : Color.white.opacity(0.1)),
+                                lineWidth: isSelected ? 1.5 : 1
+                            )
+                    )
+            )
+            .scaleEffect(isPressed ? 0.97 : (isHovering && !isSelected ? 1.02 : 1.0))
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isHovering)
+            .animation(.spring(response: 0.15, dampingFraction: 0.6), value: isPressed)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovering = hovering
+        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
+    }
+}
+
+
+// MARK: - SwiftUI Feature Previews (Using REAL Components)
+
+/// Volume/Brightness HUD Preview - uses REAL NotchShape and HUDSlider
+struct VolumeHUDPreview: View {
+    @State private var animatedValue: CGFloat = 0.65
+    
+    // Match real notch dimensions from NotchShelfView
+    private let hudWidth: CGFloat = 280
+    private let notchWidth: CGFloat = 180
+    private let notchHeight: CGFloat = 32
+    
+    private var wingWidth: CGFloat { (hudWidth - notchWidth) / 2 }
+    
+    var body: some View {
+        ZStack {
+            // Notch background with proper rounded corners
+            NotchShape(bottomRadius: 16)
+                .fill(Color.black)
+                .frame(width: hudWidth, height: notchHeight + 28)
+                .overlay(
+                    NotchShape(bottomRadius: 16)
+                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                )
+            
+            // HUD content - laid out exactly like real NotchHUDView
+            VStack(spacing: 0) {
+                // Wings: Icon (left) | Camera Gap | Percentage (right)
+                HStack(spacing: 0) {
+                    // Left wing - Icon
+                    HStack {
+                        Spacer(minLength: 0)
+                        Image(systemName: volumeIcon)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .symbolVariant(.fill)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(width: wingWidth)
+                    
+                    // Camera notch gap
+                    Spacer().frame(width: notchWidth)
+                    
+                    // Right wing - Percentage (clipped to prevent animation overflow)
+                    HStack {
+                        Spacer(minLength: 0)
+                        Text("\(Int(animatedValue * 100))%")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .monospacedDigit()
+                        Spacer(minLength: 0)
+                    }
+                    .frame(width: wingWidth)
+                    .clipped()
+                }
+                .frame(height: notchHeight)
+                
+                // REAL HUDSlider below notch
+                HUDSlider(
+                    value: $animatedValue,
+                    accentColor: .white,
+                    isActive: false,
+                    onChange: nil
+                )
+                .frame(height: 20)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 4)
+                .allowsHitTesting(false)
+            }
+            .frame(width: hudWidth)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                animatedValue = 0.35
+            }
+        }
+    }
+    
+    private var volumeIcon: String {
+        if animatedValue == 0 { return "speaker.slash.fill" }
+        if animatedValue < 0.33 { return "speaker.wave.1.fill" }
+        if animatedValue < 0.66 { return "speaker.wave.2.fill" }
+        return "speaker.wave.3.fill"
+    }
+}
+
+/// Media Player Preview - uses REAL NotchShape, AudioSpectrumView, and MarqueeText
+struct MediaPlayerPreview: View {
+    @State private var isPlaying = true
+    
+    // Match real notch dimensions
+    private let hudWidth: CGFloat = 280
+    private let notchWidth: CGFloat = 180
+    private let notchHeight: CGFloat = 32
+    
+    private var wingWidth: CGFloat { (hudWidth - notchWidth) / 2 }
+    
+    var body: some View {
+        ZStack {
+            // Notch background with proper rounded corners
+            NotchShape(bottomRadius: 16)
+                .fill(Color.black)
+                .frame(width: hudWidth, height: notchHeight + 28)
+                .overlay(
+                    NotchShape(bottomRadius: 16)
+                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                )
+            
+            // HUD content - laid out exactly like real MediaHUDView
+            VStack(spacing: 0) {
+                // Wings: Album (left) | Camera Gap | Visualizer (right)
+                HStack(spacing: 0) {
+                    // Left wing - Album art
+                    HStack {
+                        Spacer(minLength: 0)
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(LinearGradient(colors: [.purple, .pink], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .frame(width: 22, height: 22)
+                            .overlay(
+                                Image(systemName: "music.note")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.white.opacity(0.8))
+                            )
+                        Spacer(minLength: 0)
+                    }
+                    .frame(width: wingWidth)
+                    
+                    // Camera notch gap
+                    Spacer().frame(width: notchWidth)
+                    
+                    // Right wing - REAL AudioSpectrumView
+                    HStack {
+                        Spacer(minLength: 0)
+                        AudioSpectrumView(isPlaying: isPlaying, barCount: 4, barWidth: 3, spacing: 2, height: 16, color: .orange)
+                            .frame(width: 4 * 3 + 3 * 2, height: 16)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(width: wingWidth)
+                }
+                .frame(height: notchHeight)
+                
+                // REAL MarqueeText below notch
+                MarqueeText(text: "Purple Rain — Prince", speed: 30)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .frame(height: 18)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 4)
+            }
+            .frame(width: hudWidth)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .onAppear {
+            Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    isPlaying.toggle()
+                }
+            }
+        }
+    }
+}
+
+/// Clipboard Preview - realistic split view matching ClipboardWindow
+struct ClipboardPreview: View {
+    var body: some View {
+        HStack(spacing: 0) {
+            // Left: Item list
+            VStack(alignment: .leading, spacing: 0) {
+                // Header
+                HStack(spacing: 6) {
+                    Image(systemName: "doc.on.clipboard.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.blue)
+                    Text("History")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                
+                Divider().background(Color.white.opacity(0.1))
+                
+                // Items
+                VStack(spacing: 2) {
+                    ClipboardMockItem(icon: "doc.text.fill", text: "Hello World", color: .blue, isSelected: true)
+                    ClipboardMockItem(icon: "link", text: "droppy.app", color: .green, isSelected: false)
+                    ClipboardMockItem(icon: "photo.fill", text: "Image.png", color: .purple, isSelected: false)
+                }
+                .padding(4)
+                
+                Spacer(minLength: 0)
+            }
+            .frame(width: 110)
+            
+            Divider().background(Color.white.opacity(0.1))
+            
+            // Right: Preview pane
+            VStack {
+                Spacer()
+                VStack(spacing: 4) {
+                    Text("Hello World")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white)
+                    Text("Copied text")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                Spacer()
+                
+                // Paste button
+                HStack(spacing: 4) {
+                    Image(systemName: "doc.on.doc.fill")
+                        .font(.system(size: 8))
+                    Text("Paste")
+                        .font(.system(size: 9, weight: .medium))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Color.blue)
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .padding(.bottom, 8)
+            }
+            .frame(width: 90)
+        }
+        .background(Color.black)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
+        )
+        .frame(width: 200, height: 120)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+    }
+}
+
+/// Single mock item for ClipboardPreview
+private struct ClipboardMockItem: View {
+    let icon: String
+    let text: String
+    let color: Color
+    var isSelected: Bool = false
+    
+    var body: some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.system(size: 8))
+                .foregroundStyle(color)
+                .frame(width: 12)
+            
+            Text(text)
+                .font(.system(size: 9))
+                .foregroundStyle(.white.opacity(isSelected ? 1 : 0.7))
+                .lineLimit(1)
+            
+            Spacer()
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 4)
+        .background(isSelected ? Color.blue.opacity(0.3) : Color.clear)
+        .clipShape(RoundedRectangle(cornerRadius: 4))
+    }
+}
+
+/// Battery HUD Preview - animated charging state with real battery icon
+struct BatteryHUDPreview: View {
+    @State private var isCharging = false
+    @State private var batteryLevel: Int = 75
+    
+    // Match real notch dimensions
+    private let hudWidth: CGFloat = 280
+    private let notchWidth: CGFloat = 180
+    private let notchHeight: CGFloat = 32
+    
+    private var wingWidth: CGFloat { (hudWidth - notchWidth) / 2 }
+    
+    private var batteryIcon: String {
+        if isCharging {
+            return "battery.100.bolt"
+        } else {
+            switch batteryLevel {
+            case 0...24: return "battery.25"
+            case 25...49: return "battery.50"
+            case 50...74: return "battery.75"
+            default: return "battery.100"
+            }
+        }
+    }
+    
+    private var batteryColor: Color {
+        if isCharging { return .green }
+        if batteryLevel <= 20 { return .red }
+        return .white // White when not charging
+    }
+    
+    var body: some View {
+        ZStack {
+            // Notch background with proper rounded corners
+            NotchShape(bottomRadius: 16)
+                .fill(Color.black)
+                .frame(width: hudWidth, height: notchHeight)
+                .overlay(
+                    NotchShape(bottomRadius: 16)
+                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                )
+            
+            // Wings: Battery (left) | Camera Gap | Percentage (right)
+            HStack(spacing: 0) {
+                // Left wing - Battery icon with animation
+                HStack {
+                    Spacer(minLength: 0)
+                    Image(systemName: batteryIcon)
+                        .font(.system(size: 22))
+                        .foregroundStyle(batteryColor)
+                        .contentTransition(.symbolEffect(.replace))
+                        .symbolEffect(.pulse, options: .repeating, isActive: isCharging)
+                    Spacer(minLength: 0)
+                }
+                .frame(width: wingWidth)
+                
+                // Camera notch gap
+                Spacer().frame(width: notchWidth)
+                
+                // Right wing - Percentage
+                HStack {
+                    Spacer(minLength: 0)
+                    Text("\(batteryLevel)%")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .monospacedDigit()
+                        .contentTransition(.numericText(value: Double(batteryLevel)))
+                    Spacer(minLength: 0)
+                }
+                .frame(width: wingWidth)
+            }
+            .frame(width: hudWidth, height: notchHeight)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .onAppear {
+            // Animate charging state and battery level
+            Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                    isCharging.toggle()
+                    // Animate battery level when charging
+                    if isCharging {
+                        batteryLevel = min(100, batteryLevel + 10)
+                    } else {
+                        batteryLevel = 75 // Reset
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Floating Basket Preview - realistic mock matching FloatingBasketView
+struct FloatingBasketPreview: View {
+    @State private var dashPhase: CGFloat = 0
+    
+    private let cornerRadius: CGFloat = 20
+    private let previewWidth: CGFloat = 220
+    private let previewHeight: CGFloat = 150
+    private let insetPadding: CGFloat = 20 // Symmetrical padding from dotted border
+    
+    var body: some View {
+        ZStack {
+                // Background with animated dashed border
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(Color.black)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius - 10, style: .continuous)
+                            .stroke(
+                                Color.white.opacity(0.2),
+                                style: StrokeStyle(
+                                    lineWidth: 1.5,
+                                    lineCap: .round,
+                                    dash: [6, 8],
+                                    dashPhase: dashPhase
+                                )
+                            )
+                            .padding(10)
+                    )
+                
+                // Content - symmetrical padding from dotted border
+                VStack(spacing: 10) {
+                    // Header - moved up for symmetry
+                    HStack(spacing: 8) {
+                        Text("3 items")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                        
+                        Spacer()
+                        
+                        // To Shelf button - single line
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.up.to.line")
+                                .font(.system(size: 8, weight: .bold))
+                            Text("To Shelf")
+                                .font(.system(size: 8, weight: .semibold))
+                                .fixedSize() // Prevent wrapping
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.blue.opacity(0.85))
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        
+                        // Clear button
+                        Image(systemName: "eraser.fill")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 24, height: 24)
+                            .background(Color.white.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    }
+                    
+                    Spacer(minLength: 0)
+                    
+                    // Mock items grid - centered
+                    HStack(spacing: 12) {
+                        MockFileItem(icon: "doc.fill", color: .blue, name: "Document")
+                        MockFileItem(icon: "photo.fill", color: .purple, name: "Image.png")
+                        MockFileItem(icon: "folder.fill", color: .cyan, name: "Folder")
+                    }
+                }
+                .padding(insetPadding) // Symmetrical padding on all sides
+            }
+            .frame(width: previewWidth, height: previewHeight)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(Color.white.opacity(0.15), lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .onAppear {
+            // Dashed border animation
+            withAnimation(.linear(duration: 15).repeatForever(autoreverses: false)) {
+                dashPhase -= 280
+            }
+        }
+    }
+}
+
+/// Mock file item for basket and shelf previews
+private struct MockFileItem: View {
+    let icon: String
+    let color: Color
+    let name: String
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 22))
+                .foregroundStyle(color)
+                .frame(width: 44, height: 44)
+                .background(Color.white.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            
+            Text(name)
+                .font(.system(size: 7))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+    }
+}
+
+/// Notch Shelf Preview - realistic mock matching NotchShelfView expanded state
+struct NotchShelfPreview: View {
+    @State private var dashPhase: CGFloat = 0
+    @State private var bounce = false
+    
+    // Notch dimensions
+    private let notchWidth: CGFloat = 180
+    private let notchHeight: CGFloat = 32
+    private let shelfWidth: CGFloat = 280
+    private let shelfHeight: CGFloat = 70
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            ZStack(alignment: .top) {
+                // Expanded shelf background with NotchShape
+                NotchShape(bottomRadius: 16)
+                    .fill(Color.black)
+                    .frame(width: shelfWidth, height: shelfHeight)
+                    .overlay(
+                        // BLUE marching ants - matches real drag indicator
+                        NotchShape(bottomRadius: 12)
+                            .stroke(
+                                Color.blue,
+                                style: StrokeStyle(
+                                    lineWidth: 2,
+                                    lineCap: .round,
+                                    dash: [6, 8],
+                                    dashPhase: dashPhase
+                                )
+                            )
+                            .padding(8)
+                    )
+                    .overlay(
+                        NotchShape(bottomRadius: 16)
+                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                    )
+                
+                // REAL "Drop!" indicator - exact copy from NotchShelfView.dropIndicatorContent
+                VStack(spacing: 0) {
+                    Spacer()
+                        .frame(height: notchHeight)
+                    
+                    // Real drop indicator content
+                    HStack(spacing: 8) {
+                        Image(systemName: "tray.and.arrow.down.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(.white, .green)
+                            .symbolEffect(.bounce, value: bounce)
+                        
+                        Text("Drop!")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(.white)
+                            .shadow(radius: 2)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(Color.black)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                            )
+                            .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
+                    )
+                    
+                    Spacer()
+                }
+            }
+            .frame(width: shelfWidth, height: shelfHeight)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .onAppear {
+            // Blue marching ants animation
+            withAnimation(.linear(duration: 8).repeatForever(autoreverses: false)) {
+                dashPhase -= 280
+            }
+            // Bounce animation for icon
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                bounce = true
+            }
+        }
+    }
+}
+
+/// Mock shelf item (smaller than basket items)
+private struct MockShelfItem: View {
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        Image(systemName: icon)
+            .font(.system(size: 18))
+            .foregroundStyle(color)
+            .frame(width: 36, height: 36)
+            .background(Color.white.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+}
+
+/// Open Shelf Indicator Preview - REAL component from NotchShelfView
+struct OpenShelfIndicatorPreview: View {
+    @State private var bounce = false
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "hand.tap.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.white, .blue)
+                .symbolEffect(.bounce, value: bounce)
+            
+            Text("Open Shelf")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(.white)
+                .shadow(radius: 2)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(Color.black)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
+        )
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                bounce = true
+            }
+        }
+    }
+}
+
+/// Drop Indicator Preview - REAL component from NotchShelfView
+struct DropIndicatorPreview: View {
+    @State private var bounce = false
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "tray.and.arrow.down.fill")
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(.white, .green)
+                .symbolEffect(.bounce, value: bounce)
+            
+            Text("Drop!")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(.white)
+                .shadow(radius: 2)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(Color.black)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
+        )
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                bounce = true
+            }
+        }
+    }
+}
+

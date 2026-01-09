@@ -22,61 +22,101 @@ struct NotchHUDView: View {
     let hudWidth: CGFloat     // Total HUD width (passed from parent)
     var onValueChange: ((CGFloat) -> Void)?
     
-    /// Width of each "wing" (area left/right of physical notch)
+    /// Whether we're in Dynamic Island mode
+    private var isDynamicIslandMode: Bool {
+        guard let screen = NSScreen.main else { return true }
+        let hasNotch = screen.safeAreaInsets.top > 0
+        let useDynamicIsland = UserDefaults.standard.object(forKey: "useDynamicIslandStyle") as? Bool ?? true
+        let forceTest = UserDefaults.standard.bool(forKey: "forceDynamicIslandTest")
+        return (!hasNotch || forceTest) && useDynamicIsland
+    }
+    
+    /// Width of each "wing" (area left/right of physical notch) - only used in notch mode
     private var wingWidth: CGFloat {
         (hudWidth - notchWidth) / 2
     }
     
     var body: some View {
         VStack(alignment: .center, spacing: 0) {
-            // Main HUD: Two wings separated by the notch space
-            // Same layout pattern as MediaHUDView
-            HStack(spacing: 0) {
-                // Left wing: Icon centered
-                HStack {
-                    Spacer(minLength: 0)
+            if isDynamicIslandMode {
+                // DYNAMIC ISLAND: Compact horizontal layout, all content in one row
+                HStack(spacing: 10) {
+                    // Icon
                     Image(systemName: hudType.icon(for: value))
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(hudType == .brightness ? .yellow : .white)
                         .contentTransition(.symbolEffect(.replace))
                         .symbolVariant(.fill)
-                        .frame(width: 26, height: 26)
-                        .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
-                        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: hudType.icon(for: value))
-                    Spacer(minLength: 0)
-                }
-                .frame(width: wingWidth)
-                
-                // Camera notch area (spacer)
-                Spacer()
-                    .frame(width: notchWidth)
-                
-                // Right wing: Percentage centered
-                HStack {
-                    Spacer(minLength: 0)
+                        .frame(width: 18, height: 18)
+                    
+                    // Mini slider
+                    HUDSlider(
+                        value: $value,
+                        accentColor: hudType == .brightness ? .yellow : .white,
+                        isActive: isActive,
+                        onChange: onValueChange
+                    )
+                    .frame(width: 100, height: 16)
+                    
+                    // Percentage
                     Text("\(Int(value * 100))%")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.white)
                         .monospacedDigit()
                         .contentTransition(.numericText(value: value))
-                        .animation(.spring(response: 0.2, dampingFraction: 0.8), value: value)
-                    Spacer(minLength: 0)
+                        .frame(width: 36)
                 }
-                .frame(width: wingWidth)
+                .padding(.horizontal, 12)
+                .frame(height: notchHeight)
+            } else {
+                // NOTCH MODE: Main HUD - Two wings separated by the notch space
+                HStack(spacing: 0) {
+                    // Left wing: Icon centered
+                    HStack {
+                        Spacer(minLength: 0)
+                        Image(systemName: hudType.icon(for: value))
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(hudType == .brightness ? .yellow : .white)
+                            .contentTransition(.symbolEffect(.replace))
+                            .symbolVariant(.fill)
+                            .frame(width: 26, height: 26)
+                            .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
+                            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: hudType.icon(for: value))
+                        Spacer(minLength: 0)
+                    }
+                    .frame(width: wingWidth)
+                    
+                    // Camera notch area (spacer)
+                    Spacer()
+                        .frame(width: notchWidth)
+                    
+                    // Right wing: Percentage centered
+                    HStack {
+                        Spacer(minLength: 0)
+                        Text("\(Int(value * 100))%")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .monospacedDigit()
+                            .contentTransition(.numericText(value: value))
+                            .animation(.spring(response: 0.2, dampingFraction: 0.8), value: value)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(width: wingWidth)
+                }
+                .frame(height: notchHeight) // Match physical notch for proper vertical centering
+                
+                // Below notch: Slider (same style as seek slider in expanded media player)
+                HUDSlider(
+                    value: $value,
+                    accentColor: hudType == .brightness ? .yellow : .white,
+                    isActive: isActive,
+                    onChange: onValueChange
+                )
+                .frame(height: 20)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 4)
+                .animation(.spring(response: 0.15, dampingFraction: 0.8), value: value)
             }
-            .frame(height: notchHeight) // Match physical notch for proper vertical centering
-            
-            // Below notch: Slider (same style as seek slider in expanded media player)
-            HUDSlider(
-                value: $value,
-                accentColor: hudType == .brightness ? .yellow : .white,
-                isActive: isActive,
-                onChange: onValueChange
-            )
-            .frame(height: 20)
-            .padding(.horizontal, 16)
-            .padding(.bottom, 4)
-            .animation(.spring(response: 0.15, dampingFraction: 0.8), value: value)
         }
     }
 }
@@ -158,6 +198,15 @@ struct MediaHUDView: View {
     let notchHeight: CGFloat // Physical notch height (for vertical centering)
     let hudWidth: CGFloat    // Total HUD width
     
+    /// Whether we're in Dynamic Island mode
+    private var isDynamicIslandMode: Bool {
+        guard let screen = NSScreen.main else { return true }
+        let hasNotch = screen.safeAreaInsets.top > 0
+        let useDynamicIsland = UserDefaults.standard.object(forKey: "useDynamicIslandStyle") as? Bool ?? true
+        let forceTest = UserDefaults.standard.bool(forKey: "forceDynamicIslandTest")
+        return (!hasNotch || forceTest) && useDynamicIsland
+    }
+    
     /// Combined song info for marquee
     private var songInfo: String {
         if musicManager.songTitle.isEmpty {
@@ -174,56 +223,106 @@ struct MediaHUDView: View {
         return .white.opacity(0.7)
     }
     
-    /// Width of each "wing" (area left/right of physical notch)
+    /// Width of each "wing" (area left/right of physical notch) - only used in notch mode
     private var wingWidth: CGFloat {
         (hudWidth - notchWidth) / 2
     }
     
     var body: some View {
         VStack(alignment: .center, spacing: 0) {
-            // Main HUD: Two wings separated by the notch space
-            HStack(spacing: 0) {
-                // Left wing: Album art centered
-                HStack {
-                    Spacer(minLength: 0)
-                    Group {
-                        if musicManager.albumArt.size.width > 0 {
-                            Image(nsImage: musicManager.albumArt)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                        } else {
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.white.opacity(0.2))
-                                .overlay(
-                                    Image(systemName: "music.note")
-                                        .font(.system(size: 12))
-                                        .foregroundStyle(.white.opacity(0.5))
-                                )
-                        }
+            // Main HUD layout differs for Dynamic Island vs Notch mode
+            if isDynamicIslandMode {
+                // DYNAMIC ISLAND: Album on left, Visualizer on right, Title centered
+                ZStack {
+                    // Title - truly centered in the island (both horizontally and vertically)
+                    // Use explicit height and frame alignment to fix GeometryReader vertical positioning
+                    VStack {
+                        Spacer(minLength: 0)
+                        MarqueeText(text: musicManager.songTitle.isEmpty ? "Not Playing" : musicManager.songTitle, speed: 30)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.9))
+                            .frame(height: 14) // Fixed height for text
+                        Spacer(minLength: 0)
                     }
-                    .frame(width: 26, height: 26)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-                    .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
-                    Spacer(minLength: 0)
+                    .padding(.horizontal, 32) // Leave space for album art and visualizer
+                    
+                    // Album art (left) and Visualizer (right)
+                    HStack {
+                        // Album art
+                        Group {
+                            if musicManager.albumArt.size.width > 0 {
+                                Image(nsImage: musicManager.albumArt)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            } else {
+                                RoundedRectangle(cornerRadius: 5)
+                                    .fill(Color.white.opacity(0.2))
+                                    .overlay(
+                                        Image(systemName: "music.note")
+                                            .font(.system(size: 9))
+                                            .foregroundStyle(.white.opacity(0.5))
+                                    )
+                            }
+                        }
+                        .frame(width: 20, height: 20)
+                        .clipShape(RoundedRectangle(cornerRadius: 5))
+                        
+                        Spacer()
+                        
+                        // Visualizer
+                        AudioSpectrumView(isPlaying: musicManager.isPlaying, barCount: 3, barWidth: 2, spacing: 1.5, height: 12, color: visualizerColor)
+                            .frame(width: 3 * 2 + 2 * 1.5, height: 12)
+                    }
+                    .frame(maxHeight: .infinity, alignment: .center)
                 }
-                .frame(width: wingWidth)
-                
-                // Camera notch area (spacer)
-                Spacer()
-                    .frame(width: notchWidth)
-                
-                // Right wing: Visualizer centered
-                HStack {
-                    Spacer(minLength: 0)
-                    MiniAudioVisualizerBars(isPlaying: musicManager.isPlaying, color: visualizerColor)
-                    Spacer(minLength: 0)
+                .frame(height: notchHeight)
+                .padding(.horizontal, 12)
+            } else {
+                // NOTCH MODE: Two wings separated by the notch space
+                HStack(spacing: 0) {
+                    // Left wing: Album art centered
+                    HStack {
+                        Spacer(minLength: 0)
+                        Group {
+                            if musicManager.albumArt.size.width > 0 {
+                                Image(nsImage: musicManager.albumArt)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            } else {
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(Color.white.opacity(0.2))
+                                    .overlay(
+                                        Image(systemName: "music.note")
+                                            .font(.system(size: 12))
+                                            .foregroundStyle(.white.opacity(0.5))
+                                    )
+                            }
+                        }
+                        .frame(width: 26, height: 26)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(width: wingWidth)
+                    
+                    // Camera notch area (spacer)
+                    Spacer()
+                        .frame(width: notchWidth)
+                    
+                    // Right wing: Visualizer centered
+                    HStack {
+                        Spacer(minLength: 0)
+                        MiniAudioVisualizerBars(isPlaying: musicManager.isPlaying, color: visualizerColor)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(width: wingWidth)
                 }
-                .frame(width: wingWidth)
+                .frame(height: notchHeight) // Match physical notch for proper vertical centering
             }
-            .frame(height: notchHeight) // Match physical notch for proper vertical centering
             
             // Hover: Scrolling song info (appears below album art / visualizer row)
-            if isHovered {
+            // Only in Notch mode - Dynamic Island already shows title inline
+            if isHovered && !isDynamicIslandMode {
                 MarqueeText(text: songInfo, speed: 40)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white.opacity(0.9))

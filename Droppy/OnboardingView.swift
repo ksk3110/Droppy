@@ -12,6 +12,7 @@ import AppKit
 
 enum OnboardingPage: Int, CaseIterable {
     case welcome = 0
+    case displayMode  // Only shown on non-notch displays
     case shelf
     case basket
     case clipboard
@@ -19,9 +20,22 @@ enum OnboardingPage: Int, CaseIterable {
     case alfred
     case finish
     
+    /// Whether this page should be shown for the current device
+    var shouldShow: Bool {
+        switch self {
+        case .displayMode:
+            // Only show on non-notch displays
+            guard let screen = NSScreen.main else { return true }
+            return screen.safeAreaInsets.top == 0
+        default:
+            return true
+        }
+    }
+    
     var title: String {
         switch self {
         case .welcome: return "Welcome to Droppy"
+        case .displayMode: return "Display Mode"
         case .shelf: return "The Shelf"
         case .basket: return "Floating Basket"
         case .clipboard: return "Clipboard History"
@@ -34,6 +48,7 @@ enum OnboardingPage: Int, CaseIterable {
     var subtitle: String {
         switch self {
         case .welcome: return "Your files, always within reach"
+        case .displayMode: return "Choose your preferred style"
         case .shelf: return "Drop files into your notch for quick access"
         case .basket: return "A floating drop zone that follows your cursor"
         case .clipboard: return "Never lose copied text or images again"
@@ -46,6 +61,7 @@ enum OnboardingPage: Int, CaseIterable {
     var icon: String {
         switch self {
         case .welcome: return "sparkles"
+        case .displayMode: return "rectangle.topthird.inset.filled"
         case .shelf: return "tray.and.arrow.down"
         case .basket: return "basket"
         case .clipboard: return "doc.on.clipboard"
@@ -78,6 +94,9 @@ struct OnboardingView: View {
     @AppStorage("showMediaPlayer") private var showMediaPlayer = true
     @AppStorage("autoFadeMediaHUD") private var autoFadeMediaHUD = true
     
+    // Display mode (non-notch only)
+    @AppStorage("useDynamicIslandStyle") private var useDynamicIslandStyle = true
+    
     @State private var currentPage: OnboardingPage = .welcome
     @State private var isNextHovering = false
     @State private var isBackHovering = false
@@ -103,9 +122,7 @@ struct OnboardingView: View {
                     if currentPage != .welcome {
                         Button {
                             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                if let prevPage = OnboardingPage(rawValue: currentPage.rawValue - 1) {
-                                    currentPage = prevPage
-                                }
+                                currentPage = previousVisiblePage(from: currentPage)
                             }
                         } label: {
                             HStack(spacing: 6) {
@@ -130,9 +147,9 @@ struct OnboardingView: View {
                     
                     Spacer()
                     
-                    // Page indicators
+                    // Page indicators (only show pages that shouldShow)
                     HStack(spacing: 6) {
-                        ForEach(OnboardingPage.allCases, id: \.rawValue) { page in
+                        ForEach(visiblePages, id: \.rawValue) { page in
                             Circle()
                                 .fill(page == currentPage ? Color.blue : Color.white.opacity(0.3))
                                 .frame(width: 8, height: 8)
@@ -149,12 +166,11 @@ struct OnboardingView: View {
                             onComplete()
                         } else {
                             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                if let nextPage = OnboardingPage(rawValue: currentPage.rawValue + 1) {
-                                    currentPage = nextPage
-                                    if nextPage == .finish {
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                            showConfetti = true
-                                        }
+                                let nextPage = nextVisiblePage(from: currentPage)
+                                currentPage = nextPage
+                                if nextPage == .finish {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                        showConfetti = true
                                     }
                                 }
                             }
@@ -205,6 +221,8 @@ struct OnboardingView: View {
         switch currentPage {
         case .welcome:
             welcomePage
+        case .displayMode:
+            displayModePage
         case .shelf:
             shelfPage
         case .basket:
@@ -271,8 +289,8 @@ struct OnboardingView: View {
         VStack(spacing: 16) {
             Spacer()
             
-            // GIF Preview
-            OnboardingGIF(url: "https://i.postimg.cc/jqkPwkRp/Schermopname2026-01-05om22-04-43-ezgif-com-video-to-gif-converter.gif")
+            // SwiftUI Preview
+            NotchShelfPreview()
                 .frame(maxWidth: 450, maxHeight: 180)
             
             VStack(spacing: 8) {
@@ -348,8 +366,8 @@ struct OnboardingView: View {
         VStack(spacing: 16) {
             Spacer()
             
-            // GIF Preview
-            OnboardingGIF(url: "https://i.postimg.cc/dtHH09fB/Schermopname2026-01-05om22-01-22-ezgif-com-video-to-gif-converter.gif")
+            // SwiftUI Preview
+            FloatingBasketPreview()
                 .frame(maxWidth: 450, maxHeight: 180)
             
             VStack(spacing: 8) {
@@ -395,8 +413,8 @@ struct OnboardingView: View {
         VStack(spacing: 14) {
             Spacer()
             
-            // GIF Preview
-            OnboardingGIF(url: "https://i.postimg.cc/Kvc9c2Kr/Schermopname2026-01-06om18-05-02-ezgif-com-video-to-gif-converter.gif")
+            // SwiftUI Preview
+            ClipboardPreview()
                 .frame(maxWidth: 450, maxHeight: 160)
             
             VStack(spacing: 8) {
@@ -503,17 +521,9 @@ struct OnboardingView: View {
         VStack(spacing: 18) {
             Spacer()
             
-            // Icon
-            ZStack {
-                Circle()
-                    .fill(Color.orange.opacity(0.2))
-                    .frame(width: 70, height: 70)
-                    .blur(radius: 20)
-                
-                Image(systemName: "slider.horizontal.3")
-                    .font(.system(size: 36))
-                    .foregroundStyle(.orange)
-            }
+            // SwiftUI Preview - Real HUD component
+            VolumeHUDPreview()
+                .frame(maxWidth: 350, maxHeight: 100)
             
             VStack(spacing: 8) {
                 Text("System HUDs")
@@ -568,6 +578,151 @@ struct OnboardingView: View {
             insertion: .move(edge: .trailing).combined(with: .opacity),
             removal: .move(edge: .leading).combined(with: .opacity)
         ))
+    }
+    
+    // MARK: - Display Mode Page (Non-notch only)
+    
+    private var displayModePage: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            
+            // Icon
+            ZStack {
+                Circle()
+                    .fill(Color.blue.opacity(0.2))
+                    .frame(width: 80, height: 80)
+                    .blur(radius: 25)
+                
+                Image(systemName: "rectangle.topthird.inset.filled")
+                    .font(.system(size: 40))
+                    .foregroundStyle(.blue)
+            }
+            
+            VStack(spacing: 8) {
+                Text("Display Mode")
+                    .font(.largeTitle.bold())
+                    .foregroundStyle(.white)
+                
+                Text("Since your Mac doesn't have a notch, choose how Droppy appears at the top of your screen.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 50)
+            }
+            
+            // Mode picker
+            HStack(spacing: 20) {
+                // Notch option
+                displayModeOption(
+                    title: "Notch",
+                    subtitle: "Classic notch style overlay",
+                    isSelected: !useDynamicIslandStyle,
+                    icon: {
+                        OnboardingUShape()
+                            .fill(!useDynamicIslandStyle ? Color.blue : Color.white.opacity(0.5))
+                            .frame(width: 60, height: 18)
+                    }
+                ) {
+                    useDynamicIslandStyle = false
+                }
+                
+                // Dynamic Island option
+                displayModeOption(
+                    title: "Dynamic Island",
+                    subtitle: "Floating pill style",
+                    isSelected: useDynamicIslandStyle,
+                    icon: {
+                        Capsule()
+                            .fill(useDynamicIslandStyle ? Color.blue : Color.white.opacity(0.5))
+                            .frame(width: 50, height: 16)
+                    }
+                ) {
+                    useDynamicIslandStyle = true
+                }
+            }
+            .padding(.horizontal, 40)
+            
+            Text(useDynamicIslandStyle ? "Dynamic Island selected" : "Notch mode selected")
+                .font(.caption)
+                .foregroundStyle(.blue)
+            
+            Spacer()
+        }
+        .transition(.asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+        ))
+    }
+    
+    private func displayModeOption<Icon: View>(title: String, subtitle: String, isSelected: Bool, @ViewBuilder icon: () -> Icon, action: @escaping () -> Void) -> some View {
+        Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                action()
+            }
+        } label: {
+            VStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(isSelected ? Color.blue.opacity(0.25) : Color.white.opacity(0.08))
+                        .frame(width: 120, height: 60)
+                    
+                    icon()
+                }
+                
+                VStack(spacing: 2) {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(isSelected ? .white : .secondary)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(isSelected ? Color.blue.opacity(0.12) : Color.clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .strokeBorder(isSelected ? Color.blue.opacity(0.5) : Color.white.opacity(0.15), lineWidth: 1.5)
+                    )
+            )
+            .scaleEffect(isSelected ? 1.02 : 1.0)
+        }
+        .buttonStyle(OptionButtonStyle())
+    }
+    
+    // MARK: - Navigation Helpers
+    
+    /// Pages that should be shown for this device
+    private var visiblePages: [OnboardingPage] {
+        OnboardingPage.allCases.filter { $0.shouldShow }
+    }
+    
+    /// Get next page that should be shown
+    private func nextVisiblePage(from current: OnboardingPage) -> OnboardingPage {
+        let allCases = OnboardingPage.allCases
+        guard let currentIndex = allCases.firstIndex(of: current) else { return current }
+        
+        for i in (currentIndex.advanced(by: 1))..<allCases.count {
+            if allCases[i].shouldShow {
+                return allCases[i]
+            }
+        }
+        return current
+    }
+    
+    /// Get previous page that should be shown
+    private func previousVisiblePage(from current: OnboardingPage) -> OnboardingPage {
+        let allCases = OnboardingPage.allCases
+        guard let currentIndex = allCases.firstIndex(of: current) else { return current }
+        
+        for i in stride(from: currentIndex.advanced(by: -1), through: 0, by: -1) {
+            if allCases[i].shouldShow {
+                return allCases[i]
+            }
+        }
+        return current
     }
     
     // MARK: - Helper Views
@@ -964,5 +1119,35 @@ struct OptionButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
             .animation(.spring(response: 0.2, dampingFraction: 0.6), value: configuration.isPressed)
             .contentShape(Rectangle())
+    }
+}
+
+// MARK: - U-Shape for Notch Icon Preview
+/// Simple U-shape for notch mode icon in onboarding
+struct OnboardingUShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let radius: CGFloat = 6
+        
+        // Start top-left
+        path.move(to: CGPoint(x: 0, y: 0))
+        // Down left side
+        path.addLine(to: CGPoint(x: 0, y: rect.height - radius))
+        // Bottom-left corner
+        path.addQuadCurve(
+            to: CGPoint(x: radius, y: rect.height),
+            control: CGPoint(x: 0, y: rect.height)
+        )
+        // Across bottom
+        path.addLine(to: CGPoint(x: rect.width - radius, y: rect.height))
+        // Bottom-right corner
+        path.addQuadCurve(
+            to: CGPoint(x: rect.width, y: rect.height - radius),
+            control: CGPoint(x: rect.width, y: rect.height)
+        )
+        // Up right side
+        path.addLine(to: CGPoint(x: rect.width, y: 0))
+        
+        return path
     }
 }

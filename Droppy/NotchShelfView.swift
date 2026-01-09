@@ -32,6 +32,7 @@ struct NotchShelfView: View {
     @AppStorage("showClipboardButton") private var showClipboardButton = false
     @AppStorage("showOpenShelfIndicator") private var showOpenShelfIndicator = true
     @AppStorage("showDropIndicator") private var showDropIndicator = true
+    @AppStorage("useDynamicIslandStyle") private var useDynamicIslandStyle = true  // For reactive mode changes
     
     // HUD State - Use @ObservedObject for singletons (they manage their own lifecycle)
     @ObservedObject private var volumeManager = VolumeManager.shared
@@ -75,6 +76,9 @@ struct NotchShelfView: View {
     /// Dynamic notch width based on screen's actual safe areas
     /// This properly handles all resolutions including "More Space" settings
     private var notchWidth: CGFloat {
+        // Dynamic Island uses fixed size
+        if isDynamicIslandMode { return 210 }
+        
         guard let screen = NSScreen.main else { return 180 }
         
         // Use auxiliary areas to calculate true notch width
@@ -95,25 +99,46 @@ struct NotchShelfView: View {
     
     /// Notch height - scales with resolution
     private var notchHeight: CGFloat {
+        // Dynamic Island uses fixed size
+        if isDynamicIslandMode { return 37 }
+        
         guard let screen = NSScreen.main else { return 32 }
         let topInset = screen.safeAreaInsets.top
         return topInset > 0 ? topInset : 32
     }
     
+    /// Whether we're in Dynamic Island mode (no physical notch + setting enabled, or force test)
+    private var isDynamicIslandMode: Bool {
+        guard let screen = NSScreen.main else { return true }
+        let hasNotch = screen.safeAreaInsets.top > 0
+        let forceTest = UserDefaults.standard.bool(forKey: "forceDynamicIslandTest")
+        // Use the @AppStorage property for reactive updates!
+        return (!hasNotch || forceTest) && useDynamicIslandStyle
+    }
+    
     private let expandedWidth: CGFloat = 450
     
     /// HUD dimensions - different sizes for volume/brightness vs media vs battery
-    /// Volume/Brightness HUD needs more width for icon + slider + percentage
+    /// Dynamic Island uses smaller widths since there's no physical notch taking up space
     private var volumeHudWidth: CGFloat {
-        max(350, notchWidth * 1.6)  // Wider to fit icon and percentage outside notch
+        if isDynamicIslandMode {
+            return 280  // Smaller for Dynamic Island
+        }
+        return max(350, notchWidth * 1.6)  // Wider to fit icon and percentage outside notch
     }
     /// Battery HUD - slightly narrower than volume, just needs icon + percentage
     private var batteryHudWidth: CGFloat {
-        max(335, notchWidth * 1.5)  // Fits "100%" on one line
+        if isDynamicIslandMode {
+            return 100  // Compact for Dynamic Island - just icon + percentage
+        }
+        return max(335, notchWidth * 1.5)  // Fits "100%" on one line
     }
     /// Media HUD has tighter wings for album art / visualizer
     private var hudWidth: CGFloat {
-        max(300, notchWidth * 1.35)
+        if isDynamicIslandMode {
+            return 260  // Smaller for Dynamic Island
+        }
+        return max(300, notchWidth * 1.35)
     }
     private let hudHeight: CGFloat = 73
     
@@ -158,11 +183,19 @@ struct NotchShelfView: View {
         } else if batteryHUDIsVisible && enableBatteryHUD {
             return notchHeight  // Battery HUD just uses notch height (no slider)
         } else if shouldShowMediaHUD {
+            // Dynamic Island stays fixed height - no vertical extension
+            if isDynamicIslandMode {
+                return notchHeight
+            }
             // Grow when hovered OR when dragging files (peek effect with title)
             // Title row: 4px top + 20px title + 4px bottom = 28px
             let shouldExpand = mediaHUDIsHovered || (enableNotchShelf && dragMonitor.isDragging)
             return shouldExpand ? notchHeight + 28 : notchHeight
         } else if enableNotchShelf && (dragMonitor.isDragging || state.isMouseHovering) {
+            // Dynamic Island stays fixed height - no vertical extension on hover
+            if isDynamicIslandMode {
+                return notchHeight
+            }
             return notchHeight + 16  // Subtle expansion, not too tall
         } else {
             return notchHeight
@@ -191,8 +224,26 @@ struct NotchShelfView: View {
     }
     
     private var shouldShowVisualNotch: Bool {
-        // Always show when HUD is active (volume/brightness/media) - works independently of shelf
-        if hudIsVisible || shouldShowMediaHUD { return true }
+        // Always show when HUD is active (volume/brightness) - works independently of shelf
+        if hudIsVisible { return true }
+        
+        // DYNAMIC ISLAND MODE: Only show when there's something to display
+        if isDynamicIslandMode {
+            // Show when music is playing
+            if musicManager.isPlaying && showMediaPlayer && musicManager.isMediaAvailable { return true }
+            // Show when hovering (to access shelf)
+            if state.isMouseHovering || state.isDropTargeted { return true }
+            // Show when dragging files
+            if dragMonitor.isDragging { return true }
+            // Show when expanded
+            if state.isExpanded { return true }
+            // Otherwise hide - Dynamic Island is invisible when idle
+            return false
+        }
+        
+        // NOTCH MODE: Legacy behavior - notch is always visible to cover camera
+        // Always show when music is playing
+        if shouldShowMediaHUD { return true }
         
         // Shelf-specific triggers only apply when shelf is enabled
         if enableNotchShelf {
@@ -209,6 +260,18 @@ struct NotchShelfView: View {
         return enableNotchShelf
     }
     
+    /// Returns appropriate shape for current mode
+    @ViewBuilder
+    private func shelfBackgroundShape(radius: CGFloat) -> some View {
+        if isDynamicIslandMode {
+            DynamicIslandShape(cornerRadius: 50) // Full capsule effect
+                .fill(Color.black)
+        } else {
+            NotchShape(bottomRadius: radius)
+                .fill(Color.black)
+        }
+    }
+    
     var body: some View {
         ZStack(alignment: .top) {
             // MARK: - Main Morphing Background
@@ -216,30 +279,62 @@ struct NotchShelfView: View {
             // NOTE: The shelf/notch always uses solid black background.
             // The "Transparent Background" setting only applies to other UI elements
             // (Settings, Clipboard, etc.) - not the shelf, as that would look weird.
-            NotchShape(bottomRadius: state.isExpanded ? 20 : (hudIsVisible ? 18 : 16))
-                .fill(Color.black)
-                .frame(
-                    width: currentNotchWidth,
-                    height: currentNotchHeight
-                )
-                .opacity(shouldShowVisualNotch ? 1.0 : 0.0)
-                .overlay(
-                   NotchOutlineShape(bottomRadius: state.isExpanded ? 20 : 16)
-                       .trim(from: 0, to: 1) // Ensures full path
-                       .stroke(
-                           style: StrokeStyle(
-                               lineWidth: 2,
-                               lineCap: .round,
-                               lineJoin: .round,
-                               dash: [3, 5],
-                               dashPhase: dashPhase
-                           )
-                       )
-                       .foregroundStyle(Color.blue)
-                       .opacity((enableNotchShelf && shouldShowVisualNotch && !state.isExpanded && (dragMonitor.isDragging || state.isMouseHovering)) ? 1 : 0)
-                       .animation(.spring(response: 0.3, dampingFraction: 0.7), value: dragMonitor.isDragging)
-                       .animation(.spring(response: 0.3, dampingFraction: 0.7), value: state.isMouseHovering)
-                )
+            // MORPH: Both shapes exist, crossfade with opacity for smooth transition
+            ZStack {
+                // Dynamic Island shape (pill)
+                DynamicIslandShape(cornerRadius: state.isExpanded ? 24 : 50)
+                    .fill(Color.black)
+                    .shadow(color: Color.black.opacity(isDynamicIslandMode ? 0.4 : 0), radius: 8, x: 0, y: 4)
+                    .opacity(isDynamicIslandMode ? 1 : 0)
+                    .scaleEffect(isDynamicIslandMode ? 1 : 0.85)
+                
+                // Notch shape (U-shaped)
+                NotchShape(bottomRadius: state.isExpanded ? 20 : (hudIsVisible ? 18 : 16))
+                    .fill(Color.black)
+                    .opacity(isDynamicIslandMode ? 0 : 1)
+                    .scaleEffect(isDynamicIslandMode ? 0.85 : 1)
+            }
+            .frame(
+                width: currentNotchWidth,
+                height: currentNotchHeight
+            )
+            .opacity(shouldShowVisualNotch ? 1.0 : 0.0)
+            .overlay(
+                // MORPH: Both outline shapes exist, crossfade for smooth transition
+                ZStack {
+                    // Dynamic Island: Fully rounded outline
+                    DynamicIslandOutlineShape(cornerRadius: state.isExpanded ? 24 : 50)
+                        .stroke(
+                            style: StrokeStyle(
+                                lineWidth: 2,
+                                lineCap: .round,
+                                lineJoin: .round,
+                                dash: [3, 5],
+                                dashPhase: dashPhase
+                            )
+                        )
+                        .foregroundStyle(Color.blue)
+                        .opacity(isDynamicIslandMode ? 1 : 0)
+                    
+                    // Notch mode: U-shaped outline (no top edge)
+                    NotchOutlineShape(bottomRadius: state.isExpanded ? 20 : 16)
+                        .trim(from: 0, to: 1)
+                        .stroke(
+                            style: StrokeStyle(
+                                lineWidth: 2,
+                                lineCap: .round,
+                                lineJoin: .round,
+                                dash: [3, 5],
+                                dashPhase: dashPhase
+                            )
+                        )
+                        .foregroundStyle(Color.blue)
+                        .opacity(isDynamicIslandMode ? 0 : 1)
+                }
+                .opacity((enableNotchShelf && shouldShowVisualNotch && !state.isExpanded && (dragMonitor.isDragging || state.isMouseHovering)) ? 1 : 0)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: dragMonitor.isDragging)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: state.isMouseHovering)
+            )
                 .animation(.spring(response: 0.35, dampingFraction: 0.7), value: state.isExpanded)
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: dragMonitor.isDragging)
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: hudIsVisible)
@@ -247,6 +342,8 @@ struct NotchShelfView: View {
                 .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isSongTransitioning)  // Match song transition timing
                 // Animate height changes when items are added/removed
                 .animation(.spring(response: 0.35, dampingFraction: 0.7), value: state.items.count)
+                // Smooth morph when switching between Notch and Dynamic Island modes
+                .animation(.spring(response: 0.4, dampingFraction: 0.75), value: useDynamicIslandStyle)
             
             // MARK: - Content Overlay
             ZStack(alignment: .top) {
@@ -313,7 +410,7 @@ struct NotchShelfView: View {
                         .transition(.scale(scale: 0.85).combined(with: .opacity).animation(.spring(response: 0.3, dampingFraction: 0.8)))
                         .frame(width: expandedWidth, height: currentExpandedHeight)
                         .animation(.spring(response: 0.35, dampingFraction: 0.7), value: currentExpandedHeight)
-                        .clipShape(NotchShape(bottomRadius: 20))
+                        .clipShape(isDynamicIslandMode ? AnyShape(DynamicIslandShape(cornerRadius: 24)) : AnyShape(NotchShape(bottomRadius: 20)))
                         // Synchronize child view animations with the parent
                         .geometryGroup()
                         .zIndex(2)
@@ -541,20 +638,20 @@ struct NotchShelfView: View {
         // This prevents blocking Safari URL bars, Outlook search fields, etc.
         let isActive = enableNotchShelf && (state.isExpanded || state.isMouseHovering || dragMonitor.isDragging || state.isDropTargeted)
         
-        // Idle: just the notch itself (small area that doesn't extend below menu bar)
-        // Active: larger area for comfortable interaction
-        let dropAreaWidth: CGFloat = isActive ? (notchWidth + 80) : notchWidth
-        let dropAreaHeight: CGFloat = isActive ? (notchHeight + 50) : notchHeight
+        // For Dynamic Island: ALWAYS use currentNotchWidth/Height to match the visible black shape
+        // For Notch: use conditional sizing (larger when active for comfortable interaction)
+        let dropAreaWidth: CGFloat = isDynamicIslandMode ? currentNotchWidth : (isActive ? (notchWidth + 80) : notchWidth)
+        let dropAreaHeight: CGFloat = isDynamicIslandMode ? currentNotchHeight : (isActive ? (notchHeight + 50) : notchHeight)
         
         // Calculate indicator position: exactly below the current notch height with small gap
         let indicatorOffset = currentNotchHeight + 20
         
         return ZStack(alignment: .top) {
             // Invisible hit area for hovering/clicking - SIZE CHANGES based on state
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: isDynamicIslandMode ? 50 : 16, style: .continuous)
                 .fill(Color.clear)
                 .frame(width: dropAreaWidth, height: dropAreaHeight)
-                .contentShape(Rectangle()) // Only THIS rectangle is interactive
+                .contentShape(RoundedRectangle(cornerRadius: isDynamicIslandMode ? 50 : 16, style: .continuous)) // Match the shape exactly
             
             // Beautiful drop indicator when hovering with files (only when shelf is enabled)
             if enableNotchShelf && showDropIndicator && state.isDropTargeted && !state.isExpanded {
@@ -908,6 +1005,23 @@ struct NotchShape: Shape {
     }
 }
 
+// MARK: - Dynamic Island Shape (Pill/Capsule for non-notch screens)
+/// A fully rounded pill shape for Dynamic Island mode
+struct DynamicIslandShape: Shape {
+    var cornerRadius: CGFloat
+    
+    var animatableData: CGFloat {
+        get { cornerRadius }
+        set { cornerRadius = newValue }
+    }
+    
+    func path(in rect: CGRect) -> Path {
+        // Use RoundedRectangle with maximum corner radius for pill effect
+        let effectiveRadius = min(cornerRadius, min(rect.width, rect.height) / 2)
+        return RoundedRectangle(cornerRadius: effectiveRadius, style: .continuous).path(in: rect)
+    }
+}
+
 // MARK: - Notch Outline Shape
 /// Defines the U-shape outline of the notch (without the top edge)
 struct NotchOutlineShape: Shape {
@@ -952,6 +1066,22 @@ struct NotchOutlineShape: Shape {
         path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
         
         return path
+    }
+}
+
+// MARK: - Dynamic Island Outline Shape
+/// Defines a fully rounded outline for Dynamic Island mode (closed path, not U-shaped)
+struct DynamicIslandOutlineShape: Shape {
+    var cornerRadius: CGFloat
+    
+    var animatableData: CGFloat {
+        get { cornerRadius }
+        set { cornerRadius = newValue }
+    }
+    
+    func path(in rect: CGRect) -> Path {
+        let effectiveRadius = min(cornerRadius, min(rect.width, rect.height) / 2)
+        return RoundedRectangle(cornerRadius: effectiveRadius, style: .continuous).path(in: rect)
     }
 }
 

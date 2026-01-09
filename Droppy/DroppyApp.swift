@@ -69,11 +69,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _ = ClipboardManager.shared
         _ = ClipboardWindowController.shared
         
-        // Pre-load GIFs for Settings after a delay to avoid startup race conditions
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            GIFPreloader.shared.preloadAll()
-        }
-        
         // Start analytics (anonymous launch tracking)
         AnalyticsService.shared.logAppLaunch()
         

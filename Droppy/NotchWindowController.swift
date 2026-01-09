@@ -153,6 +153,17 @@ final class NotchWindowController: NSObject, ObservableObject {
             }
             .store(in: &cancellables)
         
+        // 1. Monitor display mode changes (Notch <-> Dynamic Island)
+        // This allows immediate visual refresh when user changes the mode in Settings
+        NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .debounce(for: .milliseconds(100), scheduler: DispatchQueue.main) // Debounce rapid changes
+            .sink { [weak self] _ in
+                // Reposition window to apply new Dynamic Island dimensions/position
+                self?.repositionNotchWindow()
+            }
+            .store(in: &cancellables)
+        
         // 1. React to DragMonitor changes (using Combine)
         DragMonitor.shared.$isDragging
             .receive(on: DispatchQueue.main)
@@ -264,10 +275,39 @@ class NotchWindow: NSWindow {
     
     /// Flag to indicate if the window is still valid for event handling
     var isValid: Bool = true
+    
+    /// Whether the current screen lacks a physical notch
+    private var needsDynamicIsland: Bool {
+        guard let screen = NSScreen.main else { return true }
+        let hasNotch = screen.safeAreaInsets.top > 0
+        let useDynamicIsland = UserDefaults.standard.bool(forKey: "useDynamicIslandStyle")
+        let forceTest = UserDefaults.standard.bool(forKey: "forceDynamicIslandTest")
+        // Use Dynamic Island if: no physical notch OR force test is enabled (and style is enabled)
+        return (!hasNotch || forceTest) && useDynamicIsland
+    }
+    
+    /// Dynamic Island dimensions
+    private let dynamicIslandWidth: CGFloat = 210
+    private let dynamicIslandHeight: CGFloat = 37
+    
     private var notchRect: NSRect {
         guard let screen = NSScreen.main else { return .zero }
         
-        // Dynamic notch dimensions using auxiliary areas
+        // DYNAMIC ISLAND MODE: Floating pill centered at top
+        if needsDynamicIsland {
+            let x = (screen.frame.width - dynamicIslandWidth) / 2
+            // Position directly below menu bar (no margin to keep hit areas aligned)
+            let y = screen.frame.height - 24 - dynamicIslandHeight
+            
+            return NSRect(
+                x: x,
+                y: y,
+                width: dynamicIslandWidth,
+                height: dynamicIslandHeight
+            )
+        }
+        
+        // NOTCH MODE: Standard notch positioning
         var notchWidth: CGFloat = 180
         var notchHeight: CGFloat = 32
         var notchX: CGFloat = screen.frame.width / 2 - notchWidth / 2  // Fallback

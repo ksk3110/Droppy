@@ -8,12 +8,12 @@
   <strong>The ultimate productivity tool for macOS.</strong><br>
   <em>Notch Shelf • Floating Basket • Clipboard Manager • Media Player • Volume & Brightness HUD • Battery HUD</em><br>
   <br>
-  Designed with ❤️ and pixel-perfect polish. Now with buttery smooth custom HUDs!
+  🆕 <strong>v5.0:</strong> Dynamic Island mode for non-notch Macs • Revamped Settings with native SwiftUI demos • Alfred Integration
 </p>
 
 <p align="center">
     <img src="https://img.shields.io/github/v/release/iordv/Droppy?style=flat-square&color=007AFF" alt="Latest Release">
-    <img src="https://img.shields.io/badge/platform-macOS_15+-lightgrey?style=flat-square" alt="Platform">
+    <img src="https://img.shields.io/badge/platform-macOS_14+-lightgrey?style=flat-square" alt="Platform">
     <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License">
 </p>
 
@@ -28,13 +28,14 @@
 
 ## What is Droppy?
 
-Droppy reimagines productivity on macOS by combining five essential tools into one seamless experience:
+Droppy reimagines productivity on macOS by combining six essential tools into one seamless experience:
 
 1.  **Notch Shelf**: A sleek holding zone hidden in your webcam notch.
-2.  **Floating Basket**: Summon a drop zone anywhere with a quick mouse jiggle.
-3.  **Clipboard Manager**: A powerful history tool with OCR, favorites, and instant search.
-4.  **🆕 Media Player**: Beautiful Now Playing embedded in the notch.
-5.  **🆕 Custom HUDs**: Gorgeous volume and brightness overlays that replace the standard system HUDs.
+2.  **🆕 Dynamic Island Mode**: Works on ANY Mac — non-notch displays get a beautiful pill-shaped interface!
+3.  **Floating Basket**: Summon a drop zone anywhere with a quick mouse jiggle.
+4.  **Clipboard Manager**: A powerful history tool with OCR, favorites, and instant search.
+5.  **Media Player**: Beautiful Now Playing embedded in the notch.
+6.  **Custom HUDs**: Gorgeous volume, brightness, and battery overlays that replace the standard system HUDs.
 
 It's the perfect bridge between your apps, spaces, and workflow.
 
@@ -191,90 +192,48 @@ brew install --cask iordv/tap/droppy
 
 ## 🆕 What's New
 <!-- CHANGELOG_START -->
-# 🚀 Droppy v4.9.5 — "Universal Integrations" Update
+# 🚀 Droppy v5.0 — "Liquid Previews" Update
 
-This is a massive update that brings deep integrations, email drag support, and major accessibility improvements!
+This release completely overhauls the Settings and Onboarding experience with beautiful native SwiftUI previews!
 
 ---
 
 ## ✨ New Features
 
-### 🔗 Alfred Integration (First-Class Support)
+### 🔮 Dynamic Island Mode (Non-Notch Macs)
+- **Universal compatibility** — Droppy now works on ANY Mac, not just those with a notch!
+- **Beautiful pill-shaped UI** — Macs without a physical notch get a sleek Dynamic Island-style interface
+- **Display mode picker** — Choose between Notch or Dynamic Island styling in Settings
+
+### 🔗 Alfred Integration (First-Class)
 - **Native Alfred Workflow** — Download the `.alfredworkflow` from Settings → Integrations
-- **URL Scheme Support** — Use `droppy://shelf?file=...` or `droppy://basket?file=...` from any automation tool
-- **Multiple File Support** — Pass comma-separated paths for batch operations
-- **Clipboard Text Capture** — Send text snippets directly to shelf/basket
+- **URL Scheme Support** — Use `droppy://shelf?file=...` or `droppy://basket?file=...`
+- **Batch Operations** — Pass comma-separated paths for multiple files
 
-### 📧 Mail.app Email Drag Support
-- **Drag emails directly** from Apple Mail to the Notch Shelf or Floating Basket
-- **Full .eml export** — Emails are saved as complete RFC 822 `.eml` files (not just links!)
-- **Uses AppleScript** — Bypasses unreliable file promises for reliable email capture
-- **Automation permission prompt** — Droppy will ask for permission to communicate with Mail on first use
+### 🎨 Completely Revamped Settings
+- **Real SwiftUI demos** — All feature previews are now native SwiftUI components, not external images
+- **Pixel-perfect accuracy** — Previews use actual production components (NotchShape, HUDSlider, AudioSpectrumView)
+- **Live animations** — Volume slider, battery charging, and media player previews animate in real-time
+- **Zero network requests** — Settings now loads instantly (no waiting for external GIFs)
 
-### 🧭 New Onboarding Wizard
-- **Beautiful guided setup** — First-launch experience walks you through all features
-- **Permission requests** — Explains Accessibility and Automation permissions clearly
-- **Feature discovery** — Shows the Notch Shelf, Floating Basket, and Clipboard History
-- **Reset via Settings** — Re-trigger the wizard anytime from Settings → About → "Show Introduction"
-
-### ⚙️ Finder Services Quick Setup
-- **"Add to Droppy Shelf"** and **"Add to Droppy Basket"** in Finder right-click menu
-- **Guided setup flow** — Deep-links to System Settings for easy enablement
-- **Visual instructions** — Clear step-by-step guide if manual setup is needed
+### 🧭 Enhanced Onboarding Wizard
+- **Native SwiftUI demos** — All onboarding pages use real SwiftUI components
+- **Real HUD preview** — System HUDs page shows actual animated VolumeHUDPreview
+- **Floating Basket preview** — Real dashed-border animation with mock file items
+- **Notch Shelf preview** — Authentic "Drop!" indicator with blue marching ants
 
 ---
 
-## 🎨 UI/UX Improvements
+## 🔧 Technical Improvements
 
-### 🔒 Screenshot Privacy
-- **Hide from screenshots** — New toggle to exclude the Notch Shelf from screenshots and screen recordings
-- **Perfect for demos** — Keep your shelf contents private during presentations
-- Located in Settings → Accessibility → "Hide from Screenshots"
-
-### ♿ Accessibility Settings Overhaul
-- **Renamed section** — "Visual Hints" is now "Accessibility" for clearer organization
-- **Screenshot visibility** — New option added alongside indicator toggles
-- **Cohesive grouping** — Related visual and privacy options in one place
-
-### 👁️ Quick Look Toggle
-- **Spacebar toggles** — Press spacebar once to preview, press again to close
-- **Fluid interaction** — No need to click outside or press Escape
-
-### 🧹 Improved Clear Actions
-- **New "eraser" icon** — Clear buttons now use `eraser.fill` for clearer semantics
-- **State reset** — Clearing the shelf properly resets expansion and hover states
+- **Removed GIFPreloader** — Entire class deleted, no longer needed
+- **Removed external GIF URLs** — All preview images replaced with native SwiftUI
+- **Faster Settings load** — No network requests for previews
+- **Reduced memory** — No GIF caching or preloading at app startup
 
 ---
 
-## 🔧 Fixes & Optimizations
-
-### 🐛 Bug Fixes
-- **Accessibility prompt loop fixed** — No longer repeatedly prompts after permissions are granted
-- **Keyboard shortcut cleanup** — Removed duplicate Cmd+S shortcut in clipboard search
-- **Unused variable warnings** — Cleaned up compiler warnings throughout codebase
-- **GitHub Releases URLs** — Fixed download URLs to use proper Releases endpoints
-
-### ⚡ Performance
-- **Memory optimization** — Improved temporary file management and cleanup
-- **Drag detection** — Streamlined drag monitoring for better responsiveness
-
----
-
-## 📋 Technical Details
-
-### New Files
-- `MailHelper.swift` — AppleScript-based email export from Mail.app
-- `OnboardingView.swift` — First-launch onboarding wizard
-- `FinderServicesSetupView.swift` — Guided Finder Services enablement
-- `QuickLookHelper.swift` — Toggle-based Quick Look preview management
-- `DroppyAlertView.swift` — Unified alert dialogs
-
-### Info.plist Updates
-- `NSAppleEventsUsageDescription` — Explains Mail.app communication permission
-
----
-
-**Full Changelog**: https://github.com/iordv/Droppy/compare/v4.9.3...v4.9.5
+**Full Changelog**: https://github.com/iordv/Droppy/compare/v4.9.5...v5.0
 <!-- CHANGELOG_END -->
 
 ---
