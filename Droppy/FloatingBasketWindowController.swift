@@ -40,8 +40,11 @@ final class FloatingBasketWindowController: NSObject {
     /// Work item for delayed auto-hide (0.5 second delay)
     private var hideDelayWorkItem: DispatchWorkItem?
     
-    /// Mouse tracking monitor for hover detection
+    /// Mouse tracking monitor for hover detection (global monitor)
     private var mouseTrackingMonitor: Any?
+    
+    /// Local mouse tracking monitor for when basket window is focused
+    private var localMouseTrackingMonitor: Any?
     
     /// Stored full-size basket position for restoration
     private var fullSizeFrame: NSRect = .zero
@@ -320,22 +323,27 @@ final class FloatingBasketWindowController: NSObject {
         guard isAutoHideEnabled else { return }
         stopMouseTrackingMonitor() // Clean up existing
         
-        mouseTrackingMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] event in
+        mouseTrackingMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged, .leftMouseUp]) { [weak self] event in
             self?.handleMouseMovement()
         }
         
         // Also add local monitor for when basket window is focused
-        NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved]) { [weak self] event in
+        // Include leftMouseDragged and leftMouseUp to catch drop completion inside basket
+        localMouseTrackingMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged, .leftMouseUp]) { [weak self] event in
             self?.handleMouseMovement()
             return event
         }
     }
     
-    /// Stops mouse tracking monitor
+    /// Stops mouse tracking monitors
     private func stopMouseTrackingMonitor() {
         if let monitor = mouseTrackingMonitor {
             NSEvent.removeMonitor(monitor)
             mouseTrackingMonitor = nil
+        }
+        if let localMonitor = localMouseTrackingMonitor {
+            NSEvent.removeMonitor(localMonitor)
+            localMouseTrackingMonitor = nil
         }
     }
     

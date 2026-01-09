@@ -377,9 +377,10 @@ struct FloatingBasketView: View {
         }
         
         // Remove moved items from basket and add to shelf
+        // Use transfer-safe removal to preserve files on disk
         for item in itemsToMove {
-            state.removeBasketItem(item)
             state.addItem(item)
+            state.removeBasketItemForTransfer(item)
         }
         state.deselectAllBasket()
         
@@ -643,7 +644,7 @@ struct BasketItemView: View {
                 if enableNotchShelf {
                     Button {
                         state.addItem(item)
-                        state.removeBasketItem(item)
+                        state.removeBasketItemForTransfer(item)  // Transfer-safe: don't delete file
                     } label: {
                         Label("Move to Shelf", systemImage: "arrow.up.to.line")
                     }

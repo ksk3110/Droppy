@@ -248,6 +248,22 @@ final class DroppyState {
         cleanupTempFoldersIfEmpty()
     }
     
+    /// Removes an item from the basket WITHOUT cleanup (for transfers to shelf)
+    /// Use this when moving items between collections to preserve the file on disk
+    func removeBasketItemForTransfer(_ item: DroppedItem) {
+        basketItems.removeAll { $0.id == item.id }
+        selectedBasketItems.remove(item.id)
+        // NOTE: No cleanupIfTemporary() - file stays on disk for destination collection
+    }
+    
+    /// Removes an item from the shelf WITHOUT cleanup (for transfers to basket)
+    /// Use this when moving items between collections to preserve the file on disk
+    func removeItemForTransfer(_ item: DroppedItem) {
+        items.removeAll { $0.id == item.id }
+        selectedItems.remove(item.id)
+        // NOTE: No cleanupIfTemporary() - file stays on disk for destination collection
+    }
+    
     /// Clears all items from the basket
     func clearBasket() {
         for item in basketItems {
@@ -263,7 +279,9 @@ final class DroppyState {
         for item in basketItems {
             addItem(item)
         }
-        clearBasket()
+        // Clear arrays without cleanup - files now belong to shelf
+        basketItems.removeAll()
+        selectedBasketItems.removeAll()
     }
     
     // MARK: - Selection (Shelf)

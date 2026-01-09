@@ -65,10 +65,10 @@ final class NotchWindowController: NSObject, ObservableObject {
             height: windowHeight
         )
         
-        // Create the custom window
+        // Create the custom window (NSPanel for first-click activation)
         let window = NotchWindow(
             contentRect: windowFrame,
-            styleMask: [.borderless],
+            styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
@@ -350,7 +350,7 @@ final class NotchWindowController: NSObject, ObservableObject {
 
 // MARK: - Custom Window Configuration
 
-class NotchWindow: NSWindow {
+class NotchWindow: NSPanel {
     
     /// Flag to indicate if the window is still valid for event handling
     var isValid: Bool = true
@@ -433,6 +433,11 @@ class NotchWindow: NSWindow {
         self.level = .statusBar
         self.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
         self.isMovableByWindowBackground = false
+        self.hidesOnDeactivate = false
+        
+        // CRITICAL: Panel-specific settings for first-click activation (v5.3.7)
+        // This allows immediate interaction with shelf items without clicking to activate first
+        self.becomesKeyOnlyIfNeeded = true
         
         // CRITICAL: Prevent AppKit from injecting its own unstable transform animations
         self.animationBehavior = .none
