@@ -161,7 +161,7 @@ Drag files out of the shelf and drop into any app. The file moves and vanishes f
 
 ## Pro Tips
 
-### Alfred Integration
+### <img src="assets/alfred_icon.png" alt="Alfred" width="24" height="24"> Alfred Integration
 Push files from Finder to Droppy: **Settings** → **About** → **Install in Alfred**, then use Alfred's Universal Actions on any file.
 
 ### Smart Compression
