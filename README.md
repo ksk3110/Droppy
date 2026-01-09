@@ -188,13 +188,22 @@ Enable in Settings → Basket → **Auto-Hide**. The basket slides to the screen
 # Droppy v5.4.1 - Stability & Interaction Fixes
 
 ## 🔧 Bug Fixes
-- **Fixed file corruption** — Files no longer get corrupted when moved between Basket and Shelf
-- **Fixed auto-hide peek** — Basket properly slides to edge after dropping files
-- **Instant shelf interaction** — Drag files immediately without clicking to activate first
+
+### File Transfer Stability
+- **Fixed file corruption** — Files no longer get corrupted when moved between Basket and Shelf multiple times
+- **Fixed ZIP creation failures** — Zipping now works reliably after repeated file transfers
+
+### Auto-Hide Basket
+- **Fixed "peek" not hiding** — Basket now properly slides to the edge when you move your cursor away after dropping files
+- **Improved drop detection** — Better mouse tracking for drag-and-drop operations
+
+### Shelf Interaction
+- **Instant drag from shelf** — Files can now be dragged immediately without clicking to activate first
+- **Matches basket behavior** — Both shelf and basket now support first-click interaction
 
 ---
 
-*Includes all v5.4 features: Caps Lock HUD, Media Player improvements, performance optimizations.*
+*Includes all features from v5.4: Caps Lock HUD, Media Player improvements, and performance optimizations.*
 <!-- CHANGELOG_END -->
 
 ---
