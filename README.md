@@ -184,35 +184,20 @@ Enable in Settings → Basket → **Auto-Hide**. The basket slides to the screen
 <summary><strong>v6.0 — Native Spotify Integration</strong></summary>
 
 <!-- CHANGELOG_START -->
-# Droppy v6.0 - Native Spotify Integration
+## Droppy 6.0.1
 
-This is a major release introducing native Spotify integration with rock-solid playback controls.
+### ✨ New Features
+- **Inline HUD in Expanded Media Player**: Volume, brightness, battery, and caps lock HUDs now morph smoothly into the media player controls
+- Universal HUD system with identical animations to the regular notch HUDs
 
-## New Features
+### 🎨 Improvements
+- HUD displays "MAX" instead of "100%" for maximum values
+- Perfect spacing symmetry in inline HUD elements
+- Snappy, instant HUD response matching regular notch behavior
 
-- **Native Spotify Integration**: Full native control of Spotify playback directly from the media player
-  - Shuffle toggle with real-time state sync
-  - Repeat mode toggle (on/off via AppleScript)
-  - Rock-solid timestamp accuracy via direct AppleScript polling
-  - Spotify Green branding with official icon badge on album art
-
-## Technical Improvements
-
-- **AppleScript Position Sync**: True playback position is fetched directly from Spotify every second
-- **Fixed AppleScript Double Parsing**: Properly handles floating-point return values from AppleScript
-- **Improved Timing Architecture**: MediaRemote timing is ignored for Spotify; AppleScript is the single source of truth
-- **Simplified Timing Logic**: Clean separation between Spotify (AppleScript) and other media sources (MediaRemote)
-
-## Bug Fixes
-
-- Fixed timestamp jumping when clicking Spotify controls
-- Fixed timestamp showing 0:00 on pause/resume
-- Fixed AppleScript not parsing player position correctly (was returning 0)
-- Removed noisy debug logging
-
-## Documentation
-
-- Added Native Spotify feature to README with official Spotify icon
+### 🔧 Technical
+- Added `InlineHUDType` enum for easy extension of future HUD types
+- Unified trigger function with per-manager visible duration support
 <!-- CHANGELOG_END -->
 
 </details>
