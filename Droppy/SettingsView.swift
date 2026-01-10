@@ -9,6 +9,7 @@ struct SettingsView: View {
     @AppStorage("enableNotchShelf") private var enableNotchShelf = true
     @AppStorage("enableFloatingBasket") private var enableFloatingBasket = true
     @AppStorage("enableBasketAutoHide") private var enableBasketAutoHide = false  // Auto-hide basket with peek (v5.3)
+    @AppStorage("enableAutoClean") private var enableAutoClean = false  // Auto-clear after drag-out (v6.0.2)
     @AppStorage("basketAutoHideEdge") private var basketAutoHideEdge = "right"  // "left", "right", "bottom"
     @AppStorage("showClipboardButton") private var showClipboardButton = false
     @AppStorage("showOpenShelfIndicator") private var showOpenShelfIndicator = true
@@ -310,6 +311,18 @@ struct SettingsView: View {
                         
                         // Animated peek preview
                         PeekPreview(edge: basketAutoHideEdge)
+                    }
+                }
+                
+                // Auto-Clean toggle (applies to both shelf and basket)
+                if enableNotchShelf || enableFloatingBasket {
+                    Toggle(isOn: $enableAutoClean) {
+                        VStack(alignment: .leading) {
+                            Text("Auto-Clean")
+                            Text("Remove files from shelf/basket after dragging them out")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             } header: {

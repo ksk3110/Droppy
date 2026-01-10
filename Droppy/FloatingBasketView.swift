@@ -21,6 +21,7 @@ struct FloatingBasketView: View {
     @AppStorage("useTransparentBackground") private var useTransparentBackground = false
     @AppStorage("showClipboardButton") private var showClipboardButton = false
     @AppStorage("enableNotchShelf") private var enableNotchShelf = true
+    @AppStorage("enableAutoClean") private var enableAutoClean = false
     
     @State private var dashPhase: CGFloat = 0
     
@@ -177,7 +178,6 @@ struct FloatingBasketView: View {
         .background {
             // Hidden button for Cmd+A select all
             Button("") {
-                state.selectAllBasket()
             }
             .keyboardShortcut("a", modifiers: .command)
             .opacity(0)
@@ -449,6 +449,24 @@ struct BasketItemView: View {
                 if !state.selectedBasketItems.contains(item.id) {
                     state.deselectAllBasket()
                     state.selectedBasketItems.insert(item.id)
+                }
+            },
+            onDragComplete: { [weak state] operation in
+                guard let state = state else { return }
+                // Auto-clean: remove only the dragged items, not everything
+                let enableAutoClean = UserDefaults.standard.bool(forKey: "enableAutoClean")
+                if enableAutoClean {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        // If this item was selected, remove all selected items
+                        if state.selectedBasketItems.contains(item.id) {
+                            let idsToRemove = state.selectedBasketItems
+                            state.basketItems.removeAll { idsToRemove.contains($0.id) }
+                            state.selectedBasketItems.removeAll()
+                        } else {
+                            // Otherwise just remove this single item
+                            state.basketItems.removeAll { $0.id == item.id }
+                        }
+                    }
                 }
             },
             selectionSignature: state.selectedBasketItems.hashValue

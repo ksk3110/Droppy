@@ -16,28 +16,31 @@ struct DraggableArea<Content: View>: NSViewRepresentable {
     let items: () -> [NSPasteboardWriting]
     let onTap: (NSEvent.ModifierFlags) -> Void
     let onRightClick: () -> Void
+    let onDragComplete: ((NSDragOperation) -> Void)?  // Called when drag ends successfully
     let selectionSignature: Int // Force update
     
     init(
         items: @escaping () -> [NSPasteboardWriting],
         onTap: @escaping (NSEvent.ModifierFlags) -> Void,
         onRightClick: @escaping () -> Void,
+        onDragComplete: ((NSDragOperation) -> Void)? = nil,
         selectionSignature: Int = 0,
         @ViewBuilder content: () -> Content
     ) {
         self.items = items
         self.onTap = onTap
         self.onRightClick = onRightClick
+        self.onDragComplete = onDragComplete
         self.selectionSignature = selectionSignature
         self.content = content()
     }
     
     func makeNSView(context: Context) -> DraggableAreaView<Content> {
-        return DraggableAreaView(rootView: content, items: items, onTap: onTap, onRightClick: onRightClick)
+        return DraggableAreaView(rootView: content, items: items, onTap: onTap, onRightClick: onRightClick, onDragComplete: onDragComplete)
     }
     
     func updateNSView(_ nsView: DraggableAreaView<Content>, context: Context) {
-        nsView.update(rootView: content, items: items, onTap: onTap, onRightClick: onRightClick)
+        nsView.update(rootView: content, items: items, onTap: onTap, onRightClick: onRightClick, onDragComplete: onDragComplete)
     }
 }
 
@@ -45,6 +48,7 @@ class DraggableAreaView<Content: View>: NSView, NSDraggingSource {
     var items: () -> [NSPasteboardWriting]
     var onTap: (NSEvent.ModifierFlags) -> Void
     var onRightClick: () -> Void
+    var onDragComplete: ((NSDragOperation) -> Void)?
     
     private var hostingView: NSHostingView<Content>
     private var mouseDownEvent: NSEvent?
@@ -54,10 +58,11 @@ class DraggableAreaView<Content: View>: NSView, NSDraggingSource {
     /// causing crashes in RB::SurfacePool::collect / release_image.
     private var dragSessionImages: [NSImage] = []
     
-    init(rootView: Content, items: @escaping () -> [NSPasteboardWriting], onTap: @escaping (NSEvent.ModifierFlags) -> Void, onRightClick: @escaping () -> Void) {
+    init(rootView: Content, items: @escaping () -> [NSPasteboardWriting], onTap: @escaping (NSEvent.ModifierFlags) -> Void, onRightClick: @escaping () -> Void, onDragComplete: ((NSDragOperation) -> Void)?) {
         self.items = items
         self.onTap = onTap
         self.onRightClick = onRightClick
+        self.onDragComplete = onDragComplete
         self.hostingView = NSHostingView(rootView: rootView)
         super.init(frame: .zero)
         
@@ -77,11 +82,12 @@ class DraggableAreaView<Content: View>: NSView, NSDraggingSource {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func update(rootView: Content, items: @escaping () -> [NSPasteboardWriting], onTap: @escaping (NSEvent.ModifierFlags) -> Void, onRightClick: @escaping () -> Void) {
+    func update(rootView: Content, items: @escaping () -> [NSPasteboardWriting], onTap: @escaping (NSEvent.ModifierFlags) -> Void, onRightClick: @escaping () -> Void, onDragComplete: ((NSDragOperation) -> Void)?) {
         self.hostingView.rootView = rootView
         self.items = items
         self.onTap = onTap
         self.onRightClick = onRightClick
+        self.onDragComplete = onDragComplete
     }
     
     override func mouseDown(with event: NSEvent) {
@@ -182,5 +188,21 @@ class DraggableAreaView<Content: View>: NSView, NSDraggingSource {
     func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
         // Release retained images now that drag session is complete
         dragSessionImages.removeAll()
+        
+        // Call completion callback if drag was successful (for auto-clean feature)
+        if operation != [] {
+            onDragComplete?(operation)
+        }
     }
+}
+
+// MARK: - Drag-Out Notifications
+
+extension Notification.Name {
+    /// Posted when files are dragged OUT of the shelf (for auto-clean)
+    static let droppyShelfDragOutCompleted = Notification.Name("droppyShelfDragOutCompleted")
+    /// Posted when files are dragged OUT of the basket (for auto-clean)
+    static let droppyBasketDragOutCompleted = Notification.Name("droppyBasketDragOutCompleted")
+    /// Legacy notification (deprecated, use specific ones above)
+    static let droppyDragOutCompleted = Notification.Name("droppyDragOutCompleted")
 }

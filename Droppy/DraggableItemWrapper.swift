@@ -12,28 +12,32 @@ import AppKit
 struct DraggableItemWrapper<Content: View>: NSViewRepresentable {
     let content: Content
     let items: () -> [NSItemProvider]
+    var onDragComplete: (() -> Void)?
     
-    init(@ViewBuilder content: () -> Content, items: @escaping () -> [NSItemProvider]) {
+    init(@ViewBuilder content: () -> Content, items: @escaping () -> [NSItemProvider], onDragComplete: (() -> Void)? = nil) {
         self.content = content()
         self.items = items
+        self.onDragComplete = onDragComplete
     }
     
     func makeNSView(context: Context) -> DragContainerView<Content> {
-        return DragContainerView(rootView: content, items: items)
+        return DragContainerView(rootView: content, items: items, onDragComplete: onDragComplete)
     }
     
     func updateNSView(_ nsView: DragContainerView<Content>, context: Context) {
-        nsView.update(rootView: content, items: items)
+        nsView.update(rootView: content, items: items, onDragComplete: onDragComplete)
     }
 }
 
 /// Custom NSView that contains the hosting view and handles drag events
 class DragContainerView<Content: View>: NSView, NSDraggingSource {
     var items: () -> [NSItemProvider]
+    var onDragComplete: (() -> Void)?
     private var hostingView: NSHostingView<Content>
     
-    init(rootView: Content, items: @escaping () -> [NSItemProvider]) {
+    init(rootView: Content, items: @escaping () -> [NSItemProvider], onDragComplete: (() -> Void)? = nil) {
         self.items = items
+        self.onDragComplete = onDragComplete
         self.hostingView = NSHostingView(rootView: rootView)
         super.init(frame: .zero)
         
@@ -54,9 +58,10 @@ class DragContainerView<Content: View>: NSView, NSDraggingSource {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func update(rootView: Content, items: @escaping () -> [NSItemProvider]) {
+    func update(rootView: Content, items: @escaping () -> [NSItemProvider], onDragComplete: (() -> Void)?) {
         self.hostingView.rootView = rootView
         self.items = items
+        self.onDragComplete = onDragComplete
     }
     
     override func mouseDragged(with event: NSEvent) {
@@ -88,5 +93,16 @@ class DragContainerView<Content: View>: NSView, NSDraggingSource {
     
     func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
         return .copy // Allow copying to other apps
+    }
+    
+    /// Called when drag session ends - detect successful external drops
+    func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+        // If operation is not .none, the drop was successful (external app accepted it)
+        if operation != [] {
+            print("🎯 Droppy: Drag-out completed successfully (operation: \(operation.rawValue))")
+            DispatchQueue.main.async { [weak self] in
+                self?.onDragComplete?()
+            }
+        }
     }
 }

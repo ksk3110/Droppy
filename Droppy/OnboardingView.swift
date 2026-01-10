@@ -83,6 +83,7 @@ struct OnboardingView: View {
     // Basket sub-settings
     @AppStorage("enableBasketAutoHide") private var enableBasketAutoHide = false
     @AppStorage("basketAutoHideEdge") private var basketAutoHideEdge = "right"
+    @AppStorage("enableAutoClean") private var enableAutoClean = false
     
     // Shelf sub-settings
     @AppStorage("autoShrinkShelf") private var autoShrinkShelf = true
@@ -330,7 +331,7 @@ struct OnboardingView: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                     
-                    HStack(spacing: 30) {
+                    HStack(spacing: 20) {
                         subSettingToggle(
                             icon: "arrow.down.left.arrow.up.right",
                             title: "Auto-shrink",
@@ -345,6 +346,14 @@ struct OnboardingView: View {
                             subtitle: "\"Open Shelf\" & \"Drop!\"",
                             isOn: $showOpenShelfIndicator,
                             color: .green
+                        )
+                        
+                        subSettingToggle(
+                            icon: "sparkles",
+                            title: "Auto-Clean",
+                            subtitle: "Remove after drag-out",
+                            isOn: $enableAutoClean,
+                            color: .cyan
                         )
                     }
                 }
