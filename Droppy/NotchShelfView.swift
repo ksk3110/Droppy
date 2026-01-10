@@ -35,6 +35,7 @@ struct NotchShelfView: View {
     @AppStorage("showDropIndicator") private var showDropIndicator = true
     @AppStorage("useDynamicIslandStyle") private var useDynamicIslandStyle = true  // For reactive mode changes
     @AppStorage("useDynamicIslandTransparent") private var useDynamicIslandTransparent = false  // Transparent DI (only when DI + transparent enabled)
+    @AppStorage("enableAutoClean") private var enableAutoClean = false  // Auto-clear after drag-out
     
     // HUD State - Use @ObservedObject for singletons (they manage their own lifecycle)
     @ObservedObject private var volumeManager = VolumeManager.shared
@@ -1342,6 +1343,24 @@ struct NotchItemView: View {
                  if !state.selectedItems.contains(item.id) {
                     state.deselectAll()
                     state.selectedItems.insert(item.id)
+                }
+            },
+            onDragComplete: { [weak state] operation in
+                guard let state = state else { return }
+                // Auto-clean: remove only the dragged items, not everything
+                let enableAutoClean = UserDefaults.standard.bool(forKey: "enableAutoClean")
+                if enableAutoClean {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        // If this item was selected, remove all selected items
+                        if state.selectedItems.contains(item.id) {
+                            let idsToRemove = state.selectedItems
+                            state.items.removeAll { idsToRemove.contains($0.id) }
+                            state.selectedItems.removeAll()
+                        } else {
+                            // Otherwise just remove this single item
+                            state.items.removeAll { $0.id == item.id }
+                        }
+                    }
                 }
             },
             selectionSignature: state.selectedItems.hashValue

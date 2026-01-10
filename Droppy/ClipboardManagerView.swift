@@ -148,6 +148,11 @@ struct ClipboardManagerView: View {
                     onPaste(item)
                 }
             }.keyboardShortcut("v", modifiers: .command)
+            
+            // 5. Command+A -> Select All
+            Button("") {
+                selectedItems = Set(sortedHistory.map { $0.id })
+            }.keyboardShortcut("a", modifiers: .command)
         }
         .opacity(0)
     }

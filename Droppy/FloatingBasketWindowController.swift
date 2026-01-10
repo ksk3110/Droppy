@@ -244,7 +244,7 @@ final class FloatingBasketWindowController: NSObject {
         startMouseTrackingMonitor()
     }
     
-    /// Starts keyboard monitor for spacebar Quick Look
+    /// Starts keyboard monitor for spacebar Quick Look and Cmd+A select all
     private func startKeyboardMonitor() {
         stopKeyboardMonitor() // Clean up any existing
         
@@ -259,6 +259,13 @@ final class FloatingBasketWindowController: NSObject {
                 QuickLookHelper.shared.previewSelectedBasketItems()
                 return nil // Consume the event
             }
+            
+            // Cmd+A selects all basket items
+            if event.keyCode == 0, event.modifierFlags.contains(.command) {
+                DroppyState.shared.selectAllBasket()
+                return nil // Consume the event
+            }
+            
             return event
         }
     }
