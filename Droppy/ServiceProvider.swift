@@ -15,10 +15,6 @@ class ServiceProvider: NSObject {
     }
     
     private func handleFiles(from pboard: NSPasteboard, target: String) {
-        // Check if Finder services are enabled in settings
-        let enabled = UserDefaults.standard.bool(forKey: "enableFinderServices")
-        guard enabled else { return }
-        
         // Get file URLs from pasteboard
         guard let urls = pboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] else {
             return
