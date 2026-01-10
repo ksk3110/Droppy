@@ -6,7 +6,7 @@
 <h1 align="center">Droppy</h1>
 
 <p align="center">
-  <strong>Your files. Everywhere. Instantly.</strong><br>
+  <strong>Just drop it. We've got it.</strong><br>
   <em>The free, open-source alternative to paid file management apps.</em>
 </p>
 
