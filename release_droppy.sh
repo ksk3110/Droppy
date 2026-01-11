@@ -135,15 +135,16 @@ DMG_BACKGROUND="$MAIN_REPO/assets/dmg/background.png"
 
 if [ -f "$DMG_BACKGROUND" ] && command -v create-dmg &> /dev/null; then
     # Beautiful DMG with custom background
+    # Background is 660x480 at 72 DPI, window size must match
     if create-dmg \
         --volname "Droppy" \
         --background "$DMG_BACKGROUND" \
         --window-pos 200 120 \
-        --window-size 660 400 \
+        --window-size 660 480 \
         --icon-size 128 \
-        --icon "Droppy.app" 155 170 \
+        --icon "Droppy.app" 180 200 \
         --hide-extension "Droppy.app" \
-        --app-drop-link 505 170 \
+        --app-drop-link 480 200 \
         --no-internet-enable \
         "$DMG_NAME" \
         "$APP_PATH" 2>/dev/null; then
