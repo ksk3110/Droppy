@@ -305,9 +305,9 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 
 ---
 
-## 🍺 Installation
+## Installation
 
-**Recommended: Install via Homebrew** (easiest, auto-updates)
+**Recommended:** <img src="https://brew.sh/assets/img/homebrew.svg" height="16"> **Install via Homebrew** (easiest, auto-updates)
 ```bash
 brew install --cask iordv/tap/droppy
 ```
