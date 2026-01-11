@@ -886,7 +886,16 @@ struct SettingsView: View {
         Group {
             // MARK: About
             Section {
-            HStack {
+            HStack(spacing: 14) {
+                // App Icon
+                if let appIcon = NSApp.applicationIconImage {
+                    Image(nsImage: appIcon)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 48, height: 48)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                
                 VStack(alignment: .leading) {
                     Text("Droppy")
                         .font(.headline)
