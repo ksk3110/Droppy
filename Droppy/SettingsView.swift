@@ -2752,6 +2752,8 @@ struct AIBackgroundRemovalCard: View {
 
 struct AlfredExtensionCard: View {
     @State private var isHoveringAction = false
+    @State private var isHoveringInfo = false
+    @State private var showInfoSheet = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -2769,6 +2771,19 @@ struct AlfredExtensionCard: View {
                 .frame(width: 44, height: 44)
                 
                 Spacer()
+                
+                // Info button
+                Button {
+                    showInfoSheet = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 16))
+                        .foregroundStyle(isHoveringInfo ? .white : .secondary)
+                }
+                .buttonStyle(.plain)
+                .onHover { h in
+                    withAnimation(.easeOut(duration: 0.15)) { isHoveringInfo = h }
+                }
                 
                 // Clean grey badge
                 Text("Productivity")
@@ -2834,6 +2849,13 @@ struct AlfredExtensionCard: View {
         }
         .frame(minHeight: 160)
         .extensionCardStyle(accentColor: .purple)
+        .sheet(isPresented: $showInfoSheet) {
+            ExtensionInfoView(extensionType: .alfred) {
+                if let workflowPath = Bundle.main.path(forResource: "Droppy", ofType: "alfredworkflow") {
+                    NSWorkspace.shared.open(URL(fileURLWithPath: workflowPath))
+                }
+            }
+        }
     }
 }
 
@@ -2841,7 +2863,9 @@ struct AlfredExtensionCard: View {
 
 struct FinderExtensionCard: View {
     @State private var isHoveringAction = false
+    @State private var isHoveringInfo = false
     @State private var showSetupSheet = false
+    @State private var showInfoSheet = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -2854,6 +2878,19 @@ struct FinderExtensionCard: View {
                     .frame(width: 44, height: 44)
                 
                 Spacer()
+                
+                // Info button
+                Button {
+                    showInfoSheet = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 16))
+                        .foregroundStyle(isHoveringInfo ? .white : .secondary)
+                }
+                .buttonStyle(.plain)
+                .onHover { h in
+                    withAnimation(.easeOut(duration: 0.15)) { isHoveringInfo = h }
+                }
                 
                 // Clean grey badge
                 Text("Productivity")
@@ -2920,12 +2957,21 @@ struct FinderExtensionCard: View {
         .sheet(isPresented: $showSetupSheet) {
             FinderServicesSetupSheetView()
         }
+        .sheet(isPresented: $showInfoSheet) {
+            ExtensionInfoView(extensionType: .finder) {
+                showInfoSheet = false
+                showSetupSheet = true
+            }
+        }
     }
 }
 
 // MARK: - Spotify Extension Card
 
 struct SpotifyExtensionCard: View {
+    @State private var isHoveringInfo = false
+    @State private var showInfoSheet = false
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Header with icon
@@ -2937,6 +2983,19 @@ struct SpotifyExtensionCard: View {
                     .frame(width: 44, height: 44)
                 
                 Spacer()
+                
+                // Info button
+                Button {
+                    showInfoSheet = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 16))
+                        .foregroundStyle(isHoveringInfo ? .white : .secondary)
+                }
+                .buttonStyle(.plain)
+                .onHover { h in
+                    withAnimation(.easeOut(duration: 0.15)) { isHoveringInfo = h }
+                }
                 
                 // Clean grey badge
                 Text("Media")
@@ -2987,6 +3046,9 @@ struct SpotifyExtensionCard: View {
         }
         .frame(minHeight: 160)
         .extensionCardStyle(accentColor: .green)
+        .sheet(isPresented: $showInfoSheet) {
+            ExtensionInfoView(extensionType: .spotify)
+        }
     }
 }
 
@@ -2996,8 +3058,10 @@ struct ElementCaptureCard: View {
     // Use local state to avoid @StateObject + @MainActor deadlock
     @State private var currentShortcut: SavedShortcut?
     @State private var isHoveringAction = false
+    @State private var isHoveringInfo = false
     @State private var isRecording = false
     @State private var recordMonitor: Any?
+    @State private var showInfoSheet = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -3010,6 +3074,19 @@ struct ElementCaptureCard: View {
                     .frame(width: 44, height: 44)
                 
                 Spacer()
+                
+                // Info button
+                Button {
+                    showInfoSheet = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 16))
+                        .foregroundStyle(isHoveringInfo ? .white : .secondary)
+                }
+                .buttonStyle(.plain)
+                .onHover { h in
+                    withAnimation(.easeOut(duration: 0.15)) { isHoveringInfo = h }
+                }
                 
                 // Clean grey badge
                 Text("Productivity")
@@ -3092,6 +3169,9 @@ struct ElementCaptureCard: View {
         }
         .onDisappear {
             stopRecording()
+        }
+        .sheet(isPresented: $showInfoSheet) {
+            ExtensionInfoView(extensionType: .elementCapture)
         }
     }
     
