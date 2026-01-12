@@ -8,11 +8,58 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+// MARK: - Sharing Services Cache
+private var notchSharingServicesCache: [String: (services: [NSSharingService], timestamp: Date)] = [:]
+private let notchSharingServicesCacheTTL: TimeInterval = 60
+
 // Use a wrapper function to silence the deprecation warning
 // The deprecated API is the ONLY way to properly show share services in SwiftUI context menus
 @available(macOS, deprecated: 13.0, message: "NSSharingService.sharingServices is deprecated but required for context menu integration")
 private func sharingServicesForItems(_ items: [Any]) -> [NSSharingService] {
-    NSSharingService.sharingServices(forItems: items)
+    if let url = items.first as? URL {
+        let ext = url.pathExtension.lowercased()
+        if let cached = notchSharingServicesCache[ext],
+           Date().timeIntervalSince(cached.timestamp) < notchSharingServicesCacheTTL {
+            return cached.services
+        }
+        let services = NSSharingService.sharingServices(forItems: items)
+        notchSharingServicesCache[ext] = (services: services, timestamp: Date())
+        return services
+    }
+    return NSSharingService.sharingServices(forItems: items)
+}
+
+// MARK: - Magic Processing Overlay
+/// Subtle animated overlay for background removal processing
+private struct MagicProcessingOverlay: View {
+    @State private var rotation: Double = 0
+    
+    var body: some View {
+        ZStack {
+            // Semi-transparent background
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.black.opacity(0.5))
+            
+            // Subtle rotating circle
+            Circle()
+                .trim(from: 0, to: 0.7)
+                .stroke(
+                    LinearGradient(
+                        colors: [.white.opacity(0.8), .white.opacity(0.2)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
+                )
+                .frame(width: 24, height: 24)
+                .rotationEffect(.degrees(rotation))
+        }
+        .onAppear {
+            withAnimation(.linear(duration: 0.8).repeatForever(autoreverses: false)) {
+                rotation = 360
+            }
+        }
+    }
 }
 
 /// The notch-based shelf view that shows a yellow glow during drag and expands to show items
@@ -1286,6 +1333,48 @@ struct NotchItemView: View {
     @State private var shakeOffset: CGFloat = 0
     @State private var isShakeAnimating = false
     
+    // MARK: - Bulk Operation Helpers
+    
+    /// All selected items in the shelf
+    private var selectedItems: [DroppedItem] {
+        state.items.filter { state.selectedItems.contains($0.id) }
+    }
+    
+    /// Whether ALL selected items are images (for bulk Remove BG)
+    private var allSelectedAreImages: Bool {
+        guard !selectedItems.isEmpty else { return false }
+        return selectedItems.allSatisfy { $0.isImage }
+    }
+    
+    /// Whether ALL selected items can be compressed
+    private var allSelectedCanCompress: Bool {
+        guard !selectedItems.isEmpty else { return false }
+        return selectedItems.allSatisfy { FileCompressor.canCompress(fileType: $0.fileType) }
+    }
+    
+    /// Whether ALL selected items are images (for consistent image menu)
+    private var allSelectedAreImageFiles: Bool {
+        guard !selectedItems.isEmpty else { return false }
+        return selectedItems.allSatisfy { $0.fileType?.conforms(to: .image) == true }
+    }
+    
+    /// Common conversions available for ALL selected items
+    private var commonConversions: [ConversionOption] {
+        guard !selectedItems.isEmpty else { return [] }
+        var common: Set<ConversionFormat>? = nil
+        for item in selectedItems {
+            let formats = Set(FileConverter.availableConversions(for: item.fileType).map { $0.format })
+            if common == nil {
+                common = formats
+            } else {
+                common = common!.intersection(formats)
+            }
+        }
+        guard let validFormats = common, !validFormats.isEmpty else { return [] }
+        return FileConverter.availableConversions(for: selectedItems.first?.fileType)
+            .filter { validFormats.contains($0.format) }
+    }
+    
     private func chooseDestinationAndMove() {
         // Dispatch to main async to allow the menu to close and UI to settle
         DispatchQueue.main.async {
@@ -1421,6 +1510,7 @@ struct NotchItemView: View {
                 isHovering: isHovering,
                 isConverting: isConverting,
                 isExtractingText: isExtractingText,
+                isRemovingBackground: isRemovingBackground,
                 isPoofing: $isPoofing,
                 pendingConvertedItem: $pendingConvertedItem,
                 renamingItemId: $renamingItemId,
@@ -1458,6 +1548,28 @@ struct NotchItemView: View {
             // Use fast easeOut instead of spring to reduce animation overhead
             withAnimation(.easeOut(duration: 0.15)) {
                 isHovering = hovering
+            }
+        }
+        .onChange(of: state.poofingItemIds) { _, newIds in
+            // Trigger local poof animation when this item is marked for poof (from bulk operations)
+            if newIds.contains(item.id) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    isPoofing = true
+                }
+                // Clear the poof state after triggering
+                state.clearPoof(for: item.id)
+            }
+        }
+        .onAppear {
+            // Check if this item was created with poof pending (from bulk operations)
+            if state.poofingItemIds.contains(item.id) {
+                // Small delay to ensure view is fully rendered before animation
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        isPoofing = true
+                    }
+                    state.clearPoof(for: item.id)
+                }
             }
         }
         .contextMenu {
@@ -1505,7 +1617,11 @@ struct NotchItemView: View {
                         Button {
                             item.openWith(applicationURL: app.url)
                         } label: {
-                            Label(app.name, image: NSImage.Name(app.name))
+                            Label {
+                                Text(app.name)
+                            } icon: {
+                                Image(nsImage: app.icon)
+                            }
                         }
                     }
                 } label: {
@@ -1531,70 +1647,131 @@ struct NotchItemView: View {
             }
             
             Button {
-                item.saveToDownloads()
+                // Bulk save: save all selected items
+                if state.selectedItems.count > 1 && state.selectedItems.contains(item.id) {
+                    for selectedItem in selectedItems {
+                        selectedItem.saveToDownloads()
+                    }
+                } else {
+                    item.saveToDownloads()
+                }
             } label: {
-                Label("Save", systemImage: "arrow.down.circle")
+                if state.selectedItems.count > 1 && state.selectedItems.contains(item.id) {
+                    Label("Save All (\(state.selectedItems.count))", systemImage: "arrow.down.circle")
+                } else {
+                    Label("Save", systemImage: "arrow.down.circle")
+                }
             }
             
-            // Conversion submenu - only show if conversions are available
-            let conversions = FileConverter.availableConversions(for: item.fileType)
+            // Conversion submenu - show when single item OR all selected share common conversions
+            let conversions = state.selectedItems.count > 1 ? commonConversions : FileConverter.availableConversions(for: item.fileType)
             if !conversions.isEmpty {
                 Divider()
                 
                 Menu {
                     ForEach(conversions) { option in
                         Button {
-                            convertFile(to: option.format)
+                            if state.selectedItems.count > 1 && state.selectedItems.contains(item.id) {
+                                convertAllSelected(to: option.format)
+                            } else {
+                                convertFile(to: option.format)
+                            }
                         } label: {
                             Label(option.displayName, systemImage: option.icon)
                         }
                     }
                 } label: {
-                    Label("Convert to...", systemImage: "arrow.triangle.2.circlepath")
+                    if state.selectedItems.count > 1 && state.selectedItems.contains(item.id) {
+                        Label("Convert All (\(state.selectedItems.count))...", systemImage: "arrow.triangle.2.circlepath")
+                    } else {
+                        Label("Convert to...", systemImage: "arrow.triangle.2.circlepath")
+                    }
                 }
             }
             
-            // OCR Option
-            if item.fileType?.conforms(to: .image) == true || item.fileType?.conforms(to: .pdf) == true {
-                Button {
-                    extractText()
-                } label: {
-                    Label("Extract Text", systemImage: "text.viewfinder")
+            // OCR Option - single item only
+            if state.selectedItems.count <= 1 {
+                if item.fileType?.conforms(to: .image) == true || item.fileType?.conforms(to: .pdf) == true {
+                    Button {
+                        extractText()
+                    } label: {
+                        Label("Extract Text", systemImage: "text.viewfinder")
+                    }
                 }
             }
             
-            // Remove Background - only for images
-            if item.isImage {
-                Button {
-                    removeBackground()
-                } label: {
-                    Label("Remove Background", systemImage: "person.and.background.dotted")
+            // Remove Background - show when single image OR all selected are images
+            if (state.selectedItems.count <= 1 && item.isImage) || (state.selectedItems.count > 1 && allSelectedAreImages && state.selectedItems.contains(item.id)) {
+                if AIInstallManager.shared.isInstalled {
+                    Button {
+                        if state.selectedItems.count > 1 {
+                            removeBackgroundFromAllSelected()
+                        } else {
+                            removeBackground()
+                        }
+                    } label: {
+                        if state.selectedItems.count > 1 {
+                            Label("Remove Background (\(state.selectedItems.count))", systemImage: "person.and.background.dotted")
+                        } else {
+                            Label("Remove Background", systemImage: "person.and.background.dotted")
+                        }
+                    }
+                    .disabled(isRemovingBackground)
+                } else {
+                    Button {
+                        // No action - just informational
+                    } label: {
+                        Label("Remove Background (Settings > Integrations)", systemImage: "person.and.background.dotted")
+                    }
+                    .disabled(true)
                 }
-                .disabled(isRemovingBackground)
             }
             
             // Create ZIP option
             Divider()
             
-            // Compress option - only show for compressible file types
-            if FileCompressor.canCompress(fileType: item.fileType) {
-                if item.fileType?.conforms(to: .image) == true {
+            // Compress option - show when single compressible OR all selected can compress
+            let canShowCompress = (state.selectedItems.count <= 1 && FileCompressor.canCompress(fileType: item.fileType)) ||
+                                  (state.selectedItems.count > 1 && allSelectedCanCompress && state.selectedItems.contains(item.id))
+            if canShowCompress {
+                let isMultiSelect = state.selectedItems.count > 1 && state.selectedItems.contains(item.id)
+                let isImageCompress = isMultiSelect ? allSelectedAreImageFiles : (item.fileType?.conforms(to: .image) == true)
+                
+                if isImageCompress {
                     Menu {
                         Button("Auto (Medium)") {
-                            compressFile(mode: .preset(.medium))
+                            if isMultiSelect {
+                                compressAllSelected(mode: .preset(.medium))
+                            } else {
+                                compressFile(mode: .preset(.medium))
+                            }
                         }
-                        Button("Target Size...") {
-                            compressFile(mode: nil) // Triggers prompt
+                        if !isMultiSelect {
+                            Button("Target Size...") {
+                                compressFile(mode: nil)
+                            }
                         }
                     } label: {
-                        Label("Compress", systemImage: "arrow.down.right.and.arrow.up.left")
+                        if isMultiSelect {
+                            Label("Compress All (\(state.selectedItems.count))", systemImage: "arrow.down.right.and.arrow.up.left")
+                        } else {
+                            Label("Compress", systemImage: "arrow.down.right.and.arrow.up.left")
+                        }
                     }
                     .disabled(isCompressing)
                 } else {
                     Button {
-                        compressFile(mode: .preset(.medium))
+                        if isMultiSelect {
+                            compressAllSelected(mode: .preset(.medium))
+                        } else {
+                            compressFile(mode: .preset(.medium))
+                        }
                     } label: {
-                        Label("Compress", systemImage: "arrow.down.right.and.arrow.up.left")
+                        if isMultiSelect {
+                            Label("Compress All (\(state.selectedItems.count))", systemImage: "arrow.down.right.and.arrow.up.left")
+                        } else {
+                            Label("Compress", systemImage: "arrow.down.right.and.arrow.up.left")
+                        }
                     }
                     .disabled(isCompressing)
                 }
@@ -1651,6 +1828,10 @@ struct NotchItemView: View {
                 await MainActor.run {
                     isExtractingText = false
                     state.endFileOperation()
+                    // Trigger poof animation for successful extraction
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        isPoofing = true
+                    }
                     OCRWindowController.shared.show(with: text)
                 }
             } catch {
@@ -1722,11 +1903,14 @@ struct NotchItemView: View {
                 await MainActor.run {
                     isCreatingZIP = false
                     // Keep isFileOperationInProgress = true since we auto-start renaming
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        state.replaceItems(itemsToZip, with: newItem)
-                    }
+                    // Update state immediately (animation deferred to poof effect)
+                    state.replaceItems(itemsToZip, with: newItem)
                     // Auto-start renaming the new zip file (flag stays true)
                     renamingItemId = newItem.id
+                    // Trigger poof animation after view has appeared
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        state.triggerPoof(for: newItem.id)
+                    }
                 }
             } else {
                 await MainActor.run {
@@ -1868,6 +2052,98 @@ struct NotchItemView: View {
         }
     }
     
+    // MARK: - Bulk Operations
+    
+    /// Convert all selected items to the specified format
+    private func convertAllSelected(to format: ConversionFormat) {
+        guard !isConverting else { return }
+        isConverting = true
+        state.beginFileOperation()
+        
+        Task {
+            for selectedItem in selectedItems {
+                if let convertedURL = await FileConverter.convert(selectedItem.url, to: format) {
+                    let newItem = DroppedItem(url: convertedURL, isTemporary: true)
+                    await MainActor.run {
+                        state.replaceItem(selectedItem, with: newItem)
+                        state.triggerPoof(for: newItem.id)
+                    }
+                }
+            }
+            
+            await MainActor.run {
+                isConverting = false
+                state.endFileOperation()
+            }
+        }
+    }
+    
+    /// Compress all selected items
+    private func compressAllSelected(mode: CompressionMode) {
+        guard !isCompressing else { return }
+        isCompressing = true
+        state.beginFileOperation()
+        
+        Task {
+            for selectedItem in selectedItems {
+                if let compressedURL = await FileCompressor.shared.compress(url: selectedItem.url, mode: mode) {
+                    let newItem = DroppedItem(url: compressedURL, isTemporary: true)
+                    await MainActor.run {
+                        state.replaceItem(selectedItem, with: newItem)
+                        state.triggerPoof(for: newItem.id)
+                    }
+                }
+            }
+            
+            await MainActor.run {
+                isCompressing = false
+                state.endFileOperation()
+            }
+        }
+    }
+    
+    /// Remove background from all selected images
+    private func removeBackgroundFromAllSelected() {
+        guard !isRemovingBackground else { return }
+        isRemovingBackground = true
+        state.beginFileOperation()
+        
+        // Mark ALL selected items as processing to show spinners simultaneously
+        let imagesToProcess = selectedItems.filter { $0.isImage }
+        for item in imagesToProcess {
+            state.beginProcessing(for: item.id)
+        }
+        
+        Task {
+            for selectedItem in imagesToProcess {
+                do {
+                    let outputURL = try await selectedItem.removeBackground()
+                    let newItem = DroppedItem(url: outputURL, isTemporary: true)
+                    await MainActor.run {
+                        // End processing for old item, replace with new
+                        state.endProcessing(for: selectedItem.id)
+                        state.replaceItem(selectedItem, with: newItem)
+                        // Trigger poof animation for this specific item
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            state.triggerPoof(for: newItem.id)
+                        }
+                    }
+                } catch {
+                    await MainActor.run {
+                        // End processing even on failure
+                        state.endProcessing(for: selectedItem.id)
+                    }
+                    print("Background removal failed for \(selectedItem.name): \(error.localizedDescription)")
+                }
+            }
+            
+            await MainActor.run {
+                isRemovingBackground = false
+                state.endFileOperation()
+            }
+        }
+    }
+    
     // MARK: - Rename
     
     private func startRenaming() {
@@ -1953,6 +2229,7 @@ private struct NotchItemContent: View {
     let isHovering: Bool
     let isConverting: Bool
     let isExtractingText: Bool
+    let isRemovingBackground: Bool
     @Binding var isPoofing: Bool
     @Binding var pendingConvertedItem: DroppedItem?
     @Binding var renamingItemId: UUID?
@@ -1997,12 +2274,22 @@ private struct NotchItemContent: View {
                                 .tint(.white)
                         }
                     }
+                    .overlay {
+                        // Magic processing animation for background removal - centered on thumbnail
+                        // Check both local isRemovingBackground AND global processingItemIds for bulk operations
+                        if isRemovingBackground || state.processingItemIds.contains(item.id) {
+                            MagicProcessingOverlay()
+                                .frame(width: 60, height: 60)
+                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                .transition(.opacity.animation(.easeInOut(duration: 0.3)))
+                        }
+                    }
                 
                 // Remove button on hover
                 if isHovering && !isPoofing && renamingItemId != item.id {
                     Button(action: onRemove) {
                         ZStack {
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
                                 .fill(Color.red.opacity(0.9))
                                 .frame(width: 20, height: 20)
                             Image(systemName: "xmark")
@@ -2043,8 +2330,8 @@ private struct NotchItemContent: View {
                     .padding(.horizontal, 4)
                     .background(
                         isSelected ?
-                        RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.blue) :
-                        RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.clear)
+                        RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.blue) :
+                        RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.clear)
                     )
             }
         }
@@ -2084,12 +2371,12 @@ private struct RenameTextField: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(Color.black.opacity(0.3))
         )
         // Animated dotted blue outline
         .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(
                     Color.accentColor.opacity(0.8),
                     style: StrokeStyle(

@@ -489,6 +489,16 @@ struct SettingsView: View {
     
     private var integrationsSettings: some View {
         Group {
+            // MARK: Background Removal AI
+            Section {
+                AIBackgroundRemovalSettingsRow()
+                    .padding(.vertical, 8)
+            } header: {
+                Text("AI Features")
+            } footer: {
+                Text("Requires Python 3. ~400MB download.")
+            }
+            
             // MARK: Alfred Integration
             Section {
                 VStack(alignment: .leading, spacing: 12) {
@@ -1144,7 +1154,7 @@ struct SettingsView: View {
                         Image(nsImage: NSWorkspace.shared.icon(forFile: appPath.path))
                             .resizable()
                             .frame(width: 24, height: 24)
-                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     } else {
                         Image(systemName: "app.fill")
                             .font(.system(size: 20))
@@ -1225,7 +1235,7 @@ struct SettingsView: View {
                                     Image(nsImage: icon)
                                         .resizable()
                                         .frame(width: 28, height: 28)
-                                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                                 }
                                 
                                 VStack(alignment: .leading) {
@@ -2544,3 +2554,93 @@ struct DropIndicatorPreview: View {
     }
 }
 
+// MARK: - AI Background Removal Settings Row
+
+/// Settings row for managing AI background removal with one-click install
+struct AIBackgroundRemovalSettingsRow: View {
+    @ObservedObject private var manager = AIInstallManager.shared
+    @State private var isHoveringSetup = false
+    @State private var showInstallSheet = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 14) {
+                // AI Icon - Custom DroppyAI asset
+                Image("DroppyAI")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 44, height: 44)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("AI Background Removal")
+                        .font(.headline)
+                    
+                    Text("Remove backgrounds from images using InSPyReNet AI. One-click install, works offline.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    
+                    if manager.isInstalled {
+                        HStack(spacing: 4) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text("Installed")
+                                .foregroundStyle(.green)
+                        }
+                        .font(.caption.weight(.medium))
+                    }
+                    
+                    Button {
+                        showInstallSheet = true
+                    } label: {
+                        Group {
+                            if manager.isInstalled {
+                                Text("Manage")
+                                    .fontWeight(.medium)
+                            } else {
+                                HStack(spacing: 8) {
+                                    Text("Install AI")
+                                        .fontWeight(.semibold)
+                                    Image(systemName: "arrow.down.circle.fill")
+                                        .font(.caption.weight(.semibold))
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(
+                            Group {
+                                if manager.isInstalled {
+                                    Color.white.opacity(isHoveringSetup ? 0.15 : 0.1)
+                                } else {
+                                    Color.blue.opacity(isHoveringSetup ? 1.0 : 0.85)
+                                }
+                            }
+                        )
+                        .foregroundStyle(manager.isInstalled ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.white))
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .onHover { hovering in
+                        withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                            isHoveringSetup = hovering
+                        }
+                    }
+                    .padding(.top, 4)
+                }
+            }
+        }
+        .sheet(isPresented: $showInstallSheet) {
+            AIInstallView()
+        }
+    }
+}
+
+// Keep old struct for compatibility but mark deprecated
+@available(*, deprecated, renamed: "AIBackgroundRemovalSettingsRow")
+struct BackgroundRemovalSettingsRow: View {
+    var body: some View {
+        AIBackgroundRemovalSettingsRow()
+    }
+}

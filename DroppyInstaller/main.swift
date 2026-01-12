@@ -194,9 +194,9 @@ struct InstallerView: View {
                                     : Color.blue.opacity(isLaunchHovering ? 1.0 : 0.8)
                             )
                             .foregroundStyle(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
                                     .stroke(Color.white.opacity(0.2), lineWidth: 1)
                             )
                         }

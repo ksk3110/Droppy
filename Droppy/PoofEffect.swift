@@ -22,27 +22,27 @@ struct PoofEffect: View {
     
     var body: some View {
         ZStack {
-            // Center flash
+            // Center flash - sized to match file icon (44x44)
             Circle()
                 .fill(
                     RadialGradient(
                         colors: [.white.opacity(0.8), .white.opacity(0)],
                         center: .center,
                         startRadius: 0,
-                        endRadius: 30
+                        endRadius: 22
                     )
                 )
-                .frame(width: 60, height: 60)
+                .frame(width: 44, height: 44)
                 .scaleEffect(centerScale)
                 .opacity(centerOpacity)
             
-            // Success checkmark
+            // Success checkmark - sized to match shield icon (22pt)
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 28, weight: .bold))
+                .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(.green)
                 .scaleEffect(checkmarkScale)
                 .opacity(checkmarkOpacity)
-                .shadow(color: .green.opacity(0.5), radius: 8, x: 0, y: 2)
+                .shadow(color: .green.opacity(0.5), radius: 6, x: 0, y: 2)
             
             // Floating particles
             ForEach(particles) { particle in
@@ -83,10 +83,10 @@ struct PoofEffect: View {
             centerOpacity = 1.0
         }
         
-        // Particles burst outward
+        // Particles burst outward - reduced distance to fit 44x44 area
         withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
             for i in particles.indices {
-                let distance = CGFloat.random(in: 25...45)
+                let distance = CGFloat.random(in: 18...32)
                 particles[i].offset = CGSize(
                     width: cos(particles[i].angle) * distance,
                     height: sin(particles[i].angle) * distance

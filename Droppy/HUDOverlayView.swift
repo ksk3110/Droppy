@@ -309,7 +309,7 @@ struct MediaHUDView: View {
                             }
                         }
                         .frame(width: 26, height: 26)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
                         .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
                         Spacer(minLength: 0)
                     }

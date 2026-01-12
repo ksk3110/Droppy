@@ -431,7 +431,13 @@ class FileConverter {
         
         do {
             try process.run()
-            process.waitUntilExit()
+            
+            // Non-blocking wait using async continuation
+            await withCheckedContinuation { continuation in
+                process.terminationHandler = { _ in
+                    continuation.resume()
+                }
+            }
             
             // Cleanup work directory
             try? FileManager.default.removeItem(at: workDir)

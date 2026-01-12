@@ -6,13 +6,10 @@
 //
 
 import Foundation
-@preconcurrency import Vision
-import CoreImage
 import AppKit
 import Combine
 
-/// Manages AI-powered background removal using Apple Vision framework
-/// Uses VNGenerateForegroundInstanceMaskRequest (macOS 14+) for subject isolation
+/// Manages AI-powered background removal using transparent-background Python library
 @MainActor
 final class BackgroundRemovalManager: ObservableObject {
     static let shared = BackgroundRemovalManager()
@@ -35,97 +32,33 @@ final class BackgroundRemovalManager: ObservableObject {
             progress = 1.0
         }
         
-        // Load image
-        guard let ciImage = CIImage(contentsOf: url) else {
+        // Verify image exists
+        guard FileManager.default.fileExists(atPath: url.path) else {
             throw BackgroundRemovalError.failedToLoadImage
         }
         
-        progress = 0.2
+        progress = 0.1
         
-        // Remove background
-        let outputImage = try await removeBackground(from: ciImage)
-        
+        // Use Python transparent-background
+        print("[BG Removal] Using transparent-background Python")
+        let outputData = try await removeBackgroundWithPython(imageURL: url)
         progress = 0.8
         
-        // Save as PNG
-        let outputURL = url.deletingPathExtension()
-            .appendingPathExtension("_nobg")
-            .appendingPathExtension("png")
-        
+        // Generate output path
+        let baseName = url.deletingPathExtension().lastPathComponent
+        let directory = url.deletingLastPathComponent()
+        let outputURL = directory.appendingPathComponent("\(baseName)_nobg.png")
         let finalURL = generateUniqueURL(for: outputURL)
-        try saveAsPNG(image: outputImage, to: finalURL)
+        
+        // Write to file
+        try outputData.write(to: finalURL)
         
         progress = 1.0
         
         return finalURL
     }
     
-    /// Remove background from a CIImage
-    /// - Parameter image: Source CIImage
-    /// - Returns: CIImage with transparent background
-    nonisolated func removeBackground(from image: CIImage) async throws -> CIImage {
-        // Create foreground mask request
-        let request = VNGenerateForegroundInstanceMaskRequest()
-        
-        // Create request handler
-        let handler = VNImageRequestHandler(ciImage: image, options: [:])
-        
-        // Perform request synchronously on background thread
-        try await Task.detached {
-            try handler.perform([request])
-        }.value
-        
-        // Get the mask observation
-        guard let observation = request.results?.first else {
-            throw BackgroundRemovalError.noMaskGenerated
-        }
-        
-        // Generate the mask as CIImage
-        let maskPixelBuffer = try observation.generateScaledMaskForImage(
-            forInstances: observation.allInstances,
-            from: handler
-        )
-        
-        let maskCIImage = CIImage(cvPixelBuffer: maskPixelBuffer)
-        
-        // Apply mask to original image using blend filter
-        guard let blendFilter = CIFilter(name: "CIBlendWithMask") else {
-            throw BackgroundRemovalError.filterCreationFailed
-        }
-        
-        // Create transparent background
-        let transparentBackground = CIImage.empty()
-        
-        blendFilter.setValue(image, forKey: kCIInputImageKey)
-        blendFilter.setValue(transparentBackground, forKey: kCIInputBackgroundImageKey)
-        blendFilter.setValue(maskCIImage, forKey: kCIInputMaskImageKey)
-        
-        guard let outputImage = blendFilter.outputImage else {
-            throw BackgroundRemovalError.blendFailed
-        }
-        
-        return outputImage
-    }
-    
     // MARK: - Private Helpers
-    
-    private func saveAsPNG(image: CIImage, to url: URL) throws {
-        let context = CIContext()
-        
-        // Render to CGImage
-        guard let cgImage = context.createCGImage(image, from: image.extent) else {
-            throw BackgroundRemovalError.renderFailed
-        }
-        
-        // Create PNG representation
-        let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
-        guard let pngData = bitmapRep.representation(using: .png, properties: [:]) else {
-            throw BackgroundRemovalError.pngEncodingFailed
-        }
-        
-        // Write to file
-        try pngData.write(to: url)
-    }
     
     private func generateUniqueURL(for url: URL) -> URL {
         var finalURL = url
@@ -144,32 +77,105 @@ final class BackgroundRemovalManager: ObservableObject {
         
         return finalURL
     }
+    
+    /// Remove background using Python transparent-background library
+    nonisolated func removeBackgroundWithPython(imageURL: URL) async throws -> Data {
+        // Create temporary output file
+        let tempDir = FileManager.default.temporaryDirectory
+        let outputURL = tempDir.appendingPathComponent(UUID().uuidString + "_nobg.png")
+        
+        // Find Python3
+        let pythonPaths = ["/usr/bin/python3", "/usr/local/bin/python3", "/opt/homebrew/bin/python3"]
+        var pythonPath: String?
+        for path in pythonPaths {
+            if FileManager.default.fileExists(atPath: path) {
+                pythonPath = path
+                break
+            }
+        }
+        
+        guard let python = pythonPath else {
+            throw BackgroundRemovalError.pythonNotInstalled
+        }
+        
+        // Run transparent-background command
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: python)
+        process.arguments = [
+            "-c",
+            """
+            from transparent_background import Remover
+            from PIL import Image
+            import sys
+            import gc
+            
+            try:
+                img = Image.open('\(imageURL.path)').convert('RGB')
+                remover = Remover(mode='base')
+                result = remover.process(img, type='rgba')
+                result.save('\(outputURL.path)', 'PNG')
+                
+                # Explicit memory cleanup - critical for large models
+                del remover
+                del img
+                del result
+                gc.collect()
+                
+                print('OK')
+            except Exception as e:
+                print(f'ERROR: {e}', file=sys.stderr)
+                sys.exit(1)
+            """
+        ]
+        
+        let outputPipe = Pipe()
+        let errorPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = errorPipe
+        
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            process.terminationHandler = { process in
+                if process.terminationStatus == 0 {
+                    continuation.resume()
+                } else {
+                    let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+                    let errorMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
+                    continuation.resume(throwing: BackgroundRemovalError.pythonScriptFailed(errorMessage))
+                }
+            }
+            
+            do {
+                try process.run()
+            } catch {
+                continuation.resume(throwing: BackgroundRemovalError.pythonNotInstalled)
+            }
+        }
+        
+        // Read output file
+        let outputData = try Data(contentsOf: outputURL)
+        
+        // Clean up temp file
+        try? FileManager.default.removeItem(at: outputURL)
+        
+        return outputData
+    }
 }
 
 // MARK: - Errors
 
 enum BackgroundRemovalError: LocalizedError {
     case failedToLoadImage
-    case noMaskGenerated
-    case filterCreationFailed
-    case blendFailed
-    case renderFailed
-    case pngEncodingFailed
+    case pythonNotInstalled
+    case pythonScriptFailed(String)
     
     var errorDescription: String? {
         switch self {
         case .failedToLoadImage:
             return "Failed to load image"
-        case .noMaskGenerated:
-            return "Could not detect foreground subject"
-        case .filterCreationFailed:
-            return "Failed to create blend filter"
-        case .blendFailed:
-            return "Failed to apply mask to image"
-        case .renderFailed:
-            return "Failed to render output image"
-        case .pngEncodingFailed:
-            return "Failed to encode as PNG"
+        case .pythonNotInstalled:
+            return "Python or transparent-background not installed. Run: pip3 install transparent-background"
+        case .pythonScriptFailed(let message):
+            return "Background removal failed: \(message)"
         }
     }
 }

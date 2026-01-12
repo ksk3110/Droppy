@@ -125,9 +125,24 @@ struct DroppedItem: Identifiable, Hashable, Transferable {
         NSWorkspace.shared.open([url], withApplicationAt: applicationURL, configuration: NSWorkspace.OpenConfiguration())
     }
     
-    /// Gets the list of applications that can open this file
+    // MARK: - Available Apps Cache (Static)
+    
+    /// Cache for available apps by file extension (reduces expensive system queries)
+    private static var availableAppsCache: [String: (apps: [(name: String, icon: NSImage, url: URL)], timestamp: Date)] = [:]
+    private static let cacheTTL: TimeInterval = 60 // 60 second cache
+    
+    /// Gets the list of applications that can open this file (cached)
     /// Returns an array of (name, icon, URL) tuples sorted by name
     func getAvailableApplications() -> [(name: String, icon: NSImage, url: URL)] {
+        let ext = url.pathExtension.lowercased()
+        
+        // Check cache first
+        if let cached = DroppedItem.availableAppsCache[ext],
+           Date().timeIntervalSince(cached.timestamp) < DroppedItem.cacheTTL {
+            return cached.apps
+        }
+        
+        // Query the system
         let appURLs = NSWorkspace.shared.urlsForApplications(toOpen: url)
         
         var apps: [(name: String, icon: NSImage, url: URL)] = []
@@ -139,7 +154,12 @@ struct DroppedItem: Identifiable, Hashable, Transferable {
         }
         
         // Sort by name alphabetically
-        return apps.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        let sorted = apps.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        
+        // Cache the result
+        DroppedItem.availableAppsCache[ext] = (apps: sorted, timestamp: Date())
+        
+        return sorted
     }
     
     /// Reveals the file in Finder
