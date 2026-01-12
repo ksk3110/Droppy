@@ -524,7 +524,7 @@ struct SettingsView: View {
                         case .finder, .finderServices:
                             NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.Keyboard-Settings.extension")!)
                         case .spotify:
-                            SpotifyAuthManager.shared.startAuth()
+                            SpotifyAuthManager.shared.startAuthentication()
                         case .elementCapture, .aiBackgroundRemoval:
                             break // No action needed
                         }
