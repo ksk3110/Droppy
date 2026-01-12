@@ -313,24 +313,33 @@ class ClipboardWindowController: NSObject, NSWindowDelegate {
         // First check WITHOUT prompting - use AXIsProcessTrusted() instead of AXIsProcessTrustedWithOptions with prompt
         let isAccessibilityTrusted = AXIsProcessTrusted()
         
+        // Cache the grant if we just got accessibility
+        if isAccessibilityTrusted {
+            UserDefaults.standard.set(true, forKey: "accessibilityGranted")
+        }
+        
+        // Use cached grant to prevent re-prompting after user grants but before TCC syncs
+        let hasCachedAccessibility = UserDefaults.standard.bool(forKey: "accessibilityGranted")
+        let accessibilityOk = isAccessibilityTrusted || hasCachedAccessibility
+        
         // Input Monitoring Check
         // First check the runtime variable, then fall back to cached grant
         // The cache persists across launches when IOHIDManager has successfully opened before
         let isInputMonitoringActive = globalHotKey?.isInputMonitoringActive ?? false
-        let hasCachedGrant = UserDefaults.standard.bool(forKey: "inputMonitoringGranted")
+        let hasCachedInputGrant = UserDefaults.standard.bool(forKey: "inputMonitoringGranted")
         
         // If either the runtime check passes OR we have a cached successful grant, consider it active
         // This prevents repeated prompts when TCC is slow to respond
-        let inputMonitoringOk = isInputMonitoringActive || hasCachedGrant
+        let inputMonitoringOk = isInputMonitoringActive || hasCachedInputGrant
         
         // If all permissions are granted, return without prompting
-        if isAccessibilityTrusted && inputMonitoringOk {
+        if accessibilityOk && inputMonitoringOk {
             return
         }
         
         // Build message with missing permissions
         var missingPermissions: [String] = []
-        if !isAccessibilityTrusted { missingPermissions.append("• Accessibility (for Paste)") }
+        if !accessibilityOk { missingPermissions.append("• Accessibility (for Paste)") }
         if !inputMonitoringOk { missingPermissions.append("• Input Monitoring (for Global Hotkey)") }
         
         let message = "To work in password fields and all apps, Droppy needs:\n\n" +
