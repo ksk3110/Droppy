@@ -889,12 +889,15 @@ struct OnboardingView: View {
     
     private func extensionHighlight(icon: String, color: Color, title: String, description: String) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(color)
-                .frame(width: 36, height: 36)
-                .background(color.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            // Dark squircle background (consistent with Settings)
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color(white: 0.15))
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(color)
+            }
+            .frame(width: 36, height: 36)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)

@@ -2991,13 +2991,15 @@ struct ElementCaptureCard: View {
         VStack(alignment: .leading, spacing: 12) {
             // Header with icon
             HStack(alignment: .top) {
-                // Icon with squircle background (matching onboarding style)
-                Image(systemName: "viewfinder")
-                    .font(.system(size: 22, weight: .medium))
-                    .foregroundStyle(.orange)
-                    .frame(width: 44, height: 44)
-                    .background(Color.orange.opacity(0.15))
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                // Icon with dark squircle background (consistent with all extensions)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color(white: 0.15))
+                    Image(systemName: "viewfinder")
+                        .font(.system(size: 22, weight: .medium))
+                        .foregroundStyle(.orange)
+                }
+                .frame(width: 44, height: 44)
                 
                 Spacer()
                 

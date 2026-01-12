@@ -156,13 +156,15 @@ enum ExtensionType: String, CaseIterable, Identifiable {
             }
             .frame(width: 64, height: 64)
         case .elementCapture:
-            // Same as ElementCaptureCard - with squircle background
-            Image(systemName: "viewfinder")
-                .font(.system(size: 32, weight: .medium))
-                .foregroundStyle(.orange)
-                .frame(width: 64, height: 64)
-                .background(Color.orange.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            // Same as ElementCaptureCard - with dark squircle background
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(white: 0.15))
+                Image(systemName: "viewfinder")
+                    .font(.system(size: 32, weight: .medium))
+                    .foregroundStyle(.orange)
+            }
+            .frame(width: 64, height: 64)
         }
     }
 }
@@ -382,14 +384,16 @@ struct ElementCaptureInfoView: View {
     
     private var headerSection: some View {
         VStack(spacing: 12) {
-            // Icon - with squircle background matching onboarding
-            Image(systemName: "viewfinder")
-                .font(.system(size: 32, weight: .medium))
-                .foregroundStyle(.orange)
-                .frame(width: 64, height: 64)
-                .background(Color.orange.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .shadow(color: Color.orange.opacity(0.3), radius: 8, y: 4)
+            // Icon - with dark squircle background matching all extensions
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(white: 0.15))
+                Image(systemName: "viewfinder")
+                    .font(.system(size: 32, weight: .medium))
+                    .foregroundStyle(.orange)
+            }
+            .frame(width: 64, height: 64)
+            .shadow(color: Color.orange.opacity(0.3), radius: 8, y: 4)
             
             Text("Element Capture")
                 .font(.title2.bold())
