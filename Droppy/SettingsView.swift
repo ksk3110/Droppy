@@ -3054,12 +3054,12 @@ struct ElementCaptureCard: View {
 
 struct AIBackgroundRemovalSettingsRow: View {
     @ObservedObject private var manager = AIInstallManager.shared
-    @State private var isHoveringSetup = false
     @State private var showInstallSheet = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 14) {
+            // Header with icon
+            HStack(alignment: .top) {
                 // AI Icon - Custom DroppyAI asset
                 Image("DroppyAI")
                     .resizable()
@@ -3067,64 +3067,56 @@ struct AIBackgroundRemovalSettingsRow: View {
                     .frame(width: 44, height: 44)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("AI Background Removal")
-                        .font(.headline)
-                    
-                    Text("Remove backgrounds from images using InSPyReNet AI. One-click install, works offline.")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    
-                    if manager.isInstalled {
-                        HStack(spacing: 4) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                            Text("Installed")
-                                .foregroundStyle(.green)
-                        }
-                        .font(.caption.weight(.medium))
-                    }
-                    
-                    Button {
-                        showInstallSheet = true
-                    } label: {
-                        Group {
-                            if manager.isInstalled {
-                                Text("Manage")
-                                    .fontWeight(.medium)
-                            } else {
-                                HStack(spacing: 8) {
-                                    Text("Install AI")
-                                        .fontWeight(.semibold)
-                                    Image(systemName: "arrow.down.circle.fill")
-                                        .font(.caption.weight(.semibold))
-                                }
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(
-                            Group {
-                                if manager.isInstalled {
-                                    Color.white.opacity(isHoveringSetup ? 0.15 : 0.1)
-                                } else {
-                                    Color.blue.opacity(isHoveringSetup ? 1.0 : 0.85)
-                                }
-                            }
-                        )
-                        .foregroundStyle(manager.isInstalled ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.white))
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                    .onHover { hovering in
-                        withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
-                            isHoveringSetup = hovering
-                        }
-                    }
-                    .padding(.top, 4)
-                }
+                Spacer()
+                
+                // Clean grey badge
+                Text("AI")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.1))
+                    )
             }
+            
+            // Title & Description
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Background Removal")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                
+                Text("Remove backgrounds from images using AI. Works offline.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            
+            Spacer(minLength: 8)
+            
+            // Status
+            if manager.isInstalled {
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(Color.green)
+                        .frame(width: 6, height: 6)
+                    Text("Installed")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.green)
+                }
+            } else {
+                Text("One-click install")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .frame(minHeight: 160)
+        .aiExtensionCardStyle()
+        .contentShape(Rectangle())
+        .onTapGesture {
+            showInstallSheet = true
         }
         .sheet(isPresented: $showInstallSheet) {
             AIInstallView()
