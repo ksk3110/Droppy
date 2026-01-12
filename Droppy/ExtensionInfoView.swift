@@ -134,17 +134,27 @@ enum ExtensionType: String, CaseIterable, Identifiable {
             }
             .frame(width: 64, height: 64)
         case .finder, .finderServices:
-            // Same as FinderExtensionCard - official Finder icon
-            Image(nsImage: NSWorkspace.shared.icon(forFile: "/System/Library/CoreServices/Finder.app"))
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 64, height: 64)
+            // Same as FinderExtensionCard - with squircle background
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(white: 0.15))
+                Image(nsImage: NSWorkspace.shared.icon(forFile: "/System/Library/CoreServices/Finder.app"))
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .padding(4)
+            }
+            .frame(width: 64, height: 64)
         case .spotify:
-            // Same as SpotifyExtensionCard
-            Image("SpotifyIcon")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 64, height: 64)
+            // Same as SpotifyExtensionCard - with squircle background
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(white: 0.15))
+                Image("SpotifyIcon")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .padding(4)
+            }
+            .frame(width: 64, height: 64)
         case .elementCapture:
             // Same as ElementCaptureCard - with squircle background
             Image(systemName: "viewfinder")
