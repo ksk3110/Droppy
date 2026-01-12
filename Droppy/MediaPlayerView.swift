@@ -530,7 +530,6 @@ struct SpotifyBadge: View {
             .resizable()
             .aspectRatio(contentMode: .fit)
             .frame(width: 20, height: 20)
-            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
             .shadow(color: .black.opacity(0.4), radius: 2, y: 1)
     }
 }

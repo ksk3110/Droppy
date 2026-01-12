@@ -17,7 +17,7 @@ enum OnboardingPage: Int, CaseIterable {
     case basket
     case clipboard
     case huds
-    case alfred
+    case alfred  // Renamed to extensions but keeping enum name for UserDefaults compatibility
     case finish
     
     /// Whether this page should be shown for the current device
@@ -40,7 +40,7 @@ enum OnboardingPage: Int, CaseIterable {
         case .basket: return "Floating Basket"
         case .clipboard: return "Clipboard History"
         case .huds: return "System HUDs"
-        case .alfred: return "Alfred Integration"
+        case .alfred: return "Extensions"
         case .finish: return "You're All Set!"
         }
     }
@@ -53,7 +53,7 @@ enum OnboardingPage: Int, CaseIterable {
         case .basket: return "A floating drop zone that follows your cursor"
         case .clipboard: return "Never lose copied text or images again"
         case .huds: return "Beautiful replacements for system controls"
-        case .alfred: return "Add files to Droppy from Alfred"
+        case .alfred: return "Extend Droppy with powerful add-ons"
         case .finish: return "Start using Droppy"
         }
     }
@@ -66,7 +66,7 @@ enum OnboardingPage: Int, CaseIterable {
         case .basket: return "basket"
         case .clipboard: return "doc.on.clipboard"
         case .huds: return "slider.horizontal.3"
-        case .alfred: return "command"
+        case .alfred: return "puzzlepiece.extension"
         case .finish: return "checkmark.circle.fill"
         }
     }
@@ -773,56 +773,66 @@ struct OnboardingView: View {
         )
     }
     
-    // MARK: - Alfred Page
+    // MARK: - Extensions Page (Previously Alfred Page)
     
     private var alfredPage: some View {
         VStack(spacing: 16) {
             Spacer()
             
-            // Alfred Icon
-            Image("AlfredIcon")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 60, height: 60)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
+            // Extensions icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(LinearGradient(
+                        colors: [.purple, .blue],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ))
+                Image(systemName: "puzzlepiece.extension.fill")
+                    .font(.system(size: 28, weight: .medium))
+                    .foregroundStyle(.white)
+            }
+            .frame(width: 60, height: 60)
+            .shadow(color: .purple.opacity(0.3), radius: 8, y: 4)
             
             VStack(spacing: 8) {
-                Text("Alfred Integration")
+                Text("Extensions")
                     .font(.title.bold())
                     .foregroundStyle(.white)
                 
-                Text("Use Alfred to quickly add files to Droppy. Select files in Finder, trigger Alfred, and send them to your Shelf or Basket.")
+                Text("Supercharge Droppy with powerful extensions. Access AI features, productivity tools, and integrations.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 50)
             }
             
-            Button {
-                if let workflowURL = Bundle.main.url(forResource: "Droppy", withExtension: "alfredworkflow") {
-                    NSWorkspace.shared.open(workflowURL)
-                }
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "arrow.down.circle.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                    Text("Install Alfred Workflow")
-                        .fontWeight(.semibold)
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(Color.purple.opacity(0.8))
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            // Featured extensions
+            VStack(spacing: 12) {
+                extensionHighlight(
+                    icon: "wand.and.stars",
+                    color: .pink,
+                    title: "AI Background Removal",
+                    description: "Remove backgrounds from images locally"
+                )
+                
+                extensionHighlight(
+                    icon: "viewfinder",
+                    color: .orange,
+                    title: "Element Capture",
+                    description: "Screenshot any UI element with one click"
+                )
+                
+                extensionHighlight(
+                    icon: "command",
+                    color: .purple,
+                    title: "Alfred Workflow",
+                    description: "Push files from Alfred to Droppy"
                 )
             }
-            .buttonStyle(OptionButtonStyle())
+            .padding(.horizontal, 60)
+            .padding(.vertical, 16)
             
-            Text("Requires Alfred 4+ with Powerpack")
+            Text("Find all extensions in Settings → Extensions")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             
@@ -832,6 +842,32 @@ struct OnboardingView: View {
             insertion: .move(edge: .trailing).combined(with: .opacity),
             removal: .move(edge: .leading).combined(with: .opacity)
         ))
+    }
+    
+    private func extensionHighlight(icon: String, color: Color, title: String, description: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(color)
+                .frame(width: 36, height: 36)
+                .background(color.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Color.white.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
     
     // MARK: - Finish Page

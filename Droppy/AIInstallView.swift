@@ -131,12 +131,8 @@ struct AIInstallView: View {
                         .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: false), value: pulseAnimation)
                 }
                 
-                // Main icon - Use custom DroppyAI asset
-                Image("DroppyAI")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 64, height: 64)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                // Main icon - Droppy with magic sparkle overlay
+                AIExtensionIcon(size: 64)
                     .shadow(color: manager.isInstalled ? .green.opacity(0.4) : .purple.opacity(0.3), radius: 8, y: 4)
                     .scaleEffect(manager.isInstalled ? 1.05 : 1.0)
                     .animation(.spring(response: 0.4, dampingFraction: 0.6), value: manager.isInstalled)

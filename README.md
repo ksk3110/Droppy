@@ -88,6 +88,7 @@ Now Playing controls with album art, seek slider, and native Spotify integration
 | Feature | Description |
 |:---|:---|
 | 🤖 **AI Background Removal** | Local, on-device AI removes backgrounds from images — works in bulk! |
+| 📸 **Element Capture** | Screenshot any UI element by clicking on it — copies to clipboard! |
 | **The Shelf** | Drag files to your notch — they vanish into a sleek shelf |
 | **Floating Basket** | Jiggle your cursor while dragging to summon a basket anywhere |
 | **Clipboard Manager** | Full history with search, favorites, OCR, and drag-out |
@@ -101,6 +102,25 @@ Now Playing controls with album art, seek slider, and native Spotify integration
 | <img src="https://www.alfredapp.com/media/logo4@2x.png" width="16"> **Alfred Integration** | Push files from Alfred workflows |
 | **Dynamic Island** | Non-notch Macs get a beautiful pill interface |
 | **Multi-Monitor** | Works on external displays with fullscreen detection |
+
+---
+
+## 🧩 Extension Store
+
+<p align="center">
+  <em>Supercharge Droppy with powerful add-ons — all built-in, no downloads required.</em>
+</p>
+
+Access the Extension Store in **Settings → Extensions** to discover and enable features:
+
+| Extension | What it Does |
+|:---|:---|
+| 🤖 **AI Background Removal** | Remove backgrounds from images locally using on-device AI. Works in bulk! |
+| 📸 **Element Capture** | Screenshot any UI element with a custom keyboard shortcut — auto-copies to clipboard |
+| <img src="https://www.alfredapp.com/media/logo4@2x.png" width="16"> **Alfred Workflow** | Push files from Alfred to your Shelf or Basket instantly |
+| 🎵 **Spotify Integration** | Deep native integration with shuffle, repeat, and precise seek |
+
+> 💡 **All extensions are free and built-in.** Just toggle them on in Settings!
 
 ---
 

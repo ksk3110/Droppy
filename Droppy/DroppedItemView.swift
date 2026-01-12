@@ -167,7 +167,7 @@ struct DroppedItemView: View {
                     Button {
                         // No action - just informational
                     } label: {
-                        Label("Remove Background (Settings > Integrations)", systemImage: "person.and.background.dotted")
+                        Label("Remove Background (Settings > Extensions)", systemImage: "person.and.background.dotted")
                     }
                     .disabled(true)
                 }

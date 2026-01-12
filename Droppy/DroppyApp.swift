@@ -17,25 +17,74 @@ struct DroppyApp: App {
     
     var body: some Scene {
         MenuBarExtra("Droppy", image: "MenuBarIcon", isInserted: $showInMenuBar) {
-            Button("Check for Updates...") {
-                UpdateChecker.shared.checkAndNotify()
-            }
-            
-            Divider()
-            
-            Button("Settings...") {
-                SettingsWindowController.shared.showSettings()
-            }
-            .keyboardShortcut(",", modifiers: .command)
-            
-            Divider()
-            
-            Button("Quit Droppy") {
-                NSApplication.shared.terminate(nil)
-            }
-            .keyboardShortcut("q", modifiers: .command)
+            DroppyMenuContent()
         }
     }
+}
+
+/// Menu content with Element Capture (shows configured shortcut)
+struct DroppyMenuContent: View {
+    // Track shortcut changes via notification
+    @State private var shortcutRefreshId = UUID()
+    
+    // Load saved shortcut for native keyboard shortcut display
+    private var savedShortcut: SavedShortcut? {
+        // Force re-evaluation when shortcutRefreshId changes
+        _ = shortcutRefreshId
+        if let data = UserDefaults.standard.data(forKey: "elementCaptureShortcut"),
+           let decoded = try? JSONDecoder().decode(SavedShortcut.self, from: data) {
+            return decoded
+        }
+        return nil
+    }
+    
+    var body: some View {
+        Button("Check for Updates...") {
+            UpdateChecker.shared.checkAndNotify()
+        }
+        
+        Divider()
+        
+        // Element Capture with native keyboard shortcut styling
+        elementCaptureButton
+            .id(shortcutRefreshId)  // Force rebuild when shortcut changes
+        
+        Divider()
+        
+        Button("Settings...") {
+            SettingsWindowController.shared.showSettings()
+        }
+        .keyboardShortcut(",", modifiers: .command)
+        
+        Divider()
+        
+        Button("Quit Droppy") {
+            NSApplication.shared.terminate(nil)
+        }
+        .keyboardShortcut("q", modifiers: .command)
+        .onReceive(NotificationCenter.default.publisher(for: .elementCaptureShortcutChanged)) { _ in
+            shortcutRefreshId = UUID()
+        }
+    }
+    
+    @ViewBuilder
+    private var elementCaptureButton: some View {
+        if let shortcut = savedShortcut, let key = shortcut.keyEquivalent {
+            Button("Element Capture") {
+                ElementCaptureManager.shared.startCaptureMode()
+            }
+            .keyboardShortcut(key, modifiers: shortcut.eventModifiers)
+        } else {
+            Button("Element Capture") {
+                ElementCaptureManager.shared.startCaptureMode()
+            }
+        }
+    }
+}
+
+// Notification for shortcut changes
+extension Notification.Name {
+    static let elementCaptureShortcutChanged = Notification.Name("elementCaptureShortcutChanged")
 }
 
 /// App delegate to manage application lifecycle and notch window
@@ -68,6 +117,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _ = UpdateChecker.shared
         _ = ClipboardManager.shared
         _ = ClipboardWindowController.shared
+        
+        // Load Element Capture shortcuts (after all other singletons are ready)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            ElementCaptureManager.shared.loadAndStartMonitoring()
+        }
         
         // Start analytics (anonymous launch tracking)
         AnalyticsService.shared.logAppLaunch()

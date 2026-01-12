@@ -3,7 +3,7 @@
 //  Droppy
 //
 //  Guides users through enabling Finder Services in System Settings
-//  Required because macOS doesn't allow programmatic enabling of services
+//  Design matches AIInstallView for visual consistency
 //
 
 import SwiftUI
@@ -12,132 +12,291 @@ import AppKit
 // MARK: - Finder Services Setup View
 
 struct FinderServicesSetupView: View {
-    @AppStorage("useTransparentBackground") private var useTransparentBackground = false
-    
-    @State private var isOpenHovering = false
-    @State private var isDoneHovering = false
+    @State private var isHoveringAction = false
+    @State private var isHoveringCancel = false
     @State private var hasOpenedSettings = false
     
     let onComplete: () -> Void
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header with icon and info
-            HStack(spacing: 14) {
-                Image(nsImage: NSWorkspace.shared.icon(forFile: "/System/Library/CoreServices/Finder.app"))
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 56, height: 56)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Enable Finder Services")
-                        .font(.headline)
-                    
-                    Text("macOS requires you to enable Droppy's services in System Settings.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                
-                Spacer()
-            }
-            .padding(20)
+            // Header - matching AIInstallView structure
+            headerSection
+            
+            // Steps content
+            stepsSection
             
             Divider()
                 .padding(.horizontal, 20)
             
-            // Instructions
-            VStack(alignment: .leading, spacing: 12) {
-                stepRow(number: "1", text: "Click \"Open System Settings\" below")
-                stepRow(number: "2", text: "Click \"Keyboard Shortcuts...\" button")
-                stepRow(number: "3", text: "Select \"Services\" in the left sidebar")
-                stepRow(number: "4", text: "Check \"Add to Droppy Shelf\" and \"Add to Droppy Basket\"")
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(20)
-            
-            Divider()
-                .padding(.horizontal, 20)
-            
-            // Action buttons
-            HStack(spacing: 10) {
-                Button {
-                    onComplete()
-                } label: {
-                    Text("Done")
-                        .fontWeight(.medium)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(Color.white.opacity(isDoneHovering ? 0.15 : 0.08))
-                        .foregroundStyle(.primary)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                        )
-                }
-                .buttonStyle(.plain)
-                .onHover { h in
-                    withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
-                        isDoneHovering = h
-                    }
-                }
-                
-                Spacer()
-                
-                Button {
-                    openServicesSettings()
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        hasOpenedSettings = true
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: hasOpenedSettings ? "checkmark" : "gear")
-                            .font(.system(size: 12, weight: .semibold))
-                        Text(hasOpenedSettings ? "Settings Opened" : "Open System Settings")
-                    }
-                    .fontWeight(.semibold)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background((hasOpenedSettings ? Color.green : Color.blue).opacity(isOpenHovering ? 1.0 : 0.8))
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-                .onHover { h in
-                    withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
-                        isOpenHovering = h
-                    }
-                }
-            }
-            .padding(16)
+            // Action Buttons - matching AIInstallView
+            buttonSection
         }
-        .frame(width: 420)
+        .frame(width: 340)  // Same width as AIInstallView
         .fixedSize(horizontal: false, vertical: true)
-        .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
+        .background(Color.black)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .shadow(color: .black.opacity(0.5), radius: 20, y: 10)
     }
     
-    private func stepRow(number: String, text: String) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Text(number)
-                .font(.caption.weight(.bold))
+    // MARK: - Header
+    
+    private var headerSection: some View {
+        VStack(spacing: 12) {
+            // Icon - Finder icon like AIInstallView uses AIExtensionIcon
+            Image(nsImage: NSWorkspace.shared.icon(forFile: "/System/Library/CoreServices/Finder.app"))
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 64, height: 64)
+                .shadow(color: .blue.opacity(0.3), radius: 8, y: 4)
+            
+            Text("Enable Finder Services")
+                .font(.title2.bold())
                 .foregroundStyle(.white)
-                .frame(width: 20, height: 20)
+            
+            Text("One-time setup in System Settings")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.top, 24)
+        .padding(.bottom, 20)
+    }
+    
+    // MARK: - Steps
+    
+    private var stepsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            stepRow(number: 1, text: "Click \"Open Settings\" below")
+            stepRow(number: 2, text: "Click \"Keyboard Shortcuts...\" button")
+            stepRow(number: 3, text: "Select \"Services\" in the left sidebar")
+            stepRow(number: 4, text: "Enable \"Add to Droppy Shelf\" and \"Add to Droppy Basket\"")
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 20)
+    }
+    
+    private func stepRow(number: Int, text: String) -> some View {
+        HStack(spacing: 12) {
+            Text("\(number)")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 22, height: 22)
                 .background(Color.blue.opacity(0.6))
                 .clipShape(Circle())
             
             Text(text)
-                .font(.system(size: 13))
+                .font(.callout)
                 .foregroundStyle(.primary)
         }
     }
     
+    // MARK: - Buttons
+    
+    private var buttonSection: some View {
+        HStack(spacing: 10) {
+            // Cancel button - matching AIInstallView secondary style
+            Button {
+                onComplete()
+            } label: {
+                Text("Done")
+                    .fontWeight(.medium)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Color.white.opacity(isHoveringCancel ? 0.15 : 0.1))
+                    .foregroundStyle(.secondary)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .onHover { h in
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                    isHoveringCancel = h
+                }
+            }
+            
+            Spacer()
+            
+            // Action button - matching AIInstallView primary style
+            Button {
+                openServicesSettings()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    hasOpenedSettings = true
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: hasOpenedSettings ? "checkmark" : "gear")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text(hasOpenedSettings ? "Opened" : "Open Settings")
+                }
+                .fontWeight(.semibold)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background((hasOpenedSettings ? Color.green : Color.blue).opacity(isHoveringAction ? 1.0 : 0.85))
+                .foregroundStyle(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+            .onHover { h in
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                    isHoveringAction = h
+                }
+            }
+        }
+        .padding(16)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: hasOpenedSettings)
+    }
+    
     private func openServicesSettings() {
         // Opens System Settings > Keyboard
+        if let url = URL(string: "x-apple.systempreferences:com.apple.Keyboard-Settings.extension") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+}
+
+// MARK: - Sheet View (for SwiftUI .sheet presentation)
+
+/// Sheet-compatible version that uses @Environment(\.dismiss) like AIInstallView
+struct FinderServicesSetupSheetView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var isHoveringAction = false
+    @State private var isHoveringCancel = false
+    @State private var hasOpenedSettings = false
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header - matching AIInstallView structure
+            headerSection
+            
+            // Steps content
+            stepsSection
+            
+            Divider()
+                .padding(.horizontal, 20)
+            
+            // Action Buttons - matching AIInstallView
+            buttonSection
+        }
+        .frame(width: 340)  // Same width as AIInstallView
+        .fixedSize(horizontal: false, vertical: true)
+        .background(Color.black)
+        .clipped()  // Same as AIInstallView
+    }
+    
+    // MARK: - Header
+    
+    private var headerSection: some View {
+        VStack(spacing: 12) {
+            // Icon - Finder icon
+            Image(nsImage: NSWorkspace.shared.icon(forFile: "/System/Library/CoreServices/Finder.app"))
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 64, height: 64)
+                .shadow(color: .blue.opacity(0.3), radius: 8, y: 4)
+            
+            Text("Enable Finder Services")
+                .font(.title2.bold())
+                .foregroundStyle(.white)
+            
+            Text("One-time setup in System Settings")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.top, 24)
+        .padding(.bottom, 20)
+    }
+    
+    // MARK: - Steps
+    
+    private var stepsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            stepRow(number: 1, text: "Click \"Open Settings\" below")
+            stepRow(number: 2, text: "Click \"Keyboard Shortcuts...\" button")
+            stepRow(number: 3, text: "Select \"Services\" in the left sidebar")
+            stepRow(number: 4, text: "Enable \"Add to Droppy Shelf\" and \"Add to Droppy Basket\"")
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 20)
+    }
+    
+    private func stepRow(number: Int, text: String) -> some View {
+        HStack(spacing: 12) {
+            Text("\(number)")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 22, height: 22)
+                .background(Color.blue.opacity(0.6))
+                .clipShape(Circle())
+            
+            Text(text)
+                .font(.callout)
+                .foregroundStyle(.primary)
+        }
+    }
+    
+    // MARK: - Buttons
+    
+    private var buttonSection: some View {
+        HStack(spacing: 10) {
+            // Cancel button - matching AIInstallView secondary style
+            Button {
+                dismiss()
+            } label: {
+                Text("Done")
+                    .fontWeight(.medium)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Color.white.opacity(isHoveringCancel ? 0.15 : 0.1))
+                    .foregroundStyle(.secondary)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .onHover { h in
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                    isHoveringCancel = h
+                }
+            }
+            
+            Spacer()
+            
+            // Action button - matching AIInstallView primary style
+            Button {
+                openServicesSettings()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    hasOpenedSettings = true
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: hasOpenedSettings ? "checkmark" : "gear")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text(hasOpenedSettings ? "Opened" : "Open Settings")
+                }
+                .fontWeight(.semibold)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background((hasOpenedSettings ? Color.green : Color.blue).opacity(isHoveringAction ? 1.0 : 0.85))
+                .foregroundStyle(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+            .onHover { h in
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                    isHoveringAction = h
+                }
+            }
+        }
+        .padding(16)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: hasOpenedSettings)
+    }
+    
+    private func openServicesSettings() {
         if let url = URL(string: "x-apple.systempreferences:com.apple.Keyboard-Settings.extension") {
             NSWorkspace.shared.open(url)
         }
@@ -172,23 +331,23 @@ final class FinderServicesSetupWindowController: NSObject, NSWindowDelegate {
             }
             let hostingView = NSHostingView(rootView: view)
             
-            // Create the window
+            // Create the window - exact same style as sheet presentation
             let newWindow = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 420, height: 280),
-                styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
+                contentRect: NSRect(x: 0, y: 0, width: 340, height: 320),
+                styleMask: [.fullSizeContentView],
                 backing: .buffered,
                 defer: false
             )
             
             newWindow.center()
-            newWindow.title = "Finder Services Setup"
             newWindow.titlebarAppearsTransparent = true
-            newWindow.titleVisibility = .visible
+            newWindow.titleVisibility = .hidden
+            newWindow.level = .floating
             
-            newWindow.isMovableByWindowBackground = false
-            newWindow.backgroundColor = .clear
+            newWindow.isMovableByWindowBackground = true
+            newWindow.backgroundColor = .clear  // Clear to show rounded corners
             newWindow.isOpaque = false
-            newWindow.hasShadow = true
+            newWindow.hasShadow = false  // View has its own shadow
             newWindow.isReleasedWhenClosed = false
             
             newWindow.delegate = self
@@ -196,7 +355,7 @@ final class FinderServicesSetupWindowController: NSObject, NSWindowDelegate {
             
             self.window = newWindow
             
-            // Bring to front and activate - use deferred makeKey to avoid NotchWindow conflicts
+            // Bring to front and activate
             newWindow.orderFront(nil)
             DispatchQueue.main.async {
                 NSApp.activate(ignoringOtherApps: true)

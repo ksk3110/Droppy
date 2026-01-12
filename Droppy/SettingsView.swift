@@ -43,11 +43,9 @@ struct SettingsView: View {
     @State private var hoverClipboard = false
     @State private var hoverAppearance = false
     @State private var hoverAccessibility = false
-    @State private var hoverIntegrations = false
+    @State private var hoverExtensions = false
     @State private var hoverAbout = false
     @State private var isCoffeeHovering = false
-    @State private var isAlfredHovering = false
-    @State private var isFinderHovering = false
     @State private var isIntroHovering = false
     @State private var scrollOffset: CGFloat = 0
     
@@ -65,7 +63,7 @@ struct SettingsView: View {
                     sidebarButton(title: "Clipboard", icon: "doc.on.clipboard", tag: "Clipboard", isHovering: $hoverClipboard)
                     sidebarButton(title: "Appearance", icon: "paintbrush.fill", tag: "Appearance", isHovering: $hoverAppearance)
                     sidebarButton(title: "Accessibility", icon: "accessibility", tag: "Accessibility", isHovering: $hoverAccessibility)
-                    sidebarButton(title: "Integrations", icon: "puzzlepiece.extension.fill", tag: "Integrations", isHovering: $hoverIntegrations)
+                    sidebarButton(title: "Extensions", icon: "puzzlepiece.extension.fill", tag: "Extensions", isHovering: $hoverExtensions)
                     sidebarButton(title: "About", icon: "info.circle.fill", tag: "About", isHovering: $hoverAbout)
                     
                     Spacer()
@@ -111,7 +109,7 @@ struct SettingsView: View {
                             appearanceSettings
                         } else if selectedTab == "Accessibility" {
                             indicatorsSettings
-                        } else if selectedTab == "Integrations" {
+                        } else if selectedTab == "Extensions" {
                             integrationsSettings
                         } else if selectedTab == "About" {
                             aboutSettings
@@ -488,197 +486,9 @@ struct SettingsView: View {
     }
     
     private var integrationsSettings: some View {
-        Group {
-            // MARK: Background Removal AI
-            Section {
-                AIBackgroundRemovalSettingsRow()
-                    .padding(.vertical, 8)
-            } header: {
-                Text("AI Features")
-            } footer: {
-                Text("Requires Python 3. ~400MB download.")
-            }
-            
-            // MARK: Alfred Integration
-            Section {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(alignment: .top, spacing: 14) {
-                        // Alfred Icon (bundled locally for instant loading)
-                        Image("AlfredIcon")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 44, height: 44)
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Alfred Integration")
-                                .font(.headline)
-                            
-                            Text("Select files in Finder and push them to Droppy with a quick Alfred action. Supports both Shelf and Basket destinations.")
-                                .font(.callout)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                            
-                            Button {
-                                // Open the bundled Alfred workflow for installation
-                                if let workflowPath = Bundle.main.path(forResource: "Droppy", ofType: "alfredworkflow") {
-                                    NSWorkspace.shared.open(URL(fileURLWithPath: workflowPath))
-                                }
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Text("Install in Alfred")
-                                        .fontWeight(.semibold)
-                                    Image(systemName: "arrow.down.circle.fill")
-                                        .font(.caption.weight(.semibold))
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 10)
-                                .background(Color.purple.opacity(isAlfredHovering ? 1.0 : 0.8))
-                                .foregroundStyle(.white)
-                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .onHover { hovering in
-                                withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
-                                    isAlfredHovering = hovering
-                                }
-                            }
-                            .padding(.top, 4)
-                        }
-                    }
-                }
-                .padding(.vertical, 8)
-            } header: {
-                Text("Alfred")
-            } footer: {
-                Text("Requires Alfred 4+ with Powerpack.")
-            }
-            
-            // MARK: Finder Services
-            Section {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(alignment: .top, spacing: 14) {
-                        // Official macOS Finder icon
-                        Image(nsImage: NSWorkspace.shared.icon(forFile: "/System/Library/CoreServices/Finder.app"))
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 44, height: 44)
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Finder Integration")
-                                .font(.headline)
-                            
-                            Text("Right-click files in Finder and add them to Droppy via the Services menu. Supports both Shelf and Basket destinations.")
-                                .font(.callout)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                            
-                            Button {
-                                FinderServicesSetupWindowController.shared.show()
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Text("Setup Guide")
-                                        .fontWeight(.semibold)
-                                    Image(systemName: "arrow.up.right")
-                                        .font(.caption.weight(.semibold))
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 10)
-                                .background(Color.blue.opacity(isFinderHovering ? 1.0 : 0.8))
-                                .foregroundStyle(.white)
-                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .onHover { hovering in
-                                withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
-                                    isFinderHovering = hovering
-                                }
-                            }
-                            .padding(.top, 4)
-                        }
-                    }
-                }
-                .padding(.vertical, 8)
-            } header: {
-                Text("Finder")
-            } footer: {
-                Text("Requires one-time setup in System Settings.")
-            }
-            
-            // MARK: Spotify Integration
-            Section {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(alignment: .top, spacing: 14) {
-                        // Official Spotify icon (bundled asset)
-                        Image("SpotifyIcon")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 44, height: 44)
-                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Spotify Integration")
-                                .font(.headline)
-                            
-                            Text("Extra controls appear in the media player when playing from Spotify: shuffle, repeat, and replay from the start.")
-                                .font(.callout)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                            
-                            // Status indicator
-                            HStack(spacing: 6) {
-                                Circle()
-                                    .fill(SpotifyController.shared.isSpotifyRunning ? Color(red: 0.11, green: 0.73, blue: 0.33) : Color.gray.opacity(0.5))
-                                    .frame(width: 8, height: 8)
-                                Text(SpotifyController.shared.isSpotifyRunning ? "Spotify is running" : "Spotify is not running")
-                                    .font(.caption)
-                                    .foregroundStyle(SpotifyController.shared.isSpotifyRunning ? .primary : .secondary)
-                            }
-                            .padding(.top, 2)
-                        }
-                    }
-                    
-                    // Like feature note (OAuth currently blocked by Spotify)
-                    if !SpotifyAuthManager.shared.hasValidClientId {
-                        Divider()
-                            .padding(.vertical, 4)
-                        
-                        HStack(alignment: .top, spacing: 10) {
-                            Image(systemName: "heart.slash")
-                                .font(.system(size: 14))
-                                .foregroundStyle(.secondary)
-                                .frame(width: 20)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Like Songs")
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(.secondary)
-                                
-                                Text("The ability to like songs directly from Droppy is temporarily unavailable. Spotify has paused new developer app registrations.")
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                        }
-                    }
-                }
-                .padding(.vertical, 8)
-            } header: {
-                Text("Spotify")
-            } footer: {
-                Text("No setup required. Controls appear automatically when Spotify is the active player.")
-            }
-        }
+        ExtensionsShopView()
     }
+
     
     private var appearanceSettings: some View {
         Group {
@@ -2556,7 +2366,797 @@ struct DropIndicatorPreview: View {
 
 // MARK: - AI Background Removal Settings Row
 
+// MARK: - Extensions Shop View
+
+enum ExtensionCategory: String, CaseIterable, Identifiable {
+    case all = "All"
+    case ai = "AI"
+    case productivity = "Productivity"
+    case media = "Media"
+    
+    var id: String { rawValue }
+    
+    var icon: String {
+        switch self {
+        case .all: return "square.grid.2x2"
+        case .ai: return "sparkles"
+        case .productivity: return "bolt.fill"
+        case .media: return "music.note"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .all: return .white
+        case .ai: return .purple
+        case .productivity: return .orange
+        case .media: return .green
+        }
+    }
+}
+
+struct ExtensionsShopView: View {
+    @State private var selectedCategory: ExtensionCategory = .all
+    @Namespace private var categoryAnimation
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Category Swiper Header
+            categorySwiperHeader
+                .padding(.bottom, 20)
+            
+            // Extensions Grid
+            extensionsGrid
+        }
+    }
+    
+    // MARK: - Category Swiper
+    
+    private var categorySwiperHeader: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(ExtensionCategory.allCases) { category in
+                    CategoryPillButton(
+                        category: category,
+                        isSelected: selectedCategory == category,
+                        namespace: categoryAnimation
+                    ) {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                            selectedCategory = category
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 4)
+            .padding(.vertical, 4)
+        }
+    }
+    
+    // MARK: - Extensions Grid
+    
+    private var extensionsGrid: some View {
+        LazyVGrid(columns: [
+            GridItem(.flexible(), spacing: 16),
+            GridItem(.flexible(), spacing: 16)
+        ], spacing: 16) {
+            // AI Background Removal
+            if selectedCategory == .all || selectedCategory == .ai {
+                AIBackgroundRemovalCard()
+            }
+            
+            // Alfred Integration
+            if selectedCategory == .all || selectedCategory == .productivity {
+                AlfredExtensionCard()
+            }
+            
+            // Finder Integration
+            if selectedCategory == .all || selectedCategory == .productivity {
+                FinderExtensionCard()
+            }
+            
+            // Spotify Integration
+            if selectedCategory == .all || selectedCategory == .media {
+                SpotifyExtensionCard()
+            }
+            
+            // Element Capture
+            if selectedCategory == .all || selectedCategory == .productivity {
+                ElementCaptureCard()
+            }
+        }
+    }
+}
+
+// MARK: - Category Pill Button
+
+struct CategoryPillButton: View {
+    let category: ExtensionCategory
+    let isSelected: Bool
+    let namespace: Namespace.ID
+    let action: () -> Void
+    
+    @State private var isHovering = false
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: category.icon)
+                    .font(.system(size: 12, weight: .semibold))
+                Text(category.rawValue)
+                    .font(.system(size: 13, weight: .medium))
+            }
+            .foregroundStyle(isSelected ? .white : .secondary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background {
+                if isSelected {
+                    Capsule()
+                        .fill(Color.blue.opacity(isHovering ? 1.0 : 0.85))
+                        .matchedGeometryEffect(id: "SelectedCategory", in: namespace)
+                } else {
+                    Capsule()
+                        .fill(Color.white.opacity(isHovering ? 0.12 : 0.06))
+                }
+            }
+            .overlay(
+                Capsule()
+                    .stroke(Color.white.opacity(isSelected ? 0.3 : 0.1), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            withAnimation(.easeOut(duration: 0.15)) {
+                isHovering = hovering
+            }
+        }
+    }
+}
+
+
+// MARK: - Extension Cards
+
+struct ExtensionCardStyle: ViewModifier {
+    let accentColor: Color
+    @State private var isHovering = false
+    
+    private var borderColor: Color {
+        if isHovering {
+            return accentColor.opacity(0.7)
+        } else {
+            return Color.white.opacity(0.1)
+        }
+    }
+    
+    func body(content: Content) -> some View {
+        content
+            .padding(16)
+            .background(Color.white.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(borderColor, lineWidth: 1)
+            )
+            .scaleEffect(isHovering ? 1.02 : 1.0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isHovering)
+            .onHover { hovering in
+                isHovering = hovering
+            }
+    }
+}
+
+extension View {
+    func extensionCardStyle(accentColor: Color) -> some View {
+        modifier(ExtensionCardStyle(accentColor: accentColor))
+    }
+}
+
+// Special AI card style with gradient border on hover
+struct AIExtensionCardStyle: ViewModifier {
+    @State private var isHovering = false
+    
+    func body(content: Content) -> some View {
+        content
+            .padding(16)
+            .background(Color.white.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(
+                        isHovering
+                            ? AnyShapeStyle(LinearGradient(
+                                colors: [.purple.opacity(0.8), .pink.opacity(0.8)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ))
+                            : AnyShapeStyle(Color.white.opacity(0.1)),
+                        lineWidth: 1
+                    )
+            )
+            .scaleEffect(isHovering ? 1.02 : 1.0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isHovering)
+            .onHover { hovering in
+                isHovering = hovering
+            }
+    }
+}
+
+extension View {
+    func aiExtensionCardStyle() -> some View {
+        modifier(AIExtensionCardStyle())
+    }
+}
+
+// MARK: - AI Extension Icon with Magic Overlay
+
+/// Droppy icon with subtle magic sparkle overlay for AI feature
+struct AIExtensionIcon: View {
+    var size: CGFloat = 44
+    
+    var body: some View {
+        ZStack {
+            // Droppy app icon as base
+            if let appIcon = NSApp.applicationIconImage {
+                Image(nsImage: appIcon)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            }
+            
+            // Subtle magic gradient overlay
+            LinearGradient(
+                colors: [
+                    Color.purple.opacity(0.2),
+                    Color.pink.opacity(0.15),
+                    Color.clear
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            
+            // Sparkle accents
+            VStack {
+                HStack {
+                    Spacer()
+                    Image(systemName: "sparkle")
+                        .font(.system(size: size * 0.2, weight: .bold))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.white, .purple.opacity(0.8)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .shadow(color: .purple.opacity(0.5), radius: 2)
+                        .offset(x: -2, y: 2)
+                }
+                Spacer()
+                HStack {
+                    Image(systemName: "sparkle")
+                        .font(.system(size: size * 0.15, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .shadow(color: .pink.opacity(0.5), radius: 2)
+                        .offset(x: 4, y: -4)
+                    Spacer()
+                }
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: size * 0.227, style: .continuous))
+    }
+}
+
+// MARK: - AI Background Removal Card
+
+struct AIBackgroundRemovalCard: View {
+    @ObservedObject private var manager = AIInstallManager.shared
+    @State private var isHoveringAction = false
+    @State private var showInstallSheet = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header with icon and badge
+            HStack(alignment: .top) {
+                // Droppy icon with magic overlay
+                AIExtensionIcon(size: 44)
+                
+                Spacer()
+                
+                // AI Badge
+                HStack(spacing: 4) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 9, weight: .bold))
+                    Text("AI")
+                        .font(.system(size: 10, weight: .bold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [.purple, .pink],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                )
+            }
+            
+            // Title & Description
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Background Removal")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                
+                Text("Remove backgrounds from images using AI. Works offline.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            
+            Spacer(minLength: 8)
+            
+            // Status & Action
+            HStack {
+                // Status indicator
+                if manager.isInstalled {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 6, height: 6)
+                        Text("Installed")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.green)
+                    }
+                } else {
+                    Text("~400MB")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                
+                Spacer()
+                
+                // Action button
+                Button {
+                    showInstallSheet = true
+                } label: {
+                    HStack(spacing: 4) {
+                        if manager.isInstalled {
+                            Text("Manage")
+                                .font(.caption.weight(.medium))
+                        } else {
+                            Image(systemName: "arrow.down.circle.fill")
+                                .font(.system(size: 10))
+                            Text("Install")
+                                .font(.caption.weight(.semibold))
+                        }
+                    }
+                    .foregroundStyle(manager.isInstalled ? Color.secondary : Color.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(manager.isInstalled 
+                                  ? Color.white.opacity(isHoveringAction ? 0.15 : 0.08)
+                                  : Color.blue.opacity(isHoveringAction ? 1.0 : 0.85))
+                    )
+                }
+                .buttonStyle(.plain)
+                .onHover { hovering in
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        isHoveringAction = hovering
+                    }
+                }
+            }
+        }
+        .frame(minHeight: 160)
+        .aiExtensionCardStyle()
+        .sheet(isPresented: $showInstallSheet) {
+            AIInstallView()
+        }
+    }
+}
+
+// MARK: - Alfred Extension Card
+
+struct AlfredExtensionCard: View {
+    @State private var isHoveringAction = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header with icon
+            HStack(alignment: .top) {
+                // Official Alfred icon (bundled) with squircle background
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color(white: 0.15))
+                    Image("AlfredIcon")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .padding(2)
+                }
+                .frame(width: 44, height: 44)
+                
+                Spacer()
+                
+                // Productivity badge
+                HStack(spacing: 4) {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 9, weight: .bold))
+                    Text("PRO")
+                        .font(.system(size: 10, weight: .bold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule()
+                        .fill(Color.orange.opacity(0.9))
+                )
+            }
+            
+            // Title & Description
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Alfred Integration")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                
+                Text("Push files to Droppy with a quick Alfred hotkey.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            
+            Spacer(minLength: 8)
+            
+            // Status & Action
+            HStack {
+                Text("Requires Powerpack")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                
+                Spacer()
+                
+                Button {
+                    if let workflowPath = Bundle.main.path(forResource: "Droppy", ofType: "alfredworkflow") {
+                        NSWorkspace.shared.open(URL(fileURLWithPath: workflowPath))
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.down.circle.fill")
+                            .font(.system(size: 10))
+                        Text("Install")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color.blue.opacity(isHoveringAction ? 1.0 : 0.85))
+                    )
+                }
+                .buttonStyle(.plain)
+                .onHover { hovering in
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        isHoveringAction = hovering
+                    }
+                }
+            }
+        }
+        .frame(minHeight: 160)
+        .extensionCardStyle(accentColor: .purple)
+    }
+}
+
+// MARK: - Finder Extension Card
+
+struct FinderExtensionCard: View {
+    @State private var isHoveringAction = false
+    @State private var showSetupSheet = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header with icon
+            HStack(alignment: .top) {
+                // Official Finder icon
+                Image(nsImage: NSWorkspace.shared.icon(forFile: "/System/Library/CoreServices/Finder.app"))
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 44, height: 44)
+                
+                Spacer()
+                
+                // Built-in badge
+                Text("Built-in")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.1))
+                    )
+            }
+            
+            // Title & Description
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Finder Integration")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                
+                Text("Right-click files to add them via Services menu.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            
+            Spacer(minLength: 8)
+            
+            // Status & Action
+            HStack {
+                Text("One-time setup")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                
+                Spacer()
+                
+                Button {
+                    showSetupSheet = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 10))
+                        Text("Setup")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color.blue.opacity(isHoveringAction ? 1.0 : 0.85))
+                    )
+                }
+                .buttonStyle(.plain)
+                .onHover { hovering in
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        isHoveringAction = hovering
+                    }
+                }
+            }
+        }
+        .frame(minHeight: 160)
+        .extensionCardStyle(accentColor: .blue)
+        .sheet(isPresented: $showSetupSheet) {
+            FinderServicesSetupSheetView()
+        }
+    }
+}
+
+// MARK: - Spotify Extension Card
+
+struct SpotifyExtensionCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header with icon
+            HStack(alignment: .top) {
+                // Official Spotify icon (bundled)
+                Image("SpotifyIcon")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 44, height: 44)
+                
+                Spacer()
+                
+                // Auto badge
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 9))
+                    Text("Auto")
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .foregroundStyle(.green)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule()
+                        .fill(Color.green.opacity(0.15))
+                )
+            }
+            
+            // Title & Description
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Spotify Integration")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                
+                Text("Extra shuffle, repeat & replay controls in the media player.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            
+            Spacer(minLength: 8)
+            
+            // Status
+            HStack {
+                // Live status indicator
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(SpotifyController.shared.isSpotifyRunning ? Color.green : Color.gray.opacity(0.5))
+                        .frame(width: 6, height: 6)
+                    Text(SpotifyController.shared.isSpotifyRunning ? "Running" : "Not running")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(SpotifyController.shared.isSpotifyRunning ? .primary : .secondary)
+                }
+                
+                Spacer()
+                
+                // No setup required badge
+                Text("No setup needed")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .frame(minHeight: 160)
+        .extensionCardStyle(accentColor: .green)
+    }
+}
+
+// MARK: - Element Capture Card
+
+struct ElementCaptureCard: View {
+    // Use local state to avoid @StateObject + @MainActor deadlock
+    @State private var currentShortcut: SavedShortcut?
+    @State private var isHoveringAction = false
+    @State private var isRecording = false
+    @State private var recordMonitor: Any?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header with icon
+            HStack(alignment: .top) {
+                // Icon matching Alfred's style (44x44, no background box)
+                Image(systemName: "viewfinder")
+                    .font(.system(size: 32, weight: .medium))
+                    .foregroundStyle(.orange)
+                    .frame(width: 44, height: 44)
+                
+                Spacer()
+            }
+            
+            // Title & Description
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Element Capture")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                
+                Text("Screenshot any UI element by clicking on it.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            
+            Spacer(minLength: 8)
+            
+            // Shortcut Recording Row
+            HStack {
+                Text("Shortcut")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                
+                Spacer()
+                
+                // Shortcut display / record button
+                Button {
+                    if isRecording {
+                        stopRecording()
+                    } else {
+                        startRecording()
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        if isRecording {
+                            Text("Press keys...")
+                                .font(.caption.weight(.medium))
+                        } else if let shortcut = currentShortcut {
+                            Text(shortcut.description)
+                                .font(.caption.weight(.semibold))
+                        } else {
+                            Image(systemName: "record.circle")
+                                .font(.system(size: 10))
+                            Text("Record Key")
+                                .font(.caption.weight(.semibold))
+                        }
+                    }
+                    .foregroundStyle(isRecording ? .white : (currentShortcut != nil ? .primary : .white))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(isRecording ? Color.red.opacity(0.85) : (currentShortcut != nil ? Color.white.opacity(isHoveringAction ? 0.15 : 0.1) : Color.orange.opacity(isHoveringAction ? 1.0 : 0.85)))
+                    )
+                }
+                .buttonStyle(.plain)
+                .onHover { hovering in
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        isHoveringAction = hovering
+                    }
+                }
+            }
+        }
+        .frame(minHeight: 160)
+        .extensionCardStyle(accentColor: .orange)
+        .onAppear {
+            // Load shortcut from UserDefaults (safe, no MainActor issues)
+            loadShortcut()
+        }
+        .onDisappear {
+            stopRecording()
+        }
+    }
+    
+    // MARK: - Shortcut Loading
+    
+    private func loadShortcut() {
+        if let data = UserDefaults.standard.data(forKey: "elementCaptureShortcut"),
+           let decoded = try? JSONDecoder().decode(SavedShortcut.self, from: data) {
+            currentShortcut = decoded
+        }
+    }
+    
+    private func saveShortcut(_ shortcut: SavedShortcut) {
+        currentShortcut = shortcut
+        if let encoded = try? JSONEncoder().encode(shortcut) {
+            UserDefaults.standard.set(encoded, forKey: "elementCaptureShortcut")
+        }
+        // Also update the manager (for global hotkey monitoring)
+        Task { @MainActor in
+            ElementCaptureManager.shared.shortcut = shortcut
+            ElementCaptureManager.shared.startMonitoringShortcut()
+        }
+    }
+    
+    // MARK: - Recording
+    
+    private func startRecording() {
+        isRecording = true
+        recordMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            // Ignore just modifier keys pressed alone
+            if event.keyCode == 54 || event.keyCode == 55 || event.keyCode == 56 ||
+               event.keyCode == 58 || event.keyCode == 59 || event.keyCode == 60 ||
+               event.keyCode == 61 || event.keyCode == 62 {
+                return nil
+            }
+            
+            // Capture the shortcut
+            DispatchQueue.main.async {
+                let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                let shortcut = SavedShortcut(keyCode: Int(event.keyCode), modifiers: flags.rawValue)
+                saveShortcut(shortcut)
+                stopRecording()
+            }
+            return nil
+        }
+    }
+    
+    private func stopRecording() {
+        isRecording = false
+        if let m = recordMonitor {
+            NSEvent.removeMonitor(m)
+            recordMonitor = nil
+        }
+    }
+}
+
 /// Settings row for managing AI background removal with one-click install
+
 struct AIBackgroundRemovalSettingsRow: View {
     @ObservedObject private var manager = AIInstallManager.shared
     @State private var isHoveringSetup = false
