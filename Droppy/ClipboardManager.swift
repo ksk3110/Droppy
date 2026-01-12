@@ -210,7 +210,16 @@ class ClipboardManager: ObservableObject {
     
     init() {
         self.lastChangeCount = NSPasteboard.general.changeCount
-        self.hasAccessibilityPermission = AXIsProcessTrusted()
+        
+        // Use cached accessibility grant to prevent false negatives on startup
+        let trusted = AXIsProcessTrusted()
+        let hasCachedGrant = UserDefaults.standard.bool(forKey: "accessibilityGranted")
+        self.hasAccessibilityPermission = trusted || hasCachedGrant
+        
+        // Update cache if newly trusted
+        if trusted {
+            UserDefaults.standard.set(true, forKey: "accessibilityGranted")
+        }
         
         // Initial load of settings from UserDefaults
         self.isEnabled = UserDefaults.standard.bool(forKey: "enableClipboardBeta")
@@ -228,9 +237,19 @@ class ClipboardManager: ObservableObject {
     
     func checkPermission() {
         let trusted = AXIsProcessTrusted()
-        if hasAccessibilityPermission != trusted {
+        
+        // Cache the grant if we just got accessibility
+        if trusted {
+            UserDefaults.standard.set(true, forKey: "accessibilityGranted")
+        }
+        
+        // Use cached grant to prevent UI warning when user has granted but TCC hasn't synced
+        let hasCachedGrant = UserDefaults.standard.bool(forKey: "accessibilityGranted")
+        let effectivelyTrusted = trusted || hasCachedGrant
+        
+        if hasAccessibilityPermission != effectivelyTrusted {
             DispatchQueue.main.async {
-                self.hasAccessibilityPermission = trusted
+                self.hasAccessibilityPermission = effectivelyTrusted
             }
         }
     }
