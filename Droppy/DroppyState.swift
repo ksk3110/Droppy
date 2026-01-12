@@ -70,6 +70,34 @@ final class DroppyState {
         return fileOperationCount > 0
     }
     
+    /// Items currently showing poof animation (for bulk operations)
+    /// Each item view observes this and triggers its own animation
+    var poofingItemIds: Set<UUID> = []
+    
+    /// Items currently being processed (for bulk operation spinners)
+    /// Each item view observes this to show/hide spinner
+    var processingItemIds: Set<UUID> = []
+    
+    /// Trigger poof animation for a specific item
+    func triggerPoof(for itemId: UUID) {
+        poofingItemIds.insert(itemId)
+    }
+    
+    /// Clear poof state for an item (called after animation completes)
+    func clearPoof(for itemId: UUID) {
+        poofingItemIds.remove(itemId)
+    }
+    
+    /// Mark an item as being processed (shows spinner)
+    func beginProcessing(for itemId: UUID) {
+        processingItemIds.insert(itemId)
+    }
+    
+    /// Mark an item as finished processing (hides spinner)
+    func endProcessing(for itemId: UUID) {
+        processingItemIds.remove(itemId)
+    }
+    
     /// Pending converted file ready to download (temp URL, original filename)
     var pendingConversion: (tempURL: URL, filename: String)?
     

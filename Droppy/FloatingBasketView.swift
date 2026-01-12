@@ -8,11 +8,59 @@ import UniformTypeIdentifiers
 
 import SwiftUI
 
+// MARK: - Sharing Services Cache
+private var sharingServicesCache: [String: (services: [NSSharingService], timestamp: Date)] = [:]
+private let sharingServicesCacheTTL: TimeInterval = 60
+
 // Use a wrapper function to silence the deprecation warning
 // The deprecated API is the ONLY way to properly show share services in SwiftUI context menus
 @available(macOS, deprecated: 13.0, message: "NSSharingService.sharingServices is deprecated but required for context menu integration")
 private func sharingServicesForItems(_ items: [Any]) -> [NSSharingService] {
-    NSSharingService.sharingServices(forItems: items)
+    // Check if first item is a URL for caching
+    if let url = items.first as? URL {
+        let ext = url.pathExtension.lowercased()
+        if let cached = sharingServicesCache[ext],
+           Date().timeIntervalSince(cached.timestamp) < sharingServicesCacheTTL {
+            return cached.services
+        }
+        let services = NSSharingService.sharingServices(forItems: items)
+        sharingServicesCache[ext] = (services: services, timestamp: Date())
+        return services
+    }
+    return NSSharingService.sharingServices(forItems: items)
+}
+
+// MARK: - Magic Processing Overlay
+/// Subtle animated overlay for background removal processing
+private struct MagicProcessingOverlay: View {
+    @State private var rotation: Double = 0
+    
+    var body: some View {
+        ZStack {
+            // Semi-transparent background
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.black.opacity(0.5))
+            
+            // Subtle rotating circle
+            Circle()
+                .trim(from: 0, to: 0.7)
+                .stroke(
+                    LinearGradient(
+                        colors: [.white.opacity(0.8), .white.opacity(0.2)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
+                )
+                .frame(width: 24, height: 24)
+                .rotationEffect(.degrees(rotation))
+        }
+        .onAppear {
+            withAnimation(.linear(duration: 0.8).repeatForever(autoreverses: false)) {
+                rotation = 360
+            }
+        }
+    }
 }
 
 /// A floating basket view that appears during file drags as an alternative drop zone
@@ -427,6 +475,55 @@ struct BasketItemView: View {
         state.selectedBasketItems.contains(item.id)
     }
     
+    /// All selected items in the basket
+    private var selectedItems: [DroppedItem] {
+        state.basketItems.filter { state.selectedBasketItems.contains($0.id) }
+    }
+    
+    /// Whether ALL selected items are images (for bulk Remove BG)
+    private var allSelectedAreImages: Bool {
+        guard !selectedItems.isEmpty else { return false }
+        return selectedItems.allSatisfy { $0.isImage }
+    }
+    
+    /// Whether ALL selected items can be compressed
+    private var allSelectedCanCompress: Bool {
+        guard !selectedItems.isEmpty else { return false }
+        return selectedItems.allSatisfy { FileCompressor.canCompress(fileType: $0.fileType) }
+    }
+    
+    /// Whether ALL selected items are images (for consistent image menu)
+    private var allSelectedAreImageFiles: Bool {
+        guard !selectedItems.isEmpty else { return false }
+        return selectedItems.allSatisfy { $0.fileType?.conforms(to: .image) == true }
+    }
+    
+    /// Common conversions available for ALL selected items
+    private var commonConversions: [ConversionOption] {
+        guard !selectedItems.isEmpty else { return [] }
+        var common: Set<ConversionFormat>? = nil
+        for item in selectedItems {
+            let formats = Set(FileConverter.availableConversions(for: item.fileType).map { $0.format })
+            if common == nil {
+                common = formats
+            } else {
+                common = common!.intersection(formats)
+            }
+        }
+        guard let validFormats = common, !validFormats.isEmpty else { return [] }
+        // Return full ConversionOptions for the common formats
+        return FileConverter.availableConversions(for: selectedItems.first?.fileType)
+            .filter { validFormats.contains($0.format) }
+    }
+    
+    /// Whether ALL selected items support OCR (images or PDFs)
+    private var allSelectedSupportOCR: Bool {
+        guard !selectedItems.isEmpty else { return false }
+        return selectedItems.allSatisfy {
+            $0.fileType?.conforms(to: .image) == true || $0.fileType?.conforms(to: .pdf) == true
+        }
+    }
+    
     var body: some View {
         DraggableArea(
             items: {
@@ -480,6 +577,7 @@ struct BasketItemView: View {
                 isHovering: isHovering,
                 isConverting: isConverting,
                 isExtractingText: isExtractingText,
+                isRemovingBackground: isRemovingBackground,
                 isSelected: isSelected,
                 isPoofing: $isPoofing,
                 pendingConvertedItem: $pendingConvertedItem,
@@ -506,6 +604,28 @@ struct BasketItemView: View {
             .onHover { hovering in
                 withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
                     isHovering = hovering
+                }
+            }
+            .onChange(of: state.poofingItemIds) { _, newIds in
+                // Trigger local poof animation when this item is marked for poof (from bulk operations)
+                if newIds.contains(item.id) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        isPoofing = true
+                    }
+                    // Clear the poof state after triggering
+                    state.clearPoof(for: item.id)
+                }
+            }
+            .onAppear {
+                // Check if this item was created with poof pending (from bulk operations)
+                if state.poofingItemIds.contains(item.id) {
+                    // Small delay to ensure view is fully rendered before animation
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            isPoofing = true
+                        }
+                        state.clearPoof(for: item.id)
+                    }
                 }
             }
             .contextMenu {
@@ -553,7 +673,11 @@ struct BasketItemView: View {
                             Button {
                                 item.openWith(applicationURL: app.url)
                             } label: {
-                                Label(app.name, image: NSImage.Name(app.name))
+                                Label {
+                                    Text(app.name)
+                                } icon: {
+                                    Image(nsImage: app.icon)
+                                }
                             }
                         }
                     } label: {
@@ -579,32 +703,50 @@ struct BasketItemView: View {
                 }
                 
                 Button {
-                    item.saveToDownloads()
+                    // Bulk save: save all selected items
+                    if state.selectedBasketItems.count > 1 && state.selectedBasketItems.contains(item.id) {
+                        for selectedItem in selectedItems {
+                            selectedItem.saveToDownloads()
+                        }
+                    } else {
+                        item.saveToDownloads()
+                    }
                 } label: {
-                    Label("Save", systemImage: "arrow.down.circle")
+                    if state.selectedBasketItems.count > 1 && state.selectedBasketItems.contains(item.id) {
+                        Label("Save All (\(state.selectedBasketItems.count))", systemImage: "arrow.down.circle")
+                    } else {
+                        Label("Save", systemImage: "arrow.down.circle")
+                    }
                 }
                 
-                // Conversion and OCR only for single selection
-                if state.selectedBasketItems.count <= 1 {
-                    // Conversion submenu
-                    let conversions = FileConverter.availableConversions(for: item.fileType)
-                    if !conversions.isEmpty {
-                        Divider()
-                        
-                        Menu {
-                            ForEach(conversions) { option in
-                                Button {
+                // Conversion submenu - show when single item OR all selected share common conversions
+                let conversions = state.selectedBasketItems.count > 1 ? commonConversions : FileConverter.availableConversions(for: item.fileType)
+                if !conversions.isEmpty {
+                    Divider()
+                    
+                    Menu {
+                        ForEach(conversions) { option in
+                            Button {
+                                if state.selectedBasketItems.count > 1 && state.selectedBasketItems.contains(item.id) {
+                                    convertAllSelected(to: option.format)
+                                } else {
                                     convertFile(to: option.format)
-                                } label: {
-                                    Label(option.displayName, systemImage: option.icon)
                                 }
+                            } label: {
+                                Label(option.displayName, systemImage: option.icon)
                             }
-                        } label: {
+                        }
+                    } label: {
+                        if state.selectedBasketItems.count > 1 && state.selectedBasketItems.contains(item.id) {
+                            Label("Convert All (\(state.selectedBasketItems.count))...", systemImage: "arrow.triangle.2.circlepath")
+                        } else {
                             Label("Convert to...", systemImage: "arrow.triangle.2.circlepath")
                         }
                     }
-                    
-                    // OCR Option
+                }
+                
+                // OCR Option - single item only (too complex for bulk)
+                if state.selectedBasketItems.count <= 1 {
                     if item.fileType?.conforms(to: .image) == true || item.fileType?.conforms(to: .pdf) == true {
                         Button {
                             extractText()
@@ -612,40 +754,79 @@ struct BasketItemView: View {
                             Label("Extract Text", systemImage: "text.viewfinder")
                         }
                     }
-                    
-                    // Remove Background - only for images
-                    if item.isImage {
+                }
+                
+                // Remove Background - show when single image OR all selected are images
+                if (state.selectedBasketItems.count <= 1 && item.isImage) || (state.selectedBasketItems.count > 1 && allSelectedAreImages && state.selectedBasketItems.contains(item.id)) {
+                    if AIInstallManager.shared.isInstalled {
                         Button {
-                            removeBackground()
+                            if state.selectedBasketItems.count > 1 {
+                                removeBackgroundFromAllSelected()
+                            } else {
+                                removeBackground()
+                            }
                         } label: {
-                            Label("Remove Background", systemImage: "person.and.background.dotted")
+                            if state.selectedBasketItems.count > 1 {
+                                Label("Remove Background (\(state.selectedBasketItems.count))", systemImage: "person.and.background.dotted")
+                            } else {
+                                Label("Remove Background", systemImage: "person.and.background.dotted")
+                            }
                         }
                         .disabled(isRemovingBackground)
+                    } else {
+                        Button {
+                            // No action - just informational
+                        } label: {
+                            Label("Remove Background (Settings > Integrations)", systemImage: "person.and.background.dotted")
+                        }
+                        .disabled(true)
                     }
                 }
                 
                 Divider()
                 
-                // Compress option - only show for compressible file types
-                // Compress option - only show for compressible file types
-                if FileCompressor.canCompress(fileType: item.fileType) {
-                    if item.fileType?.conforms(to: .image) == true {
+                // Compress option - show when single compressible OR all selected can compress
+                let canShowCompress = (state.selectedBasketItems.count <= 1 && FileCompressor.canCompress(fileType: item.fileType)) ||
+                                      (state.selectedBasketItems.count > 1 && allSelectedCanCompress && state.selectedBasketItems.contains(item.id))
+                if canShowCompress {
+                    let isMultiSelect = state.selectedBasketItems.count > 1 && state.selectedBasketItems.contains(item.id)
+                    let isImageCompress = isMultiSelect ? allSelectedAreImageFiles : (item.fileType?.conforms(to: .image) == true)
+                    
+                    if isImageCompress {
                         Menu {
                             Button("Auto (Medium)") {
-                                compressFile(mode: .preset(.medium))
+                                if isMultiSelect {
+                                    compressAllSelected(mode: .preset(.medium))
+                                } else {
+                                    compressFile(mode: .preset(.medium))
+                                }
                             }
-                            Button("Target Size...") {
-                                compressFile(mode: nil)
+                            if !isMultiSelect {
+                                Button("Target Size...") {
+                                    compressFile(mode: nil)
+                                }
                             }
                         } label: {
-                            Label("Compress", systemImage: "arrow.down.right.and.arrow.up.left")
+                            if isMultiSelect {
+                                Label("Compress All (\(state.selectedBasketItems.count))", systemImage: "arrow.down.right.and.arrow.up.left")
+                            } else {
+                                Label("Compress", systemImage: "arrow.down.right.and.arrow.up.left")
+                            }
                         }
                         .disabled(isCompressing)
                     } else {
                         Button {
-                            compressFile(mode: .preset(.medium))
+                            if isMultiSelect {
+                                compressAllSelected(mode: .preset(.medium))
+                            } else {
+                                compressFile(mode: .preset(.medium))
+                            }
                         } label: {
-                            Label("Compress", systemImage: "arrow.down.right.and.arrow.up.left")
+                            if isMultiSelect {
+                                Label("Compress All (\(state.selectedBasketItems.count))", systemImage: "arrow.down.right.and.arrow.up.left")
+                            } else {
+                                Label("Compress", systemImage: "arrow.down.right.and.arrow.up.left")
+                            }
                         }
                         .disabled(isCompressing)
                     }
@@ -834,6 +1015,10 @@ struct BasketItemView: View {
                 await MainActor.run {
                     isExtractingText = false
                     state.endFileOperation()
+                    // Trigger poof animation for successful extraction
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        isPoofing = true
+                    }
                     OCRWindowController.shared.show(with: text)
                 }
             } catch {
@@ -876,11 +1061,14 @@ struct BasketItemView: View {
                     isCreatingZIP = false
                     // Keep isFileOperationInProgress = true since we auto-start renaming
                     // The flag will be reset when rename completes or is cancelled
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        state.replaceBasketItems(itemsToZip, with: newItem)
-                    }
+                    // Update state immediately (animation deferred to poof effect)
+                    state.replaceBasketItems(itemsToZip, with: newItem)
                     // Auto-start renaming the new zip file (flag stays true)
                     renamingItemId = newItem.id
+                    // Trigger poof animation after view has appeared
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        state.triggerPoof(for: newItem.id)
+                    }
                 }
             } else {
                 await MainActor.run {
@@ -1016,6 +1204,100 @@ struct BasketItemView: View {
         }
     }
     
+    // MARK: - Bulk Operations
+    
+    /// Convert all selected items to the specified format
+    private func convertAllSelected(to format: ConversionFormat) {
+        guard !isConverting else { return }
+        isConverting = true
+        state.beginFileOperation()
+        
+        Task {
+            for selectedItem in selectedItems {
+                if let convertedURL = await FileConverter.convert(selectedItem.url, to: format) {
+                    let newItem = DroppedItem(url: convertedURL, isTemporary: true)
+                    await MainActor.run {
+                        state.replaceBasketItem(selectedItem, with: newItem)
+                        // Trigger poof animation for this specific item
+                        state.triggerPoof(for: newItem.id)
+                    }
+                }
+            }
+            
+            await MainActor.run {
+                isConverting = false
+                state.endFileOperation()
+            }
+        }
+    }
+    
+    /// Compress all selected items
+    private func compressAllSelected(mode: CompressionMode) {
+        guard !isCompressing else { return }
+        isCompressing = true
+        state.beginFileOperation()
+        
+        Task {
+            for selectedItem in selectedItems {
+                if let compressedURL = await FileCompressor.shared.compress(url: selectedItem.url, mode: mode) {
+                    let newItem = DroppedItem(url: compressedURL, isTemporary: true)
+                    await MainActor.run {
+                        state.replaceBasketItem(selectedItem, with: newItem)
+                        // Trigger poof animation for this specific item
+                        state.triggerPoof(for: newItem.id)
+                    }
+                }
+            }
+            
+            await MainActor.run {
+                isCompressing = false
+                state.endFileOperation()
+            }
+        }
+    }
+    
+    /// Remove background from all selected images
+    private func removeBackgroundFromAllSelected() {
+        guard !isRemovingBackground else { return }
+        isRemovingBackground = true
+        state.beginFileOperation()
+        
+        // Mark ALL selected items as processing to show spinners simultaneously
+        let imagesToProcess = selectedItems.filter { $0.isImage }
+        for item in imagesToProcess {
+            state.beginProcessing(for: item.id)
+        }
+        
+        Task {
+            for selectedItem in imagesToProcess {
+                do {
+                    let outputURL = try await selectedItem.removeBackground()
+                    let newItem = DroppedItem(url: outputURL, isTemporary: true)
+                    await MainActor.run {
+                        // End processing for old item, replace with new
+                        state.endProcessing(for: selectedItem.id)
+                        state.replaceBasketItem(selectedItem, with: newItem)
+                        // Trigger poof animation for this specific item
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            state.triggerPoof(for: newItem.id)
+                        }
+                    }
+                } catch {
+                    await MainActor.run {
+                        // End processing even on failure
+                        state.endProcessing(for: selectedItem.id)
+                    }
+                    print("Background removal failed for \(selectedItem.name): \(error.localizedDescription)")
+                }
+            }
+            
+            await MainActor.run {
+                isRemovingBackground = false
+                state.endFileOperation()
+            }
+        }
+    }
+    
     // MARK: - Rename
     
     private func startRenaming() {
@@ -1064,6 +1346,7 @@ private struct BasketItemContent: View {
     let isHovering: Bool
     let isConverting: Bool
     let isExtractingText: Bool
+    let isRemovingBackground: Bool
     let isSelected: Bool
     @Binding var isPoofing: Bool
     @Binding var pendingConvertedItem: DroppedItem?
@@ -1105,12 +1388,22 @@ private struct BasketItemContent: View {
                             .tint(.white)
                         }
                     }
+                    .overlay {
+                        // Magic processing animation for background removal - centered on thumbnail
+                        // Check both local isRemovingBackground AND global processingItemIds for bulk operations
+                        if isRemovingBackground || state.processingItemIds.contains(item.id) {
+                            MagicProcessingOverlay()
+                                .frame(width: 60, height: 60)
+                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                .transition(.opacity.animation(.easeInOut(duration: 0.3)))
+                        }
+                    }
                 
                 // Remove button on hover
                 if isHovering && !isPoofing && renamingItemId != item.id {
                     Button(action: onRemove) {
                         ZStack {
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
                                 .fill(Color.red.opacity(0.9))
                                 .frame(width: 20, height: 20)
                             Image(systemName: "xmark")
@@ -1151,8 +1444,8 @@ private struct BasketItemContent: View {
                     .padding(.horizontal, 4)
                     .background(
                         isSelected ?
-                        RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.blue) :
-                        RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.clear)
+                        RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.blue) :
+                        RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.clear)
                     )
             }
         }
@@ -1207,12 +1500,12 @@ private struct RenameTextField: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(Color.black.opacity(0.3))
         )
         // Animated dotted blue outline
         .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(
                     Color.accentColor.opacity(0.8),
                     style: StrokeStyle(

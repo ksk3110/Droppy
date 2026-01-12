@@ -428,6 +428,20 @@ struct ClipboardManagerView: View {
                                             Label(item.isFavorite ? "Unfavorite" : "Favorite", systemImage: item.isFavorite ? "star.slash" : "star")
                                         }
                                         Divider()
+                                        
+                                        // Move to Shelf/Basket
+                                        Button {
+                                            moveItemToShelf(item)
+                                        } label: {
+                                            Label("Move to Shelf", systemImage: "arrow.up.to.line")
+                                        }
+                                        Button {
+                                            moveItemToBasket(item)
+                                        } label: {
+                                            Label("Move to Basket", systemImage: "tray.and.arrow.down")
+                                        }
+                                        
+                                        Divider()
                                         Button {
                                             renamingText = item.title
                                             renamingItemId = item.id
@@ -487,7 +501,7 @@ struct ClipboardManagerView: View {
                     .padding(.vertical, 4)
                     .frame(maxWidth: .infinity)
                     .background(Color.white.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .buttonStyle(.plain)
         }
@@ -623,6 +637,78 @@ struct ClipboardManagerView: View {
         }
     }
     
+    /// Moves clipboard item to the Floating Basket
+    private func moveItemToBasket(_ item: ClipboardItem) {
+        guard let fileURL = clipboardItemToTempFile(item) else { return }
+        let droppedItem = DroppedItem(url: fileURL, isTemporary: true)
+        DroppyState.shared.addBasketItem(droppedItem)
+        // Show the basket so user sees the item
+        FloatingBasketWindowController.shared.showBasket()
+    }
+    
+    /// Moves clipboard item to the Shelf
+    private func moveItemToShelf(_ item: ClipboardItem) {
+        guard let fileURL = clipboardItemToTempFile(item) else { return }
+        let droppedItem = DroppedItem(url: fileURL, isTemporary: true)
+        DroppyState.shared.addItem(droppedItem)
+    }
+    
+    /// Converts a ClipboardItem to a temp file and returns its URL
+    private func clipboardItemToTempFile(_ item: ClipboardItem) -> URL? {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent("DroppyClipboard", isDirectory: true)
+        try? FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        
+        let uniqueSuffix = String(item.id.uuidString.prefix(8))
+        
+        switch item.type {
+        case .text:
+            if let content = item.content {
+                let fileName = sanitizeFileName(item.title) + "_\(uniqueSuffix).txt"
+                let fileURL = tempDir.appendingPathComponent(fileName)
+                do {
+                    try content.write(to: fileURL, atomically: true, encoding: .utf8)
+                    return fileURL
+                } catch { return nil }
+            }
+        case .url:
+            if let content = item.content {
+                let fileName = sanitizeFileName(item.title) + "_\(uniqueSuffix).webloc"
+                let fileURL = tempDir.appendingPathComponent(fileName)
+                let plist = ["URL": content]
+                do {
+                    let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+                    try data.write(to: fileURL)
+                    return fileURL
+                } catch { return nil }
+            }
+        case .file:
+            if let path = item.content {
+                return URL(fileURLWithPath: path)
+            }
+        case .image:
+            if let data = item.loadImageData() {
+                let fileName = sanitizeFileName(item.title) + "_\(uniqueSuffix)"
+                let fileURL: URL
+                
+                if data.starts(with: [0x89, 0x50, 0x4E, 0x47]) {
+                    fileURL = tempDir.appendingPathComponent(fileName + ".png")
+                } else if data.starts(with: [0xFF, 0xD8, 0xFF]) {
+                    fileURL = tempDir.appendingPathComponent(fileName + ".jpg")
+                } else {
+                    fileURL = tempDir.appendingPathComponent(fileName + ".png")
+                }
+                
+                do {
+                    try data.write(to: fileURL)
+                    return fileURL
+                } catch { return nil }
+            }
+        case .color:
+            return nil
+        }
+        return nil
+    }
+    
     var previewPane: some View {
         VStack(spacing: 0) {
             // Draggable header area for window repositioning (top right)
@@ -695,7 +781,7 @@ struct ClipboardItemRow: View {
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(width: 32, height: 32)
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 } else {
                     Image(systemName: iconName(for: item.type))
                         .foregroundStyle(.white)
@@ -1160,7 +1246,7 @@ struct ClipboardPreviewView: View {
                 case .file:
                     if let path = item.content {
                         VStack(spacing: 12) {
-                            Image(nsImage: NSWorkspace.shared.icon(forFile: path))
+                            Image(nsImage: ThumbnailCache.shared.cachedIcon(forPath: path))
                                 .resizable()
                                 .frame(width: 64, height: 64)
                             Text(URL(fileURLWithPath: path).lastPathComponent)
@@ -1555,8 +1641,24 @@ nonisolated private func rtfToAttributedString(_ data: Data) throws -> Attribute
         documentAttributes: nil
     )
     
-    // Create a mutable copy to adjust colors for dark mode
-    let mutable = NSMutableAttributedString(attributedString: nsAttr)
+    // PERFORMANCE: Limit to 50K characters to prevent CPU spike with huge text
+    let maxPreviewLength = 50000
+    let isTruncated = nsAttr.length > maxPreviewLength
+    
+    // Create a mutable copy, truncated if necessary
+    let mutable: NSMutableAttributedString
+    if isTruncated {
+        let truncatedRange = NSRange(location: 0, length: maxPreviewLength)
+        mutable = NSMutableAttributedString(attributedString: nsAttr.attributedSubstring(from: truncatedRange))
+        // Add truncation notice
+        let truncationNotice = NSAttributedString(
+            string: "\n\n[Content truncated - \(nsAttr.length) characters total]",
+            attributes: [.foregroundColor: NSColor.secondaryLabelColor, .font: NSFont.systemFont(ofSize: 12)]
+        )
+        mutable.append(truncationNotice)
+    } else {
+        mutable = NSMutableAttributedString(attributedString: nsAttr)
+    }
     
     // Scale font size up if it's too small (often RTF is 11pt/12pt)
     mutable.enumerateAttribute(.font, in: NSRange(location: 0, length: mutable.length), options: []) { value, range, _ in
@@ -1915,7 +2017,7 @@ struct MetadataInfoStrip: View {
                     }
                 }
                 .frame(width: 32, height: 32)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 
                 VStack(alignment: .leading, spacing: 4) {
                     if let title = title {

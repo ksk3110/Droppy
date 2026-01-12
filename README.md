@@ -37,7 +37,7 @@
 ## ✨ Features at a Glance
 
 <p align="center">
-  <img src="assets/features-overview.png" alt="Features Overview">
+  <img src="docs/assets/features-grid.png" alt="Features Overview">
 </p>
 
 ---
@@ -87,6 +87,7 @@ Now Playing controls with album art, seek slider, and native Spotify integration
 
 | Feature | Description |
 |:---|:---|
+| 🤖 **AI Background Removal** | Local, on-device AI removes backgrounds from images — works in bulk! |
 | **The Shelf** | Drag files to your notch — they vanish into a sleek shelf |
 | **Floating Basket** | Jiggle your cursor while dragging to summon a basket anywhere |
 | **Clipboard Manager** | Full history with search, favorites, OCR, and drag-out |
@@ -94,7 +95,7 @@ Now Playing controls with album art, seek slider, and native Spotify integration
 | <img src="https://upload.wikimedia.org/wikipedia/commons/8/84/Spotify_icon.svg" width="16"> **Native Spotify** | Shuffle, repeat, and rock-solid playback timing |
 | **Quick Actions** | Right-click for compress, convert, OCR, move, share |
 | **Custom HUDs** | Beautiful volume, brightness, battery, caps lock overlays |
-| 🎧 **AirPods HUD** | See battery levels and connection status for your AirPods |
+| <img src="docs/assets/images/airpods-hud-icon.png" width="16"> **AirPods HUD** | See battery levels and connection status for your AirPods |
 | **OCR & Vision** | Extract text from any image instantly |
 | **Auto-Hide & Peek** | Basket slides to edge, peeks on hover |
 | <img src="https://www.alfredapp.com/media/logo4@2x.png" width="16"> **Alfred Integration** | Push files from Alfred workflows |
