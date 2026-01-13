@@ -1638,7 +1638,7 @@
                     if (currentSelectedRating > 0 && currentExtensionId) {
                         const btn = document.getElementById('reviews-submit-btn');
                         const feedback = document.getElementById('reviews-feedback-input')?.value || '';
-                        btn.textContent = 'Submitting...';
+                        btn.querySelector('.submit-text').textContent = 'Submitting...';
                         btn.disabled = true;
 
                         const success = await submitExtensionRating(currentExtensionId, currentSelectedRating, feedback);
@@ -1648,7 +1648,7 @@
                             // Refresh reviews
                             await loadReviews(currentExtensionId);
                         } else {
-                            btn.textContent = 'Submit Review';
+                            btn.querySelector('.submit-text').textContent = 'Submit Review';
                             btn.disabled = false;
                         }
                     }
@@ -1666,7 +1666,7 @@
             document.getElementById('reviews-thanks')?.classList.add('hidden');
             const btn = document.getElementById('reviews-submit-btn');
             if (btn) {
-                btn.textContent = 'Submit Review';
+                btn.querySelector('.submit-text').textContent = 'Submit Review';
                 btn.disabled = false;
             }
 
