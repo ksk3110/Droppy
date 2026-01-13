@@ -64,15 +64,15 @@ struct VoiceTranscribeCard: View {
                     }
                     .foregroundStyle(.secondary)
                     
-                    // Category badge
-                    Text("AI")
+                    // Category badge - shows "Installed" if model is downloaded
+                    Text(manager.isModelDownloaded ? "Installed" : "AI")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(manager.isModelDownloaded ? .green : .secondary)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(
                             Capsule()
-                                .fill(Color.white.opacity(0.1))
+                                .fill(manager.isModelDownloaded ? Color.green.opacity(0.15) : Color.white.opacity(0.1))
                         )
                 }
             }

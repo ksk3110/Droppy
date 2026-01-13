@@ -12,6 +12,7 @@ struct VoiceTranscribeInfoView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isHoveringAction = false
     @State private var isHoveringCancel = false
+    @State private var isHoveringReviews = false
     @State private var showReviewsSheet = false
     @State private var isDownloading = false
     
@@ -77,7 +78,6 @@ struct VoiceTranscribeInfoView: View {
                 }
                 .foregroundStyle(.secondary)
                 
-                // Reviews button
                 Button {
                     showReviewsSheet = true
                 } label: {
@@ -88,6 +88,9 @@ struct VoiceTranscribeInfoView: View {
                         if let r = rating, r.ratingCount > 0 {
                             Text(String(format: "%.1f", r.averageRating))
                                 .font(.caption.weight(.medium))
+                            Text("(\(r.ratingCount))")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
                         } else {
                             Text("–")
                                 .font(.caption.weight(.medium))
@@ -325,6 +328,29 @@ struct VoiceTranscribeInfoView: View {
             .onHover { h in
                 withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
                     isHoveringCancel = h
+                }
+            }
+            
+            // Reviews button
+            Button {
+                showReviewsSheet = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "star.bubble")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("Reviews")
+                }
+                .fontWeight(.medium)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color.white.opacity(isHoveringReviews ? 0.15 : 0.1))
+                .foregroundStyle(.secondary)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .onHover { h in
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                    isHoveringReviews = h
                 }
             }
             
