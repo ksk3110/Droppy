@@ -43,12 +43,20 @@ struct FinderServicesSetupView: View {
     
     private var headerSection: some View {
         VStack(spacing: 12) {
-            // Icon - Finder icon like AIInstallView uses AIExtensionIcon
-            Image(nsImage: NSWorkspace.shared.icon(forFile: "/System/Library/CoreServices/Finder.app"))
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 64, height: 64)
-                .shadow(color: .blue.opacity(0.3), radius: 8, y: 4)
+            // Icon - Finder icon from remote URL
+            AsyncImage(url: URL(string: "https://iordv.github.io/Droppy/assets/icons/finder.jpg")) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().aspectRatio(contentMode: .fill)
+                case .failure:
+                    Image(systemName: "folder").font(.system(size: 32)).foregroundStyle(.blue)
+                default:
+                    RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color(white: 0.2))
+                }
+            }
+            .frame(width: 64, height: 64)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .shadow(color: .blue.opacity(0.3), radius: 8, y: 4)
             
             Text("Enable Finder Services")
                 .font(.title2.bold())
@@ -190,12 +198,20 @@ struct FinderServicesSetupSheetView: View {
     
     private var headerSection: some View {
         VStack(spacing: 12) {
-            // Icon - Finder icon
-            Image(nsImage: NSWorkspace.shared.icon(forFile: "/System/Library/CoreServices/Finder.app"))
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 64, height: 64)
-                .shadow(color: .blue.opacity(0.3), radius: 8, y: 4)
+            // Icon - Finder icon from remote URL
+            AsyncImage(url: URL(string: "https://iordv.github.io/Droppy/assets/icons/finder.jpg")) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().aspectRatio(contentMode: .fill)
+                case .failure:
+                    Image(systemName: "folder").font(.system(size: 32)).foregroundStyle(.blue)
+                default:
+                    RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color(white: 0.2))
+                }
+            }
+            .frame(width: 64, height: 64)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .shadow(color: .blue.opacity(0.3), radius: 8, y: 4)
             
             Text("Enable Finder Services")
                 .font(.title2.bold())
