@@ -535,7 +535,7 @@ struct SpotifyBadge: View {
             default:
                 Image(systemName: "music.note.list")
                     .font(.system(size: 12))
-                    .foregroundStyle(.green)
+                    .foregroundStyle(.blue)
             }
         }
         .frame(width: 20, height: 20)

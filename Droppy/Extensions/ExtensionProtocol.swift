@@ -59,7 +59,7 @@ enum ExtensionType: String, CaseIterable, Identifiable {
         case .aiBackgroundRemoval: return .pink
         case .alfred: return .blue
         case .finder, .finderServices: return .blue
-        case .spotify: return .green
+        case .spotify: return .blue
         case .elementCapture: return .blue
         case .windowSnap: return .cyan
         }
@@ -182,7 +182,7 @@ enum ExtensionType: String, CaseIterable, Identifiable {
                 case .success(let image):
                     image.resizable().aspectRatio(contentMode: .fill)
                 case .failure:
-                    Image(systemName: "music.note.list").font(.system(size: 32)).foregroundStyle(.green)
+                    Image(systemName: "music.note.list").font(.system(size: 32)).foregroundStyle(.blue)
                 default:
                     RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color(white: 0.2))
                 }

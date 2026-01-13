@@ -28,7 +28,7 @@ struct SpotifyExtensionCard: View {
                     case .failure:
                         Image(systemName: "music.note.list")
                             .font(.system(size: 24))
-                            .foregroundStyle(.green)
+                            .foregroundStyle(.blue)
                     default:
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .fill(Color(white: 0.2))
@@ -105,7 +105,7 @@ struct SpotifyExtensionCard: View {
             }
         }
         .frame(minHeight: 160)
-        .extensionCardStyle(accentColor: .green)
+        .extensionCardStyle(accentColor: .blue)
         .contentShape(Rectangle())
         .onTapGesture {
             showInfoSheet = true
