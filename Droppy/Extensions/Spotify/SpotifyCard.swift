@@ -18,16 +18,24 @@ struct SpotifyExtensionCard: View {
         VStack(alignment: .leading, spacing: 12) {
             // Header with icon, stats, and badge
             HStack(alignment: .top) {
-                // Official Spotify icon (bundled) with squircle background
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color(white: 0.15))
-                    Image("SpotifyIcon")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .padding(2)
+                // Official Spotify icon from remote URL (keeps app binary small)
+                AsyncImage(url: URL(string: "https://iordv.github.io/Droppy/assets/icons/spotify.png")) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    case .failure:
+                        Image(systemName: "music.note.list")
+                            .font(.system(size: 24))
+                            .foregroundStyle(.green)
+                    default:
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color(white: 0.2))
+                    }
                 }
                 .frame(width: 44, height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 
                 Spacer()
                 
