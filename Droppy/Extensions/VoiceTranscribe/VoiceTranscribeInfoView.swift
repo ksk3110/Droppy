@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct VoiceTranscribeInfoView: View {
-    @StateObject private var manager = VoiceTranscribeManager.shared
+    @ObservedObject private var manager = VoiceTranscribeManager.shared
     @Environment(\.dismiss) private var dismiss
     @State private var isHoveringAction = false
     @State private var isHoveringCancel = false

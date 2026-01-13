@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct VoiceTranscribeCard: View {
-    @StateObject private var manager = VoiceTranscribeManager.shared
+    @ObservedObject private var manager = VoiceTranscribeManager.shared
     @State private var showInfoSheet = false
     var installCount: Int?
     var rating: AnalyticsService.ExtensionRating?
@@ -96,43 +96,26 @@ struct VoiceTranscribeCard: View {
                 // Status indicator
                 HStack(spacing: 6) {
                     Circle()
-                        .fill(manager.isModelDownloaded ? Color.blue : Color.white.opacity(0.3))
+                        .fill(manager.isModelDownloaded ? Color.green : Color.white.opacity(0.3))
                         .frame(width: 8, height: 8)
                         .overlay(
                             Circle()
-                                .stroke(manager.isModelDownloaded ? Color.blue.opacity(0.3) : Color.clear, lineWidth: 3)
+                                .stroke(manager.isModelDownloaded ? Color.green.opacity(0.3) : Color.clear, lineWidth: 3)
                         )
                     
                     Text(manager.isModelDownloaded ? "Ready" : "Setup Required")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                
                 Spacer()
-                
-                // Open button
-                Button {
-                    showInfoSheet = true
-                } label: {
-                    Text("Open")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 6)
-                        .background(Color.blue.opacity(0.8))
-                        .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
             }
         }
-        .padding(16)
-        .frame(height: 180)
-        .background(Color.white.opacity(0.05))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-        )
+        .frame(minHeight: 160)
+        .extensionCardStyle(accentColor: .blue)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            showInfoSheet = true
+        }
         .sheet(isPresented: $showInfoSheet) {
             VoiceTranscribeInfoView(installCount: installCount, rating: rating)
         }
