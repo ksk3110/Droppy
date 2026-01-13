@@ -55,7 +55,7 @@ struct VoiceTranscribeInfoView: View {
                     Circle()
                         .fill(Color.red.opacity(0.3))
                         .frame(width: 80, height: 80)
-                        .scaleEffect(manager.audioLevel + 0.8)
+                        .scaleEffect(CGFloat(manager.audioLevel) + 0.8)
                         .animation(.easeOut(duration: 0.1), value: manager.audioLevel)
                 }
                 
