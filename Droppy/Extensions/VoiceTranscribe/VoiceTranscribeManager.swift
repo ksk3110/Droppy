@@ -621,14 +621,41 @@ final class VoiceTranscribeManager: ObservableObject {
         // Reset progress
         transcriptionProgress = 0
         
+        // Start security-scoped access (required for files from NSOpenPanel)
+        let accessGranted = url.startAccessingSecurityScopedResource()
+        defer {
+            if accessGranted {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+        
+        // Copy and convert file to WAV format for WhisperKit compatibility
+        let tempWavURL = recordingsDirectory.appendingPathComponent("upload_\(Date().timeIntervalSince1970).wav")
+        
+        do {
+            // Convert audio to WAV format (16kHz, mono, 16-bit) - required by WhisperKit
+            if let convertedURL = try await convertToWav(source: url, destination: tempWavURL) {
+                print("VoiceTranscribe: Converted audio to WAV: \(convertedURL.path)")
+            } else {
+                // Fallback: just copy the file directly
+                try FileManager.default.copyItem(at: url, to: tempWavURL)
+                print("VoiceTranscribe: Copied audio file directly: \(tempWavURL.path)")
+            }
+        } catch {
+            print("VoiceTranscribe: Failed to prepare audio file: \(error)")
+            state = .error("Failed to process audio file: \(error.localizedDescription)")
+            return
+        }
+        
         // Ensure we have a loaded model
         if whisperKit == nil {
             transcriptionProgress = 0.1 // Loading model phase
             do {
+                print("VoiceTranscribe: Loading WhisperKit model...")
                 let kit = try await WhisperKit(
                     model: selectedModel.rawValue,
-                    verbose: false,
-                    logLevel: .none,
+                    verbose: true,  // Enable verbose for debugging
+                    logLevel: .info,
                     prewarm: false,
                     load: false,
                     download: true
@@ -636,13 +663,16 @@ final class VoiceTranscribeManager: ObservableObject {
                 try await kit.loadModels()
                 try await kit.prewarmModels()
                 whisperKit = kit
+                print("VoiceTranscribe: Model loaded successfully")
             } catch {
+                try? FileManager.default.removeItem(at: tempWavURL)
                 state = .error("Failed to load model: \(error.localizedDescription)")
                 return
             }
         }
         
         guard let whisper = whisperKit else {
+            try? FileManager.default.removeItem(at: tempWavURL)
             state = .error("Model not initialized")
             return
         }
@@ -663,18 +693,21 @@ final class VoiceTranscribeManager: ObservableObject {
                 options.language = selectedLanguage
             }
             
-            let results = try await whisper.transcribe(audioPath: url.path, decodeOptions: options)
+            print("VoiceTranscribe: Starting transcription of \(tempWavURL.path)")
+            let results = try await whisper.transcribe(audioPath: tempWavURL.path, decodeOptions: options)
+            print("VoiceTranscribe: Transcription returned \(results.count) results")
             
             progressObservation.invalidate()
             transcriptionProgress = 1.0
             
             if let result = results.first {
                 transcriptionResult = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
-                print("VoiceTranscribe: File transcription complete - \(result.text.count) chars")
+                print("VoiceTranscribe: File transcription complete - \(transcriptionResult.count) chars: '\(transcriptionResult.prefix(100))...'")
                 
                 VoiceTranscriptionResultController.shared.showResult()
                 state = .idle
             } else {
+                print("VoiceTranscribe: No transcription results returned")
                 transcriptionResult = ""
                 state = .idle
             }
@@ -685,7 +718,65 @@ final class VoiceTranscribeManager: ObservableObject {
             state = .error("Transcription failed: \(error.localizedDescription)")
         }
         
-        // NOTE: We do NOT delete the source file for uploaded files
+        // Clean up temp file (NOT the original)
+        try? FileManager.default.removeItem(at: tempWavURL)
+    }
+    
+    /// Convert audio file to WAV format required by WhisperKit (16kHz, mono, 16-bit PCM)
+    private func convertToWav(source: URL, destination: URL) async throws -> URL? {
+        let asset = AVAsset(url: source)
+        
+        // Check if file has audio track
+        let audioTracks = try await asset.loadTracks(withMediaType: .audio)
+        guard !audioTracks.isEmpty else {
+            throw NSError(domain: "VoiceTranscribe", code: 1, userInfo: [NSLocalizedDescriptionKey: "No audio track found in file"])
+        }
+        
+        // Create export session
+        guard let exportSession = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetAppleM4A) else {
+            // Can't convert, just copy
+            return nil
+        }
+        
+        // For WAV, we need a different approach - use AVAudioFile
+        let sourceFile = try AVAudioFile(forReading: source)
+        let format = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 16000, channels: 1, interleaved: true)!
+        
+        guard let converter = AVAudioConverter(from: sourceFile.processingFormat, to: format) else {
+            return nil
+        }
+        
+        let outputFile = try AVAudioFile(forWriting: destination, settings: format.settings)
+        
+        let bufferCapacity: AVAudioFrameCount = 4096
+        let inputBuffer = AVAudioPCMBuffer(pcmFormat: sourceFile.processingFormat, frameCapacity: bufferCapacity)!
+        let outputBuffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: bufferCapacity)!
+        
+        while true {
+            do {
+                try sourceFile.read(into: inputBuffer)
+            } catch {
+                break // End of file
+            }
+            
+            if inputBuffer.frameLength == 0 {
+                break
+            }
+            
+            var error: NSError?
+            converter.convert(to: outputBuffer, error: &error) { inNumPackets, outStatus in
+                outStatus.pointee = .haveData
+                return inputBuffer
+            }
+            
+            if let error = error {
+                throw error
+            }
+            
+            try outputFile.write(from: outputBuffer)
+        }
+        
+        return destination
     }
     
     private func checkModelStatus() {
