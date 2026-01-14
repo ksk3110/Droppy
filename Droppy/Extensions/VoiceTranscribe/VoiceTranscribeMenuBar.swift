@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AppKit
+import UniformTypeIdentifiers
 
 @MainActor
 final class VoiceTranscribeMenuBar {
@@ -124,6 +125,11 @@ final class VoiceTranscribeMenuBar {
             invisiItem.image = NSImage(systemSymbolName: "eye.slash.circle", accessibilityDescription: nil)
             menu.addItem(invisiItem)
             
+            let uploadItem = NSMenuItem(title: "Upload Audio File...", action: #selector(uploadAudioFile), keyEquivalent: "")
+            uploadItem.target = self
+            uploadItem.image = NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: nil)
+            menu.addItem(uploadItem)
+            
             menu.addItem(NSMenuItem.separator())
             
             let settingsItem = NSMenuItem(title: "Voice Transcribe Settings...", action: #selector(openSettings), keyEquivalent: "")
@@ -183,6 +189,32 @@ final class VoiceTranscribeMenuBar {
     @objc private func openSettings() {
         Task { @MainActor in
             SettingsWindowController.shared.showSettings(openingExtension: .voiceTranscribe)
+        }
+    }
+    
+    @objc private func uploadAudioFile() {
+        Task { @MainActor in
+            let panel = NSOpenPanel()
+            panel.title = "Select Audio File to Transcribe"
+            panel.allowedContentTypes = [
+                .audio,
+                .mp3,
+                .wav,
+                .mpeg4Audio,
+                .aiff
+            ]
+            panel.allowsMultipleSelection = false
+            panel.canChooseDirectories = false
+            
+            let response = await panel.begin()
+            
+            if response == .OK, let url = panel.url {
+                // Show transcribing progress window
+                VoiceRecordingWindowController.shared.showTranscribingProgress()
+                
+                // Start transcription of the selected file
+                VoiceTranscribeManager.shared.transcribeFile(at: url)
+            }
         }
     }
 }

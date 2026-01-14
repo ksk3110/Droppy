@@ -329,6 +329,20 @@ final class VoiceTranscribeManager: ObservableObject {
         NSPasteboard.general.setString(transcriptionResult, forType: .string)
     }
     
+    /// Transcribe an existing audio file
+    func transcribeFile(at url: URL) {
+        guard state == .idle else {
+            print("VoiceTranscribe: Cannot transcribe file - not idle")
+            return
+        }
+        
+        state = .processing
+        
+        Task {
+            await transcribeAudioFile(at: url)
+        }
+    }
+    
     /// Download and initialize the selected model
     func downloadModel() {
         guard !isDownloading else { return }
@@ -600,6 +614,78 @@ final class VoiceTranscribeManager: ObservableObject {
         
         // Clean up recording file
         try? FileManager.default.removeItem(at: url)
+    }
+    
+    /// Transcribe an external audio file (does NOT delete the source file)
+    private func transcribeAudioFile(at url: URL) async {
+        // Reset progress
+        transcriptionProgress = 0
+        
+        // Ensure we have a loaded model
+        if whisperKit == nil {
+            transcriptionProgress = 0.1 // Loading model phase
+            do {
+                let kit = try await WhisperKit(
+                    model: selectedModel.rawValue,
+                    verbose: false,
+                    logLevel: .none,
+                    prewarm: false,
+                    load: false,
+                    download: true
+                )
+                try await kit.loadModels()
+                try await kit.prewarmModels()
+                whisperKit = kit
+            } catch {
+                state = .error("Failed to load model: \(error.localizedDescription)")
+                return
+            }
+        }
+        
+        guard let whisper = whisperKit else {
+            state = .error("Model not initialized")
+            return
+        }
+        
+        // Observe transcription progress
+        let progressObservation = whisper.progress.observe(\.fractionCompleted, options: [.new]) { [weak self] progress, _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.transcriptionProgress = 0.2 + (progress.fractionCompleted * 0.75)
+            }
+        }
+        
+        transcriptionProgress = 0.2
+        
+        do {
+            var options = DecodingOptions()
+            if selectedLanguage != "auto" {
+                options.language = selectedLanguage
+            }
+            
+            let results = try await whisper.transcribe(audioPath: url.path, decodeOptions: options)
+            
+            progressObservation.invalidate()
+            transcriptionProgress = 1.0
+            
+            if let result = results.first {
+                transcriptionResult = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                print("VoiceTranscribe: File transcription complete - \(result.text.count) chars")
+                
+                VoiceTranscriptionResultController.shared.showResult()
+                state = .idle
+            } else {
+                transcriptionResult = ""
+                state = .idle
+            }
+            
+        } catch {
+            progressObservation.invalidate()
+            print("VoiceTranscribe: File transcription error: \(error)")
+            state = .error("Transcription failed: \(error.localizedDescription)")
+        }
+        
+        // NOTE: We do NOT delete the source file for uploaded files
     }
     
     private func checkModelStatus() {
