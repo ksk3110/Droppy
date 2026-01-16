@@ -19,9 +19,7 @@
 ---
 
 <p align="center">
-  <a href="https://i.postimg.cc/1tpKj1Wf/Droppy-demo-v2.gif">
-    <img src="https://i.postimg.cc/1tpKj1Wf/Droppy-demo-v2.gif" alt="Droppy Demo">
-  </a>
+  <img src="https://i.postimg.cc/1tpKj1Wf/Droppy-demo-v2.gif" alt="Droppy Demo" width="80%">
 </p>
 
 <p align="center">
