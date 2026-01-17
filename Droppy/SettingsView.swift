@@ -578,7 +578,7 @@ struct SettingsView: View {
                     
                     // Focus/DND HUD
                     HUDToggleButton(
-                        title: "Focus Mode",
+                        title: DNDManager.shared.hasAccess ? "Focus Mode" : "Focus Mode ⚠️",
                         icon: "moon.fill",
                         isEnabled: $enableDNDHUD,
                         color: Color(red: 0.55, green: 0.35, blue: 0.95)
@@ -586,8 +586,10 @@ struct SettingsView: View {
                     .onChange(of: enableDNDHUD) { _, newValue in
                         if newValue {
                             NotchWindowController.shared.setupNotchWindow()
-                            // Show instructions since Full Disk Access can't be prompted
-                            showDNDAccessAlert = true
+                            // Only show alert if we don't have access
+                            if !DNDManager.shared.hasAccess {
+                                showDNDAccessAlert = true
+                            }
                         } else {
                             if !enableNotchShelf && !enableHUDReplacement && !showMediaPlayer && !enableBatteryHUD && !enableCapsLockHUD && !enableAirPodsHUD && !enableLockScreenHUD {
                                 NotchWindowController.shared.closeWindow()
@@ -600,11 +602,14 @@ struct SettingsView: View {
                                 NSWorkspace.shared.open(url)
                             }
                         }
+                        Button("I've Granted Access") {
+                            DNDManager.shared.recheckAccess()
+                        }
                         Button("Cancel", role: .cancel) {
                             enableDNDHUD = false
                         }
                     } message: {
-                        Text("To detect Focus mode changes, Droppy needs Full Disk Access.\n\n1. Click \"Open Settings\"\n2. Enable Droppy in the list\n3. Restart Droppy for changes to take effect")
+                        Text("To detect Focus mode changes, Droppy needs Full Disk Access.\n\n1. Click \"Open Settings\"\n2. Enable Droppy in the list\n3. Click \"I've Granted Access\"")
                     }
                 }
                 .padding(.vertical, 4)

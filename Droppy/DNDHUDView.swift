@@ -3,53 +3,60 @@
 //  Droppy
 //
 //  Created by Droppy on 17/01/2026.
-//  Do Not Disturb / Focus Mode HUD
+//  Focus/DND HUD matching CapsLockHUDView style exactly
 //
 
 import SwiftUI
 
-/// HUD view for Do Not Disturb / Focus Mode state
-/// Shows a moon icon with purple accent when Focus is active
+/// Compact Focus/DND HUD that sits inside the notch
+/// Matches CapsLockHUDView layout exactly: icon on left wing, ON/OFF on right wing
 struct DNDHUDView: View {
     @ObservedObject var dndManager: DNDManager
-    let notchWidth: CGFloat
-    let notchHeight: CGFloat
-    let hudWidth: CGFloat
-    var targetScreen: NSScreen? = nil
+    let notchWidth: CGFloat   // Physical notch width
+    let notchHeight: CGFloat  // Physical notch height
+    let hudWidth: CGFloat     // Total HUD width
+    var targetScreen: NSScreen? = nil  // Target screen for multi-monitor support
     
+    /// Width of each "wing" (area left/right of physical notch)
     private var wingWidth: CGFloat {
         (hudWidth - notchWidth) / 2
     }
     
-    // Purple accent for Focus mode (matches iOS)
+    /// Accent color: purple when Focus ON, white when OFF
+    /// In transparent DI mode, always use white for readability
     private var accentColor: Color {
         dndManager.isDNDActive ? Color(red: 0.55, green: 0.35, blue: 0.95) : .white
     }
     
-    private var iconName: String {
+    /// Focus icon - use filled variant when ON
+    private var focusIcon: String {
         dndManager.isDNDActive ? "moon.fill" : "moon"
     }
     
-    private var statusText: String {
-        dndManager.isDNDActive ? "Focus" : "Off"
-    }
-    
-    // Dynamic Island mode detection (screen-aware)
+    /// Whether we're in Dynamic Island mode (screen-aware for multi-monitor)
     private var isDynamicIslandMode: Bool {
         let screen = targetScreen ?? NSScreen.main ?? NSScreen.screens.first
         guard let screen = screen else { return true }
         let hasNotch = screen.safeAreaInsets.top > 0
         let forceTest = UserDefaults.standard.bool(forKey: "forceDynamicIslandTest")
-        if !screen.isBuiltIn { return true }
+        
+        // External displays never have physical notches, so always use compact HUD layout
+        if !screen.isBuiltIn {
+            return true
+        }
+        
+        // For built-in display, use main Dynamic Island setting
         let useDynamicIsland = UserDefaults.standard.object(forKey: "useDynamicIslandStyle") as? Bool ?? true
         return (!hasNotch || forceTest) && useDynamicIsland
     }
     
+    /// Whether transparent Dynamic Island mode is enabled
     private var isTransparentDI: Bool {
         isDynamicIslandMode && UserDefaults.standard.bool(forKey: "useDynamicIslandTransparent")
     }
     
-    private var displayColor: Color {
+    /// Color for Dynamic Island mode - white for transparent, accent color otherwise
+    private var dynamicIslandColor: Color {
         isTransparentDI ? .white : accentColor
     }
     
@@ -57,48 +64,59 @@ struct DNDHUDView: View {
         VStack(alignment: .center, spacing: 0) {
             if isDynamicIslandMode {
                 // DYNAMIC ISLAND: Compact horizontal layout
+                // EXACT COPY of CapsLockHUDView Dynamic Island layout
                 HStack(spacing: 12) {
-                    Image(systemName: iconName)
+                    // Focus icon - white in transparent mode for readability
+                    Image(systemName: focusIcon)
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(displayColor)
+                        .foregroundStyle(dynamicIslandColor)
+                        .symbolEffect(.pulse, options: .repeating, value: dndManager.isDNDActive)
                         .contentTransition(.symbolEffect(.replace))
+                        .symbolVariant(.fill)
                         .frame(width: 20, height: 20)
                     
-                    Text(statusText)
+                    // ON/OFF text - white in transparent mode for readability
+                    Text(dndManager.isDNDActive ? "ON" : "OFF")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(displayColor)
+                        .foregroundStyle(dynamicIslandColor)
+                        .monospacedDigit()
                         .contentTransition(.interpolate)
                 }
                 .padding(.horizontal, 14)
                 .frame(height: notchHeight)
             } else {
-                // NOTCH MODE: Wings layout
+                // NOTCH MODE: Two wings separated by the notch space
+                // EXACT COPY of CapsLockHUDView Notch Mode layout
                 HStack(spacing: 0) {
-                    // Left wing: Icon
+                    // Left wing: Focus icon near left edge
                     HStack {
-                        Image(systemName: iconName)
+                        Image(systemName: focusIcon)
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(accentColor)
+                            .symbolEffect(.pulse, options: .repeating, value: dndManager.isDNDActive)
                             .contentTransition(.symbolEffect(.replace))
+                            .symbolVariant(.fill)
                             .frame(width: 26, height: 26)
                         Spacer(minLength: 0)
                     }
-                    .padding(.leading, 16)
+                    .padding(.leading, 8)  // Balanced with vertical padding
                     .frame(width: wingWidth)
                     
-                    // Camera notch area
+                    // Camera notch area (spacer)
                     Spacer()
                         .frame(width: notchWidth)
                     
-                    // Right wing: Status text
+                    // Right wing: ON/OFF near right edge
                     HStack {
                         Spacer(minLength: 0)
-                        Text(statusText)
+                        Text(dndManager.isDNDActive ? "ON" : "OFF")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(accentColor)
+                            .monospacedDigit()
                             .contentTransition(.interpolate)
+                            .animation(.spring(response: 0.2, dampingFraction: 0.8), value: dndManager.isDNDActive)
                     }
-                    .padding(.trailing, 16)
+                    .padding(.trailing, 8)  // Balanced with vertical padding
                     .frame(width: wingWidth)
                 }
                 .frame(height: notchHeight)
@@ -107,23 +125,15 @@ struct DNDHUDView: View {
     }
 }
 
-// MARK: - Preview
-
-#Preview("DND HUD") {
+#Preview {
     ZStack {
-        Color.gray.opacity(0.3)
-        
-        RoundedRectangle(cornerRadius: 20)
-            .fill(Color.black)
-            .frame(width: 280, height: 40)
-            .overlay {
-                DNDHUDView(
-                    dndManager: DNDManager.shared,
-                    notchWidth: 180,
-                    notchHeight: 37,
-                    hudWidth: 280
-                )
-            }
+        Color.black
+        DNDHUDView(
+            dndManager: DNDManager.shared,
+            notchWidth: 180,
+            notchHeight: 32,
+            hudWidth: 300
+        )
     }
-    .frame(width: 400, height: 100)
+    .frame(width: 350, height: 60)
 }
