@@ -126,7 +126,7 @@ struct MediaHUDView: View {
             if isDynamicIslandMode {
                 // DYNAMIC ISLAND: Album on left, Visualizer on right, Title centered
                 // Using BoringNotch pattern: padding = (notchHeight - iconHeight) / 2 for symmetry
-                let iconSize: CGFloat = 20
+                let iconSize: CGFloat = 18  // Matches all other DI mode HUDs
                 let symmetricPadding = (notchHeight - iconSize) / 2
                 
                 ZStack {
