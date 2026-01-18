@@ -568,15 +568,8 @@ struct FeaturedExtensionCardCompact<DetailView: View>: View {
                 
                 // Content overlay
                 VStack(alignment: .leading, spacing: 8) {
-                    // Category + Icon row
+                    // Icon row (top right)
                     HStack {
-                        if !category.isEmpty {
-                            Text(category)
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(accentColor.opacity(0.9))
-                                .tracking(0.5)
-                        }
-                        
                         Spacer()
                         
                         CachedAsyncImage(url: URL(string: iconURL)) { image in
@@ -606,6 +599,27 @@ struct FeaturedExtensionCardCompact<DetailView: View>: View {
                         .lineLimit(1)
                 }
                 .padding(14)
+                
+                // NEW ribbon badge in top-left corner
+                if !category.isEmpty {
+                    VStack {
+                        HStack {
+                            Text(category)
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(
+                                    Capsule()
+                                        .fill(accentColor)
+                                )
+                                .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+                            Spacer()
+                        }
+                        Spacer()
+                    }
+                    .padding(10)
+                }
             }
             .frame(maxWidth: .infinity, minHeight: 110)
             .background(Color.black)
