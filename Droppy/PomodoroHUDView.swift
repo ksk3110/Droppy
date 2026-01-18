@@ -186,28 +186,96 @@ struct PomodoroHUDView: View {
 
 // MARK: - Timer Reveal View
 
-/// The draggable timer icon that follows the cursor during reveal gesture
+/// Premium pull-out animation - the timer "stretches" out of the shelf edge
+/// with buttery smooth physics and a beautiful tomato-inspired icon
 struct PomodoroRevealView: View {
-    let offset: CGFloat
-    let isRevealing: Bool
+    let offset: CGFloat       // How far user has dragged (0 to ~120)
+    let isRevealing: Bool     // Whether currently in drag gesture
+    
+    /// Progress from 0 to 1 based on drag distance
+    private var dragProgress: CGFloat {
+        min(max(offset / 80, 0), 1)
+    }
+    
+    /// Elastic scale that overshoots slightly during pull
+    private var elasticScale: CGFloat {
+        let base = 0.3 + (dragProgress * 0.7)
+        let overshoot = sin(dragProgress * .pi) * 0.15
+        return base + overshoot
+    }
+    
+    /// Dynamic width expands as you pull
+    private var dynamicWidth: CGFloat {
+        30 + (dragProgress * 24)  // 30 -> 54
+    }
+    
+    /// Slight rotation for organic feel
+    private var rotationAngle: Double {
+        Double(dragProgress * 8 - 4)  // -4° to +4° wobble
+    }
+    
+    /// Glow intensity increases as you pull
+    private var glowOpacity: Double {
+        Double(dragProgress * 0.6)
+    }
     
     var body: some View {
         ZStack {
-            // Background pill
+            // Glow effect behind
             Capsule()
-                .fill(Color.red.opacity(0.9))
-                .frame(width: 44, height: 28)
+                .fill(
+                    RadialGradient(
+                        colors: [Color.red.opacity(0.8), Color.red.opacity(0)],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 40
+                    )
+                )
+                .frame(width: dynamicWidth + 20, height: 48)
+                .blur(radius: 12)
+                .opacity(glowOpacity)
             
-            // Timer icon
-            Image(systemName: "timer")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.white)
-                .symbolEffect(.bounce, value: isRevealing)
+            // Main pill with gradient
+            Capsule()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.95, green: 0.25, blue: 0.25),  // Tomato red
+                            Color(red: 0.85, green: 0.15, blue: 0.15)   // Darker red
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: dynamicWidth, height: 32)
+                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                .overlay(
+                    // Shine highlight
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.3), Color.clear],
+                                startPoint: .top,
+                                endPoint: .center
+                            )
+                        )
+                        .padding(2)
+                )
+            
+            // Beautiful tomato/timer icon
+            Image(systemName: "hourglass")
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+                .symbolEffect(.bounce.down, options: .repeating.speed(0.3), value: isRevealing)
+                .rotationEffect(.degrees(dragProgress * 180))  // Hourglass flips as you drag
         }
+        .scaleEffect(elasticScale)
+        .rotationEffect(.degrees(rotationAngle))
         .offset(x: offset)
         .opacity(isRevealing ? 1 : 0)
-        .scaleEffect(isRevealing ? 1 : 0.5)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isRevealing)
+        .animation(.interactiveSpring(response: 0.25, dampingFraction: 0.6, blendDuration: 0.1), value: offset)
+        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isRevealing)
     }
 }
 
