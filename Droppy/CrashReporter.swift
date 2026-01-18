@@ -14,8 +14,12 @@ final class CrashReporter {
     
     private let crashFlagKey = "lastSessionCrashed"
     private let crashLogPathKey = "lastCrashLogPath"
+    private let lastCleanExitKey = "lastCleanExitTimestamp"
     private let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
     private let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
+    
+    /// Timestamp when the current session started
+    private var sessionStartTime: Date?
     
     private init() {}
     
@@ -23,12 +27,15 @@ final class CrashReporter {
     
     /// Call at app launch to mark session as started (not cleanly terminated)
     func markSessionStarted() {
+        sessionStartTime = Date()
         UserDefaults.standard.set(true, forKey: crashFlagKey)
     }
     
     /// Call at clean app termination to clear crash flag
     func markCleanExit() {
         UserDefaults.standard.set(false, forKey: crashFlagKey)
+        // Record the timestamp of clean exit so we can filter old crash logs
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: lastCleanExitKey)
     }
     
     /// Check if last session crashed and offer to report
@@ -46,8 +53,18 @@ final class CrashReporter {
         
         guard didCrash else { return }
         
-        // Find the most recent crash log
-        let crashLog = findLatestCrashLog()
+        // Get the last clean exit time - only show crashes AFTER this time
+        let lastCleanExit = UserDefaults.standard.double(forKey: lastCleanExitKey)
+        let lastCleanExitDate = lastCleanExit > 0 ? Date(timeIntervalSince1970: lastCleanExit) : nil
+        
+        // Find the most recent crash log that occurred AFTER last clean exit
+        let crashLog = findLatestCrashLog(after: lastCleanExitDate)
+        
+        // Only prompt if we found a relevant crash log
+        guard crashLog != nil else {
+            print("🔧 CrashReporter: No recent crash log found after last clean exit, skipping prompt")
+            return
+        }
         
         // Prompt user after a short delay to let the app fully launch
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -58,7 +75,7 @@ final class CrashReporter {
     
     // MARK: - Crash Log Discovery
     
-    private func findLatestCrashLog() -> String? {
+    private func findLatestCrashLog(after minDate: Date? = nil) -> String? {
         let crashDirs = [
             NSHomeDirectory() + "/Library/Logs/DiagnosticReports",
             "/Library/Logs/DiagnosticReports"
@@ -75,10 +92,15 @@ final class CrashReporter {
                 if let attrs = try? fileManager.attributesOfItem(atPath: path),
                    let modDate = attrs[.modificationDate] as? Date {
                     // Only consider crashes from the last 24 hours
-                    if modDate > Date().addingTimeInterval(-86400) {
-                        if latestCrash == nil || modDate > latestCrash!.date {
-                            latestCrash = (path, modDate)
-                        }
+                    guard modDate > Date().addingTimeInterval(-86400) else { continue }
+                    
+                    // If we have a minimum date (last clean exit), only consider crashes AFTER it
+                    if let minDate = minDate {
+                        guard modDate > minDate else { continue }
+                    }
+                    
+                    if latestCrash == nil || modDate > latestCrash!.date {
+                        latestCrash = (path, modDate)
                     }
                 }
             }
