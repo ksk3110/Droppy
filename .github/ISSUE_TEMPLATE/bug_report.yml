@@ -6,26 +6,31 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to report a bug! Please fill out the sections below to help us understand and fix the issue.
+        ## Thanks for helping improve Droppy! 🙏
+        Please fill out all required fields. The more details you provide, the faster I can fix the issue.
 
+  # ─────────────────────────────────────────────────────────────────
+  # SECTION 1: Your Setup
+  # ─────────────────────────────────────────────────────────────────
   - type: input
     id: version
     attributes:
-      label: Droppy Version
-      description: "You can find this in Settings > About"
-      placeholder: "e.g., 8.1.5"
+      label: 📦 Droppy Version
+      description: "Find this in: Droppy Menu Bar Icon → Right-click → Settings → About"
+      placeholder: "e.g., 8.2.4"
     validations:
       required: true
 
   - type: dropdown
     id: macos-version
     attributes:
-      label: macOS Version
+      label: 🍎 macOS Version
+      description: "Find this in: Apple Menu →  About This Mac"
       options:
         - macOS 26 (Tahoe)
-        - macOS 15 (Sequoia)
-        - macOS 14 (Sonoma)
-        - macOS 13 (Ventura)
+        - macOS 15.x (Sequoia)
+        - macOS 14.x (Sonoma)
+        - macOS 13.x (Ventura)
         - Other / Older
     validations:
       required: true
@@ -33,14 +38,54 @@ body:
   - type: dropdown
     id: mac-type
     attributes:
-      label: Mac Type
+      label: 💻 Mac Model
+      description: "What Mac are you using?"
       options:
-        - MacBook Pro (M-series, with Notch)
-        - MacBook Air (M-series, with Notch)
+        - MacBook Pro (M-series with Notch)
+        - MacBook Air (M-series with Notch)
         - iMac (M-series)
-        - Mac Mini / Mac Studio / Mac Pro
-        - MacBook Pro (Intel)
-        - MacBook Air (Intel)
+        - Mac Mini / Mac Studio / Mac Pro (M-series)
+        - MacBook Pro (Intel, no Notch)
+        - MacBook Air (Intel, no Notch)
+        - iMac (Intel)
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: display-setup
+    attributes:
+      label: 🖥️ Display Setup
+      description: "Are you using external monitors?"
+      options:
+        - Built-in display only
+        - Built-in + 1 external monitor
+        - Built-in + 2+ external monitors
+        - External monitor only (lid closed)
+        - Not sure
+    validations:
+      required: true
+
+  # ─────────────────────────────────────────────────────────────────
+  # SECTION 2: The Bug
+  # ─────────────────────────────────────────────────────────────────
+  - type: dropdown
+    id: feature-area
+    attributes:
+      label: 🎯 Which feature is affected?
+      description: "Select the area where the bug occurs"
+      options:
+        - Notch Shelf (file storage at the notch)
+        - Floating Basket (drag collector)
+        - Clipboard History
+        - Media Player / Now Playing
+        - Dynamic Island Mode
+        - Extensions (OCR, Background Removal, etc.)
+        - Settings / Preferences
+        - Window Snap
+        - Drag & Drop
+        - Keyboard Shortcuts
+        - Startup / General
         - Other
     validations:
       required: true
@@ -48,47 +93,81 @@ body:
   - type: textarea
     id: what-happened
     attributes:
-      label: What happened?
-      description: Describe the bug clearly. What did you expect vs what actually happened?
+      label: 📝 What happened?
+      description: "Describe the bug. What did you see vs what you expected?"
       placeholder: |
-        When I [action], I expected [expected behavior], but instead [actual behavior].
+        **What I did:**
+        [Describe your action]
+
+        **What I expected:**
+        [What should have happened]
+
+        **What actually happened:**
+        [What went wrong]
     validations:
       required: true
 
   - type: textarea
     id: steps
     attributes:
-      label: Steps to reproduce
-      description: How can we reproduce this bug?
+      label: 🔄 Steps to reproduce
+      description: "Exact steps so I can recreate the bug"
       placeholder: |
         1. Open Droppy
-        2. Go to...
-        3. Click on...
-        4. See error
+        2. Do this...
+        3. Then this...
+        4. Bug appears
     validations:
       required: true
 
   - type: dropdown
     id: frequency
     attributes:
-      label: How often does this happen?
+      label: 📊 How often does this happen?
       options:
-        - Every time
-        - Sometimes (50% of the time)
-        - Rarely (once or twice)
+        - Every single time (100%)
+        - Most of the time (~75%)
+        - Sometimes (~50%)
+        - Occasionally (~25%)
         - Only happened once
+        - Random / can't predict
     validations:
       required: true
 
+  - type: dropdown
+    id: severity
+    attributes:
+      label: ⚠️ How severe is this bug?
+      description: "How much does this impact your workflow?"
+      options:
+        - Crash / data loss - Droppy is unusable
+        - Major - Feature is broken, no workaround
+        - Moderate - Feature is broken, but I can work around it
+        - Minor - Annoyance but doesn't block me
+        - Cosmetic - Visual issue only
+    validations:
+      required: true
+
+  # ─────────────────────────────────────────────────────────────────
+  # SECTION 3: Evidence (Optional but helpful)
+  # ─────────────────────────────────────────────────────────────────
   - type: textarea
     id: screenshots
     attributes:
-      label: Screenshots or screen recordings
-      description: If applicable, add screenshots or recordings to help explain the problem
-      placeholder: Drag and drop images here
+      label: 📸 Screenshots or screen recordings
+      description: "Visual evidence helps a lot! Drag and drop images/videos here."
+      placeholder: |
+        Drag and drop images or videos here...
+        
+        Tip: Use Cmd+Shift+5 on macOS to record your screen
 
   - type: textarea
     id: additional
     attributes:
-      label: Additional context
-      description: Any other details that might help (crash logs, related settings, etc.)
+      label: 📎 Additional context
+      description: "Anything else that might help"
+      placeholder: |
+        - Related settings you've changed
+        - Other apps that might be involved
+        - Crash logs (if applicable)
+        - When did this start happening? (after update, fresh install, etc.)

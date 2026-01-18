@@ -996,34 +996,23 @@ struct NotchShelfPreview: View {
                             .stroke(Color.white.opacity(0.15), lineWidth: 1)
                     )
                 
-                // REAL "Drop!" indicator - exact copy from NotchShelfView.dropIndicatorContent
+                // NotchFace indicator - matches real drop indicator
                 VStack(spacing: 0) {
                     Spacer()
                         .frame(height: notchHeight)
                     
-                    // Real drop indicator content
-                    HStack(spacing: 8) {
-                        Image(systemName: "tray.and.arrow.down.fill")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(.white, .green)
-                            .symbolEffect(.bounce, value: bounce)
-                        
-                        Text("Drop!")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(.white)
-                            .shadow(radius: 2)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(Color.black)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                            )
-                            .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
-                    )
+                    // NotchFace drop indicator
+                    NotchFace(size: 30, isExcited: bounce)
+                        .padding(12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .fill(Color.black)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                )
+                                .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
+                        )
                     
                     Spacer()
                 }
@@ -1097,40 +1086,29 @@ struct OpenShelfIndicatorPreview: View {
     }
 }
 
-/// Drop Indicator Preview - REAL component from NotchShelfView
+/// Drop Indicator Preview - NotchFace that animates between normal and excited on hover
 struct DropIndicatorPreview: View {
-    @State private var bounce = false
+    @State private var isHovered = false
     
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "tray.and.arrow.down.fill")
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(.white, .green)
-                .symbolEffect(.bounce, value: bounce)
-            
-            Text("Drop!")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(.white)
-                .shadow(radius: 2)
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(Color.black)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                )
-                .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
-        )
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                bounce = true
+        NotchFace(size: 40, isExcited: isHovered)
+            .padding(16) // Symmetrical padding for centered appearance
+            .background(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(Color.black)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
+            )
+            .onHover { hovering in
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    isHovered = hovering
+                }
             }
-        }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
     }
 }
 

@@ -41,6 +41,7 @@ struct NotchShelfView: View {
     @AppStorage("useDynamicIslandStyle") private var useDynamicIslandStyle = true  // For reactive mode changes
     @AppStorage("useDynamicIslandTransparent") private var useDynamicIslandTransparent = false  // Transparent DI (only when DI + transparent enabled)
     @AppStorage("enableAutoClean") private var enableAutoClean = false  // Auto-clear after drag-out
+    @AppStorage("enableShelfAirDropZone") private var enableShelfAirDropZone = false  // AirDrop zone in shelf
     
     // HUD State - Use @ObservedObject for singletons (they manage their own lifecycle)
     @ObservedObject private var volumeManager = VolumeManager.shared
@@ -321,7 +322,7 @@ struct NotchShelfView: View {
             // Only expand on media hover, NOT when dragging files (prevents sliding animation)
             let shouldExpand = mediaHUDIsHovered && mediaHUDVisible
             return shouldExpand ? notchHeight + 28 : notchHeight
-        } else if enableNotchShelf && state.isMouseHovering {
+        } else if enableNotchShelf && (state.isMouseHovering || dragMonitor.isDragging) {
             // Dynamic Island stays fixed height - no vertical extension on hover
             if isDynamicIslandMode {
                 return notchHeight
@@ -330,8 +331,8 @@ struct NotchShelfView: View {
             if !isBuiltInDisplay {
                 return notchHeight
             }
-            // Only expand on mouse hover, NOT when dragging files (prevents sliding animation)
-            return notchHeight + 16  // Subtle expansion, not too tall
+            // Peek down when hovering or dragging files - subtle expansion
+            return notchHeight + 16
         } else {
             return notchHeight
         }
@@ -1087,16 +1088,6 @@ struct NotchShelfView: View {
                     ))
                     .allowsHitTesting(false)
             }
-            // "Open Shelf" indicator when hovering with mouse (no drag) - only when shelf is enabled
-            else if enableNotchShelf && showOpenShelfIndicator && state.isMouseHovering && !dragMonitor.isDragging && !isExpandedOnThisScreen {
-                openIndicatorContent
-                    .offset(y: indicatorOffset)
-                    .transition(.asymmetric(
-                        insertion: .scale(scale: 0.7).combined(with: .opacity).combined(with: .offset(y: -10)),
-                        removal: .scale(scale: 0.9).combined(with: .opacity)
-                    ))
-                    .allowsHitTesting(false)
-            }
         }
         .onTapGesture {
             // Only allow expanding shelf when shelf is enabled
@@ -1142,20 +1133,10 @@ struct NotchShelfView: View {
     // MARK: - Indicators
     
     private var dropIndicatorContent: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "tray.and.arrow.down.fill")
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(.white, .green)
-                .symbolEffect(.bounce, value: state.isDropTargeted)
-            
-            Text("Drop!")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(.white)
-                .shadow(radius: 2)
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-        .background(indicatorBackground)
+        // Show NotchFace in the indicator - excited when hovering on notch, idle otherwise
+        NotchFace(size: 40, isExcited: state.isDropTargeted)
+            .padding(16) // Symmetrical padding for centered appearance
+            .background(indicatorBackground)
     }
     
     private var openIndicatorContent: some View {
@@ -1526,43 +1507,80 @@ struct DynamicIslandOutlineShape: Shape {
 extension NotchShelfView {
 
     private var emptyShelfContent: some View {
-        ZStack {
-            // Face reacts to files being dragged - gets excited when drop targeted
-            if enableIdleFace {
-                NotchFace(size: 50, isExcited: state.isDropTargeted)
-            } else {
-                // Fallback if idle face is disabled
-                if state.isDropTargeted {
-                    Image(systemName: "tray.and.arrow.down.fill")
-                        .font(.system(size: 28, weight: .light))
-                        .foregroundStyle(.blue)
-                        .symbolEffect(.bounce, value: state.isDropTargeted)
+        HStack(spacing: 20) {
+            // Main drop zone (left side or full width when AirDrop zone disabled)
+            ZStack {
+                // Face reacts to files being dragged - gets excited when drop targeted
+                if enableIdleFace {
+                    NotchFace(size: 50, isExcited: state.isDropTargeted)
                 } else {
-                    Image(systemName: "tray")
-                        .font(.system(size: 28, weight: .light))
-                        .foregroundStyle(.white.opacity(0.4))
+                    // Fallback if idle face is disabled
+                    if state.isDropTargeted {
+                        Image(systemName: "tray.and.arrow.down.fill")
+                            .font(.system(size: 28, weight: .light))
+                            .foregroundStyle(.blue)
+                            .symbolEffect(.bounce, value: state.isDropTargeted)
+                    } else {
+                        Image(systemName: "tray")
+                            .font(.system(size: 28, weight: .light))
+                            .foregroundStyle(.white.opacity(0.4))
+                    }
                 }
             }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(
-                    state.isDropTargeted ? Color.blue : Color.white.opacity(0.2),
-                    style: StrokeStyle(
-                        lineWidth: state.isDropTargeted ? 2 : 1.5,
-                        lineCap: .round,
-                        dash: [6, 8],
-                        dashPhase: dropZoneDashPhase
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(4) // Ensure stroke doesn't get clipped at edges during peek animation
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(
+                        state.isDropTargeted ? Color.blue : Color.white.opacity(0.2),
+                        style: StrokeStyle(
+                            lineWidth: state.isDropTargeted ? 2 : 1.5,
+                            lineCap: .round,
+                            dash: [6, 8],
+                            dashPhase: dropZoneDashPhase
+                        )
                     )
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: state.isDropTargeted)
+            )
+            .scaleEffect(state.isDropTargeted ? 1.03 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: state.isDropTargeted)
+            
+            // AirDrop zone (right side, only when enabled)
+            if enableShelfAirDropZone {
+                ZStack {
+                    VStack(spacing: 6) {
+                        Image(systemName: "wifi")
+                            .font(.system(size: 24, weight: .light))
+                            .foregroundStyle(state.isShelfAirDropZoneTargeted ? .red : .secondary)
+                            .symbolEffect(.bounce, value: state.isShelfAirDropZoneTargeted)
+                        
+                        Text(state.isShelfAirDropZoneTargeted ? "Drop!" : "AirDrop")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(state.isShelfAirDropZoneTargeted ? .primary : .secondary)
+                    }
+                }
+                .frame(maxWidth: 90, maxHeight: .infinity)
+                .padding(4) // Ensure stroke doesn't get clipped at edges during peek animation
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(
+                            state.isShelfAirDropZoneTargeted ? Color.red : Color.white.opacity(0.2),
+                            style: StrokeStyle(
+                                lineWidth: state.isShelfAirDropZoneTargeted ? 2 : 1.5,
+                                lineCap: .round,
+                                dash: [6, 8],
+                                dashPhase: dropZoneDashPhase
+                            )
+                        )
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: state.isShelfAirDropZoneTargeted)
                 )
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: state.isDropTargeted)
-        )
-        // Top padding must clear the physical notch (notchHeight + small margin)
+                .scaleEffect(state.isShelfAirDropZoneTargeted ? 1.05 : 1.0)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: state.isShelfAirDropZoneTargeted)
+            }
+        }
+        // Top padding must clear the physical notch (notchHeight + margin for stroke visibility)
         // Island mode: minimal padding since there's no physical obstruction
-        .padding(EdgeInsets(top: isDynamicIslandMode ? 10 : notchHeight + 6, leading: 20, bottom: 20, trailing: 20))
-        .scaleEffect(state.isDropTargeted ? 1.03 : 1.0)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: state.isDropTargeted)
+        .padding(EdgeInsets(top: isDynamicIslandMode ? 10 : notchHeight + 14, leading: 20, bottom: 20, trailing: 20))
         .onAppear {
             withAnimation(.linear(duration: 25).repeatForever(autoreverses: false)) {
                 dropZoneDashPhase -= 280 // Multiple of 14 (6+8) for smooth loop

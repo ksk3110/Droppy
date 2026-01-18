@@ -19,6 +19,22 @@ class NotchDragContainer: NSView {
     /// State observation cancellable for tracking area updates
     private var stateObservationActive = false
     
+    /// AirDrop zone width (must match NotchShelfView.airDropZoneWidth)
+    private let airDropZoneWidth: CGFloat = 90
+    
+    /// Expanded shelf width constant
+    private let expandedShelfWidth: CGFloat = 450
+    
+    /// Whether AirDrop zone is enabled for shelf
+    private var isShelfAirDropZoneEnabled: Bool {
+        UserDefaults.standard.bool(forKey: "enableShelfAirDropZone")
+    }
+    
+    /// Whether shelf AirDrop zone should be shown (enabled AND expanded AND shelf is empty)
+    private var showShelfAirDropZone: Bool {
+        isShelfAirDropZoneEnabled && DroppyState.shared.isExpanded && DroppyState.shared.items.isEmpty
+    }
+    
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         
@@ -466,6 +482,72 @@ class NotchDragContainer: NSView {
                screenLocation.y >= yMin && screenLocation.y <= yMax
     }
     
+    /// Helper to check if a drag is over the shelf AirDrop zone (right side of expanded empty shelf)
+    private func isDragOverShelfAirDropZone(_ sender: NSDraggingInfo) -> Bool {
+        guard showShelfAirDropZone,
+              let notchWindow = self.window as? NotchWindow,
+              let screen = notchWindow.notchScreen else { return false }
+        
+        let dragLocation = sender.draggingLocation
+        guard let windowFrame = self.window?.frame else { return false }
+        let screenLocation = NSPoint(x: windowFrame.origin.x + dragLocation.x,
+                                     y: windowFrame.origin.y + dragLocation.y)
+        
+        // AirDrop zone is on the RIGHT side of the expanded shelf
+        let centerX = screen.frame.origin.x + screen.frame.width / 2
+        let shelfRightEdge = centerX + expandedShelfWidth / 2
+        let airDropLeftEdge = shelfRightEdge - airDropZoneWidth
+        
+        // Calculate shelf height
+        let expandedHeight: CGFloat = 110 + 54 // Empty shelf height
+        let yMin = screen.frame.origin.y + screen.frame.height - expandedHeight
+        let yMax = screen.frame.origin.y + screen.frame.height
+        
+        return screenLocation.x >= airDropLeftEdge && screenLocation.x <= shelfRightEdge &&
+               screenLocation.y >= yMin && screenLocation.y <= yMax
+    }
+    
+    /// Handle AirDrop sharing for files dropped on the shelf AirDrop zone
+    private func handleShelfAirDropShare(_ pasteboard: NSPasteboard) -> Bool {
+        var urls: [URL] = []
+        
+        // Read file URLs from pasteboard
+        if let readUrls = pasteboard.readObjects(forClasses: [NSURL.self],
+            options: [.urlReadingFileURLsOnly: true]) as? [URL] {
+            urls = readUrls
+        }
+        
+        // Fallback - read from pasteboardItems
+        if urls.isEmpty, let items = pasteboard.pasteboardItems {
+            for item in items {
+                if let urlString = item.string(forType: .fileURL),
+                   let url = URL(string: urlString) {
+                    urls.append(url)
+                }
+            }
+        }
+        
+        guard !urls.isEmpty else {
+            print("📡 Shelf AirDrop: No file URLs found in pasteboard")
+            return false
+        }
+        
+        print("📡 Shelf AirDrop: Sharing \(urls.count) file(s)")
+        
+        guard let airDropService = NSSharingService(named: .sendViaAirDrop) else {
+            print("📡 Shelf AirDrop: Service not available")
+            return false
+        }
+        
+        if airDropService.canPerform(withItems: urls) {
+            airDropService.perform(withItems: urls)
+            return true
+        }
+        
+        print("📡 Shelf AirDrop: canPerform returned false")
+        return false
+    }
+    
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
         let overNotch = isDragOverNotch(sender)
         let isExpanded = DroppyState.shared.isExpanded
@@ -492,38 +574,48 @@ class NotchDragContainer: NSView {
         let overNotch = isDragOverNotch(sender)
         let isExpanded = DroppyState.shared.isExpanded
         let overExpandedArea = isExpanded && isDragOverExpandedShelf(sender)
+        let overAirDropZone = isDragOverShelfAirDropZone(sender)
         
         DispatchQueue.main.async {
             // Show highlight when:
             // - Over notch and not expanded (collapsed state trigger)
             // - Over expanded shelf area (expanded state drop zone)
-            let shouldBeTargeted = (overNotch && !isExpanded) || overExpandedArea
+            let shouldBeTargeted = (overNotch && !isExpanded) || (overExpandedArea && !overAirDropZone)
             if DroppyState.shared.isDropTargeted != shouldBeTargeted {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                     DroppyState.shared.isDropTargeted = shouldBeTargeted
                 }
             }
+            
+            // Track AirDrop zone hover state
+            if DroppyState.shared.isShelfAirDropZoneTargeted != overAirDropZone {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    DroppyState.shared.isShelfAirDropZoneTargeted = overAirDropZone
+                }
+            }
         }
         
-        // Accept drops over the notch OR over the expanded shelf area
+        // Accept drops over the notch OR over the expanded shelf area (including AirDrop zone)
         let canDrop = overNotch || overExpandedArea
         return canDrop ? .copy : []
     }
     
     override func draggingExited(_ sender: NSDraggingInfo?) {
-        // Remove highlight
+        // Remove highlight and AirDrop zone state
         DispatchQueue.main.async {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 DroppyState.shared.isDropTargeted = false
+                DroppyState.shared.isShelfAirDropZoneTargeted = false
             }
         }
     }
     
     override func draggingEnded(_ sender: NSDraggingInfo) {
-        // Ensure highlight is removed
+        // Ensure highlight and AirDrop zone state is removed
         DispatchQueue.main.async {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 DroppyState.shared.isDropTargeted = false
+                DroppyState.shared.isShelfAirDropZoneTargeted = false
             }
         }
     }
@@ -532,17 +624,24 @@ class NotchDragContainer: NSView {
         let isExpanded = DroppyState.shared.isExpanded
         let overNotch = isDragOverNotch(sender)
         let overExpandedArea = isExpanded && isDragOverExpandedShelf(sender)
+        let overAirDropZone = isDragOverShelfAirDropZone(sender)
         
         // Accept drops when over the notch OR over the expanded shelf area
         if !overNotch && !overExpandedArea {
             return false // Reject - let other apps handle the drop
         }
         
-        // Remove highlight
+        // Remove highlight and AirDrop zone state
         DispatchQueue.main.async {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 DroppyState.shared.isDropTargeted = false
+                DroppyState.shared.isShelfAirDropZoneTargeted = false
             }
+        }
+        
+        // Check if drop is in AirDrop zone - route to AirDrop service
+        if overAirDropZone {
+            return handleShelfAirDropShare(sender.draggingPasteboard)
         }
         
         

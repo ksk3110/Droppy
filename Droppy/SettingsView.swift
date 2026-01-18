@@ -11,6 +11,7 @@ struct SettingsView: View {
     @AppStorage("enableBasketAutoHide") private var enableBasketAutoHide = false  // Auto-hide basket with peek (v5.3)
     @AppStorage("enableAutoClean") private var enableAutoClean = false  // Auto-clear after drag-out (v6.0.2)
     @AppStorage("enableAirDropZone") private var enableAirDropZone = true  // AirDrop drop zone in basket
+    @AppStorage("enableShelfAirDropZone") private var enableShelfAirDropZone = false  // AirDrop drop zone in shelf
     @AppStorage("basketAutoHideEdge") private var basketAutoHideEdge = "right"  // "left", "right", "bottom"
     @AppStorage("instantBasketOnDrag") private var instantBasketOnDrag = false  // Show basket immediately on drag
     @AppStorage("showClipboardButton") private var showClipboardButton = false
@@ -263,7 +264,7 @@ struct SettingsView: View {
     
     private var featuresSettings: some View {
         Group {
-            // MARK: Drop Zones Section
+            // MARK: Notch Shelf Section
             Section {
                 HStack(spacing: 8) {
                     NotchShelfInfoButton()
@@ -290,8 +291,38 @@ struct SettingsView: View {
                 
                 if enableNotchShelf {
                     NotchShelfPreview()
+                    
+                    // Shelf AirDrop Zone toggle
+                    HStack(spacing: 8) {
+                        AirDropZoneInfoButton()
+                        Toggle(isOn: $enableShelfAirDropZone) {
+                            VStack(alignment: .leading) {
+                                Text("AirDrop Zone")
+                                Text("Drop files on the right side of empty shelf to AirDrop")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
                 }
-
+                
+                // Auto-Clean toggle (applies to both shelf and basket)
+                if enableNotchShelf || enableFloatingBasket {
+                    Toggle(isOn: $enableAutoClean) {
+                        VStack(alignment: .leading) {
+                            Text("Auto-Clean")
+                            Text("Auto-remove files from shelf & basket after dragging out")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            } header: {
+                Text("Notch Shelf")
+            }
+            
+            // MARK: Floating Basket Section
+            Section {
                 HStack(spacing: 8) {
                     BasketGestureInfoButton()
                     Toggle(isOn: $enableFloatingBasket) {
@@ -373,22 +404,8 @@ struct SettingsView: View {
                         }
                     }
                 }
-                
-                // Auto-Clean toggle (applies to both shelf and basket)
-                if enableNotchShelf || enableFloatingBasket {
-                    Toggle(isOn: $enableAutoClean) {
-                        VStack(alignment: .leading) {
-                            Text("Auto-Clean")
-                            Text("Remove files from shelf/basket after dragging them out")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
             } header: {
-                Text("Drop Zones")
-            } footer: {
-                Text("Enable one or both drop zones to hold files temporarily.")
+                Text("Floating Basket")
             }
             
             // MARK: Media Player
@@ -869,23 +886,10 @@ struct SettingsView: View {
                     }
                 }
                 
-                Toggle(isOn: $showOpenShelfIndicator) {
-                    VStack(alignment: .leading) {
-                        Text("Open Shelf Indicator")
-                        Text("Show \"Open Shelf\" tooltip when hovering over notch")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                
-                if showOpenShelfIndicator {
-                    OpenShelfIndicatorPreview()
-                }
-                
                 Toggle(isOn: $showDropIndicator) {
                     VStack(alignment: .leading) {
                         Text("Drop Indicator")
-                        Text("Show \"Drop!\" tooltip when dragging files over notch")
+                        Text("Show NotchFace tooltip when dragging files over notch")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

@@ -248,8 +248,8 @@ struct FloatingBasketView: View {
                             dashPhase: effectiveDashPhase
                         )
                     )
-                    .frame(width: baseWidth - 24, height: currentHeight - 24)
-                    .offset(x: 12)
+                    .frame(width: baseWidth - 20, height: currentHeight - 20)
+                    .offset(x: 10)
                 
                 // Right zone outline (AirDrop - cyan when targeted)
                 RoundedRectangle(cornerRadius: cornerRadius - 8, style: .continuous)
@@ -262,8 +262,8 @@ struct FloatingBasketView: View {
                             dashPhase: effectiveDashPhase
                         )
                     )
-                    .frame(width: airDropZoneWidth - 24, height: currentHeight - 24)
-                    .offset(x: baseWidth + 12)
+                    .frame(width: airDropZoneWidth - 15, height: currentHeight - 20)
+                    .offset(x: baseWidth + 5)
                 
                 // AirDrop icon and label in the right zone (identical style to basket zone but red)
                 VStack(spacing: 6) {

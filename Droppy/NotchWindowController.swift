@@ -225,8 +225,9 @@ final class NotchWindowController: NSObject, ObservableObject {
         hiddenRightClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: .rightMouseDown) { [weak self] event in
             guard let self = self, self.isTemporarilyHidden else { return }
             
-            // Get the click location in screen coordinates
-            let clickLocation = event.locationInWindow
+            // Issue #57 Fix: Use NSEvent.mouseLocation for screen coordinates
+            // Global monitors receive event.locationInWindow in source window's coordinate space, not screen space
+            let clickLocation = NSEvent.mouseLocation
             
             // Check if click is in any notch window's original frame area
             for (displayID, _) in self.notchWindows {
@@ -243,13 +244,12 @@ final class NotchWindowController: NSObject, ObservableObject {
                     height: notchHeight
                 )
                 
-                // Convert click location to screen coordinates (NSEvent uses bottom-left origin)
-                let screenLocation = NSPoint(x: clickLocation.x, y: clickLocation.y)
-                
-                if notchArea.contains(screenLocation) {
-                    // Right-click in notch area - re-show the notch/island
+                if notchArea.contains(clickLocation) {
+                    // Right-click in notch area - re-show the notch/island and open settings
                     DispatchQueue.main.async {
                         self.setTemporarilyHidden(false)
+                        // User right-clicked to access settings - open them
+                        SettingsWindowController.shared.showSettings()
                     }
                     return
                 }
@@ -493,12 +493,45 @@ final class NotchWindowController: NSObject, ObservableObject {
         // Local monitor catches movement AND clicks when mouse is over the Notch window
         // Global monitor only catches events from OTHER apps - we need local for our own window
         // Also handles closing shelf when clicking outside the shelf area
-        localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .leftMouseDown]) { [weak self] event in
+        // Issue #63: Include rightMouseDown so right-click works with Bartender installed
+        localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .leftMouseDown, .rightMouseDown]) { [weak self] event in
             guard let self = self else { return event }
 
             // Handle mouse movement
             if event.type == .mouseMoved {
                 self.handleMouseEvent(event)
+                return event
+            }
+            
+            // Issue #63: Handle right-click locally for Bartender compatibility
+            // When Bartender is installed, it may intercept global right-click events
+            // This ensures right-click still works by handling it locally
+            if event.type == .rightMouseDown {
+                guard UserDefaults.standard.bool(forKey: "enableNotchShelf") else { return event }
+                
+                let mouseLocation = NSEvent.mouseLocation
+                
+                // Find window for this click
+                guard let (targetWindow, targetScreen) = self.findWindowForMouseLocation(mouseLocation) else { return event }
+                
+                let notchRect = targetWindow.getNotchRect()
+                let screenTopY = targetScreen.frame.maxY
+                let upwardExpansion = max(0, screenTopY - notchRect.maxY)
+                
+                let clickZone = NSRect(
+                    x: notchRect.origin.x - 10,
+                    y: notchRect.origin.y,
+                    width: notchRect.width + 20,
+                    height: notchRect.height + upwardExpansion
+                )
+                
+                if clickZone.contains(mouseLocation) {
+                    // Right-click on notch - open settings
+                    DispatchQueue.main.async {
+                        SettingsWindowController.shared.showSettings()
+                    }
+                    return nil // Consume the event
+                }
                 return event
             }
 
@@ -1170,6 +1203,14 @@ class NotchWindow: NSPanel {
         // CRITICAL: Skip all hover tracking when a context menu is open
         // This prevents view re-renders that would dismiss submenus (Share, Compress, etc.)
         if NotchWindowController.shared.hasActiveContextMenu() {
+            return
+        }
+        
+        // Issue #60: Skip leftMouseDragged events unless already hovering
+        // This prevents text selection in browsers from triggering the Dynamic Island
+        // When user drags to select text, the cursor may pass through the notch zone briefly
+        // We only want to respond to drags if the user was already hovering (intentional drag)
+        if event.type == .leftMouseDragged && !DroppyState.shared.isMouseHovering {
             return
         }
         

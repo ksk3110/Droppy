@@ -126,6 +126,7 @@ class ClipboardManager: ObservableObject {
     static let shared = ClipboardManager()
     
     private var isLoading = false // Flag to prevent saving during load
+    private var wasExplicitlyCleared = false // Flag to allow saving empty history when user clears all
     
     @Published var history: [ClipboardItem] = [] {
         didSet {
@@ -257,11 +258,15 @@ class ClipboardManager: ObservableObject {
     }
     
     private func saveToDisk() {
-        // Don't save empty history - this could indicate a bug
-        guard !history.isEmpty else {
-            print("⚠️ Refusing to save empty clipboard history")
+        // Don't save empty history UNLESS user explicitly cleared it
+        // This prevents accidental data loss from bugs while allowing intentional clears
+        guard !history.isEmpty || wasExplicitlyCleared else {
+            print("⚠️ Refusing to save empty clipboard history (use clearAll to intentionally clear)")
             return
         }
+        
+        // Reset the explicit clear flag after saving
+        wasExplicitlyCleared = false
         
         // Run save on background thread to avoid blocking UI
         let historyToSave = history
@@ -659,6 +664,8 @@ class ClipboardManager: ObservableObject {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                 history[index].isFavorite.toggle()
                 sortHistory()
+                // Force SwiftUI to detect the isFavorite change on rows
+                objectWillChange.send()
             }
         }
     }
@@ -676,6 +683,12 @@ class ClipboardManager: ObservableObject {
             // Clean up image file if it exists
             deleteImageFile(for: history[index])
             history.remove(at: index)
+            
+            // If history is now empty, mark as explicitly cleared so it persists to disk
+            if history.isEmpty {
+                wasExplicitlyCleared = true
+                scheduleSave() // Force save the empty state
+            }
         }
     }
     
@@ -683,6 +696,8 @@ class ClipboardManager: ObservableObject {
         if let index = history.firstIndex(where: { $0.id == item.id }) {
             let trimmed = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
             history[index].customTitle = trimmed.isEmpty ? nil : trimmed
+            // Force SwiftUI to re-render after mutation
+            objectWillChange.send()
         }
     }
 
@@ -720,9 +735,12 @@ class ClipboardManager: ObservableObject {
         // Set flag to favorite the next captured item
         favoriteNextCapture = true
         
-        // Simulate Cmd+C to copy current selection
-        // The clipboard monitor will pick up the change and apply the favorite flag
-        simulateCopyCommand()
+        // Issue #61: Add small delay before simulating Cmd+C
+        // This breaks the detection window for apps like DeepL that listen for Cmd+CC (double-C)
+        // The delay ensures the user's trigger shortcut has fully completed before we inject Cmd+C
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.simulateCopyCommand()
+        }
     }
     
     /// Simulates Cmd+C key press to copy current selection

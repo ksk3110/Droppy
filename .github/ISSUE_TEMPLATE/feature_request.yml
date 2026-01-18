@@ -6,51 +6,153 @@ body:
   - type: markdown
     attributes:
       value: |
-        Have an idea to make Droppy better? I'd love to hear it! Please describe your suggestion below.
+        ## Got an idea? I'd love to hear it! 💭
+        Droppy is built with user feedback. The more detail you provide, the better I can understand and prioritize your request.
 
-  - type: textarea
-    id: problem
+  # ─────────────────────────────────────────────────────────────────
+  # SECTION 1: The Problem
+  # ─────────────────────────────────────────────────────────────────
+  - type: dropdown
+    id: request-type
     attributes:
-      label: What problem does this solve?
-      description: Is your feature request related to a problem? Describe it here.
-      placeholder: |
-        I'm always frustrated when...
-        It would be great if...
+      label: 🏷️ What type of request is this?
+      options:
+        - New feature - Something Droppy doesn't do yet
+        - Enhancement - Improve an existing feature
+        - Integration - Connect with another app/service
+        - UI/UX - Design or usability improvement
+        - Performance - Make something faster
+        - Accessibility - Improve for users with disabilities
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature-area
+    attributes:
+      label: 🎯 Which area of Droppy?
+      description: "Where would this feature live?"
+      options:
+        - Notch Shelf
+        - Floating Basket
+        - Clipboard History
+        - Media Player / Now Playing
+        - Dynamic Island Mode
+        - Extensions
+        - Settings / Preferences
+        - Window Snap
+        - Drag & Drop
+        - Keyboard Shortcuts
+        - New area / Not sure
     validations:
       required: true
 
   - type: textarea
+    id: problem
+    attributes:
+      label: 😩 What problem are you trying to solve?
+      description: "What frustration or limitation does this address?"
+      placeholder: |
+        **Current situation:**
+        Right now when I try to [action], I have to [workaround], which is annoying because...
+
+        **The pain point:**
+        I wish Droppy could...
+    validations:
+      required: true
+
+  # ─────────────────────────────────────────────────────────────────
+  # SECTION 2: Your Solution
+  # ─────────────────────────────────────────────────────────────────
+  - type: textarea
     id: solution
     attributes:
-      label: Describe your ideal solution
-      description: What would you like to happen? Be as specific as possible.
+      label: 💡 Describe your ideal solution
+      description: "Be as specific as possible - how would it work?"
       placeholder: |
-        I would love if Droppy could...
+        **What I want:**
+        A way to [action] that [benefit]...
+
+        **How it could work:**
+        1. User does X
+        2. Droppy responds with Y
+        3. Result is Z
+
+        **Where it should appear:**
+        In the [shelf/basket/menu/settings/etc.]
     validations:
       required: true
 
   - type: textarea
     id: alternatives
     attributes:
-      label: Alternatives you've considered
-      description: Have you found any workarounds or alternative solutions?
+      label: 🔄 Alternatives you've tried
+      description: "Have you found workarounds? Seen this in other apps?"
       placeholder: |
-        Currently I'm using [workaround], but it's not ideal because...
+        - Currently I'm using [workaround], but it's not ideal because...
+        - [Other app] has a similar feature that works like...
+        - I tried [approach] but it didn't work because...
 
+  # ─────────────────────────────────────────────────────────────────
+  # SECTION 3: Priority & Impact
+  # ─────────────────────────────────────────────────────────────────
   - type: dropdown
     id: importance
     attributes:
-      label: How important is this to you?
+      label: ⭐ How important is this to you?
       options:
-        - Nice to have
-        - Would significantly improve my workflow
-        - Critical - I can't use Droppy effectively without this
+        - 🟢 Nice to have - Would be cool, but not urgent
+        - 🟡 Important - Would significantly improve my workflow
+        - 🔴 Critical - I really need this to use Droppy effectively
     validations:
       required: true
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: 📊 How often would you use this?
+      options:
+        - Multiple times per day
+        - Daily
+        - Weekly
+        - Occasionally
+        - Rarely, but it would be valuable when needed
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: user-type
+    attributes:
+      label: 👤 How do you primarily use Droppy?
+      description: "Select all that apply - helps me understand your workflow"
+      options:
+        - label: General productivity (files, clipboard, etc.)
+        - label: Creative work (design, video, audio)
+        - label: Development / coding
+        - label: Writing / content creation
+        - label: Research / academia
+        - label: Business / enterprise
+
+  # ─────────────────────────────────────────────────────────────────
+  # SECTION 4: Additional Info
+  # ─────────────────────────────────────────────────────────────────
+  - type: textarea
+    id: mockups
+    attributes:
+      label: 📸 Mockups or examples
+      description: "Visual references help a lot! Drag and drop images here."
+      placeholder: |
+        Drag and drop images here...
+        
+        - Sketch of how it might look
+        - Screenshot from another app with similar feature
+        - Annotated screenshot of where it should appear
 
   - type: textarea
     id: context
     attributes:
-      label: Additional context
-      description: Add any mockups, screenshots, or examples that might help explain your idea
-      placeholder: Drag and drop images here, or describe similar features in other apps
+      label: 📎 Additional context
+      description: "Anything else that helps explain your idea"
+      placeholder: |
+        - Related feature requests or GitHub issues
+        - Links to similar features in other apps
+        - Your specific use case or workflow
