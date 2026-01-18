@@ -31,6 +31,11 @@ struct TerminalNotchView: View {
     
     private var quickCommandView: some View {
         VStack(spacing: 8) {
+            // Top spacer to align with album art and clear physical notch
+            // This matches the notchHeight + padding used in MediaPlayerView
+            Spacer()
+                .frame(height: 36)
+            
             // Command input row
             HStack(spacing: 10) {
                 // Shell prompt
