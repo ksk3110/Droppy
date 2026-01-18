@@ -1715,7 +1715,8 @@ extension NotchShelfView {
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: state.isShelfAirDropZoneTargeted)
         // Top padding must clear the physical notch (notchHeight + margin for stroke visibility)
         // Island mode: uniform padding on ALL sides (16pt base, 18pt bottom for visual balance with rounded corners)
-        .padding(EdgeInsets(top: isDynamicIslandMode ? 16 : notchHeight + 14, leading: isDynamicIslandMode ? 16 : 20, bottom: isDynamicIslandMode ? 18 : 14, trailing: isDynamicIslandMode ? 16 : 20))
+        // Notch mode: 20pt on all sides except top (which must clear the notch)
+        .padding(EdgeInsets(top: isDynamicIslandMode ? 16 : notchHeight + 14, leading: isDynamicIslandMode ? 16 : 20, bottom: isDynamicIslandMode ? 18 : 20, trailing: isDynamicIslandMode ? 16 : 20))
         .onAppear {
             withAnimation(.linear(duration: 25).repeatForever(autoreverses: false)) {
                 dropZoneDashPhase -= 280 // Multiple of 14 (6+8) for smooth loop
