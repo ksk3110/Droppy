@@ -12,25 +12,9 @@ struct TerminalNotchView: View {
     @ObservedObject var manager: TerminalNotchManager
     @FocusState private var isInputFocused: Bool
     
-    /// Whether we're in Dynamic Island mode (no physical notch to clear)
-    private var isDynamicIslandMode: Bool {
-        guard let screen = NSScreen.main else { return true }
-        let hasNotch = screen.safeAreaInsets.top > 0
-        let useDynamicIsland = UserDefaults.standard.object(forKey: "useDynamicIslandStyle") as? Bool ?? true
-        // External displays or DI mode = no physical notch
-        return !screen.isBuiltIn || (!hasNotch && useDynamicIsland)
-    }
-    
-    /// Physical notch height from safe area insets
+    /// Physical notch height from safe area insets (matches MediaPlayerView)
     private var notchHeight: CGFloat {
         NSScreen.main?.safeAreaInsets.top ?? 0
-    }
-    
-    /// Top padding to match MediaPlayerView alignment
-    /// Uses notchHeight + 6 for notch mode (same as MediaPlayerView)
-    /// Uses 20pt for DI mode (same as MediaPlayerView)
-    private var topPadding: CGFloat {
-        isDynamicIslandMode ? 20 : notchHeight + 6
     }
     
     var body: some View {
@@ -51,11 +35,7 @@ struct TerminalNotchView: View {
     // MARK: - Quick Command View
     
     private var quickCommandView: some View {
-        VStack(spacing: 8) {
-            // Top spacer: 36pt for notch mode (clears physical notch), 14pt uniform for DI mode
-            Spacer()
-                .frame(height: topPadding)
-            
+        VStack(alignment: .leading, spacing: 8) {
             // Command input row
             HStack(spacing: 10) {
                 // Shell prompt
@@ -88,8 +68,6 @@ struct TerminalNotchView: View {
                         .frame(width: 16, height: 16)
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
             
             // Output preview (if any)
             if !manager.lastOutput.isEmpty {
@@ -101,15 +79,19 @@ struct TerminalNotchView: View {
                         .font(.system(size: 12, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.8))
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
                 }
                 .frame(maxHeight: 200)
             }
             
-            // Push all content to the top
-            Spacer()
+            Spacer(minLength: 0)
         }
+        // CRITICAL: Use exact same padding as MediaPlayerView for alignment
+        .padding(EdgeInsets(
+            top: notchHeight > 0 ? notchHeight + 6 : 20,
+            leading: 20,
+            bottom: 20,
+            trailing: 20
+        ))
     }
     
     // MARK: - Expanded Terminal View
