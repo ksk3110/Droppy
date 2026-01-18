@@ -40,6 +40,9 @@ class TerminalNotchManager: ObservableObject {
     /// Pulse animation trigger (set briefly on command execution)
     @Published var showPulse: Bool = false
     
+    /// Whether any command has been executed in this terminal session
+    @Published var hasExecutedCommand: Bool = false
+    
     // MARK: - Settings
     
     /// Default shell path
@@ -108,6 +111,7 @@ class TerminalNotchManager: ObservableObject {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             lastOutput = ""
             commandText = ""
+            hasExecutedCommand = false
         }
     }
     
@@ -119,6 +123,7 @@ class TerminalNotchManager: ObservableObject {
         addToHistory(command)
         
         isRunning = true
+        hasExecutedCommand = true
         lastOutput = ""
         
         // Trigger pulse animation

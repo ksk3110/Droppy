@@ -22,6 +22,9 @@ struct TerminalNotchView: View {
             VStack(spacing: 0) {
                 if manager.isExpanded {
                     expandedTerminalView
+                } else if !manager.hasExecutedCommand {
+                    // Initial centered state with dotted outline
+                    initialCommandView
                 } else {
                     quickCommandView
                 }
@@ -41,6 +44,70 @@ struct TerminalNotchView: View {
         .onAppear {
             isInputFocused = true
         }
+    }
+    
+    // MARK: - Initial Centered Command View
+    
+    /// Beautiful centered command input with dotted outline (shown before first command)
+    private var initialCommandView: some View {
+        ZStack {
+            // Dotted outline container (like empty shelf)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(
+                    Color.green.opacity(0.4),
+                    style: StrokeStyle(
+                        lineWidth: 1.5,
+                        lineCap: .round,
+                        dash: [6, 8]
+                    )
+                )
+            
+            // Centered command input
+            VStack(spacing: 12) {
+                // Terminal icon
+                Image(systemName: "terminal")
+                    .font(.system(size: 24, weight: .light))
+                    .foregroundStyle(.green.opacity(0.6))
+                
+                // Command input row
+                HStack(spacing: 8) {
+                    Text("$")
+                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.green)
+                    
+                    TextField("Enter command...", text: $manager.commandText)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 16, design: .monospaced))
+                        .foregroundStyle(.white)
+                        .focused($isInputFocused)
+                        .onSubmit {
+                            manager.executeQuickCommand(manager.commandText)
+                        }
+                        .onKeyPress(.upArrow) {
+                            manager.historyUp()
+                            return .handled
+                        }
+                        .onKeyPress(.downArrow) {
+                            manager.historyDown()
+                            return .handled
+                        }
+                    
+                    if manager.isRunning {
+                        ProgressView()
+                            .scaleEffect(0.6)
+                            .frame(width: 16, height: 16)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.white.opacity(0.05))
+                )
+            }
+            .padding(24)
+        }
+        .padding(16)
     }
     
     // MARK: - Quick Command View
