@@ -94,16 +94,24 @@ Droppy's built-in **Extension Store** adds powerful features on demand. Everythi
   <img src="docs/assets/images/extension-store-full.png" alt="Extension Store" width="100%">
 </p>
 
-<div align="center">
-
-| | |
-|:---:|:---:|
-| <img src="https://iordv.github.io/Droppy/assets/icons/voice-transcribe.jpg" height="28"> **Voice Transcribe**<br>On-device speech-to-text using WhisperKit AI | <img src="https://iordv.github.io/Droppy/assets/icons/ai-bg.jpg" height="28"> **AI Background Removal**<br>Remove backgrounds locally using ML |
-| <img src="https://iordv.github.io/Droppy/assets/icons/video-target-size.png" height="28"> **Video Target Size**<br>Compress videos to exact file sizes with FFmpeg | <img src="https://iordv.github.io/Droppy/assets/icons/window-snap.jpg" height="28"> **Window Snap**<br>Snap windows with keyboard shortcuts |
-| <img src="https://iordv.github.io/Droppy/assets/icons/spotify.png" height="28"> **Spotify Integration**<br>Control Spotify playback from your notch | <img src="https://iordv.github.io/Droppy/assets/icons/element-capture.jpg" height="28"> **Element Capture**<br>Screenshot any UI element |
-| <img src="https://iordv.github.io/Droppy/assets/icons/alfred.png" height="28"> **Alfred Workflow**<br>Add files to Droppy from Alfred | <img src="https://iordv.github.io/Droppy/assets/icons/finder.png" height="28"> **Finder Services**<br>Right-click in Finder to send files |
-
-</div>
+<table align="center">
+<tr>
+<td align="center"><img src="https://iordv.github.io/Droppy/assets/icons/voice-transcribe.jpg" height="28"> <strong>Voice Transcribe</strong><br>On-device speech-to-text using WhisperKit AI</td>
+<td align="center"><img src="https://iordv.github.io/Droppy/assets/icons/ai-bg.jpg" height="28"> <strong>AI Background Removal</strong><br>Remove backgrounds locally using ML</td>
+</tr>
+<tr>
+<td align="center"><img src="https://iordv.github.io/Droppy/assets/icons/video-target-size.png" height="28"> <strong>Video Target Size</strong><br>Compress videos to exact file sizes with FFmpeg</td>
+<td align="center"><img src="https://iordv.github.io/Droppy/assets/icons/window-snap.jpg" height="28"> <strong>Window Snap</strong><br>Snap windows with keyboard shortcuts</td>
+</tr>
+<tr>
+<td align="center"><img src="https://iordv.github.io/Droppy/assets/icons/spotify.png" height="28"> <strong>Spotify Integration</strong><br>Control Spotify playback from your notch</td>
+<td align="center"><img src="https://iordv.github.io/Droppy/assets/icons/element-capture.jpg" height="28"> <strong>Element Capture</strong><br>Screenshot any UI element</td>
+</tr>
+<tr>
+<td align="center"><img src="https://iordv.github.io/Droppy/assets/icons/alfred.png" height="28"> <strong>Alfred Workflow</strong><br>Add files to Droppy from Alfred</td>
+<td align="center"><img src="https://iordv.github.io/Droppy/assets/icons/finder.png" height="28"> <strong>Finder Services</strong><br>Right-click in Finder to send files</td>
+</tr>
+</table>
 
 <p align="center">
   <strong>📊 Visit the live Extension Store to see real reviews, ratings, and install counts!</strong><br>
