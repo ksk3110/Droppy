@@ -34,6 +34,7 @@ struct NotchShelfView: View {
     @AppStorage("autoShrinkShelf") private var autoShrinkShelf = true  // Legacy - always true now
     @AppStorage("autoShrinkDelay") private var autoShrinkDelay = 3  // Legacy - kept for backwards compat
     @AppStorage("autoCollapseDelay") private var autoCollapseDelay = 1.0  // New: 0.5-2.0 seconds
+    @AppStorage("autoCollapseShelf") private var autoCollapseShelf = true  // Toggle for auto-collapse
     @AppStorage("autoExpandDelay") private var autoExpandDelay = 1.0  // New: 0.5-2.0 seconds
     @AppStorage("showClipboardButton") private var showClipboardButton = false
     @AppStorage("showOpenShelfIndicator") private var showOpenShelfIndicator = true
@@ -1009,8 +1010,8 @@ struct NotchShelfView: View {
     
     /// Starts the auto-shrink timer when the shelf is expanded
     private func startAutoShrinkTimer() {
-        // v8.1.2: REMOVED autoShrinkShelf check - auto-collapse is always enabled now
-        // The legacy setting may still be `false` for older users, which broke auto-collapse
+        // Check if auto-collapse is enabled (new toggle)
+        guard autoCollapseShelf else { return }
         guard isExpandedOnThisScreen else { return }
         
         // Cancel any existing timer
@@ -1579,8 +1580,8 @@ extension NotchShelfView {
             }
         }
         // Top padding must clear the physical notch (notchHeight + margin for stroke visibility)
-        // Island mode: uniform padding for perfect visual balance (14pt all around)
-        .padding(EdgeInsets(top: isDynamicIslandMode ? 14 : notchHeight + 14, leading: 20, bottom: 14, trailing: 20))
+        // Island mode: uniform padding on ALL sides (16pt) for perfect visual symmetry
+        .padding(EdgeInsets(top: isDynamicIslandMode ? 16 : notchHeight + 14, leading: isDynamicIslandMode ? 16 : 20, bottom: isDynamicIslandMode ? 16 : 14, trailing: isDynamicIslandMode ? 16 : 20))
         .onAppear {
             withAnimation(.linear(duration: 25).repeatForever(autoreverses: false)) {
                 dropZoneDashPhase -= 280 // Multiple of 14 (6+8) for smooth loop

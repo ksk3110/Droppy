@@ -37,6 +37,7 @@ struct SettingsView: View {
     @AppStorage("autoShrinkShelf") private var autoShrinkShelf = true  // Legacy - always true now
     @AppStorage("autoShrinkDelay") private var autoShrinkDelay = 3  // Legacy - kept for backwards compat
     @AppStorage("autoCollapseDelay") private var autoCollapseDelay = 1.0  // New: 0.5-2.0 seconds
+    @AppStorage("autoCollapseShelf") private var autoCollapseShelf = true  // Toggle for auto-collapse
     @AppStorage("autoExpandShelf") private var autoExpandShelf = true  // Now default true
     @AppStorage("autoExpandDelay") private var autoExpandDelay = 1.0  // New: 0.5-2.0 seconds
     @AppStorage("enableFinderServices") private var enableFinderServices = true
@@ -832,21 +833,27 @@ struct SettingsView: View {
             
             // MARK: Shelf Behavior
             Section {
-                // Auto-Collapse is always enabled - only configurable delay
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text("Auto-Collapse")
-                            Text("Shelf shrinks when mouse leaves")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Text(String(format: "%.1fs", autoCollapseDelay))
+                // Auto-Collapse toggle with delay slider
+                Toggle(isOn: $autoCollapseShelf) {
+                    VStack(alignment: .leading) {
+                        Text("Auto-Collapse")
+                        Text("Shrink shelf when mouse leaves")
+                            .font(.caption)
                             .foregroundStyle(.secondary)
-                            .monospacedDigit()
                     }
-                    Slider(value: $autoCollapseDelay, in: 0.5...2.0, step: 0.5)
+                }
+                
+                if autoCollapseShelf {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Collapse Delay")
+                            Spacer()
+                            Text(String(format: "%.1fs", autoCollapseDelay))
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                        Slider(value: $autoCollapseDelay, in: 0.5...2.0, step: 0.5)
+                    }
                 }
                 
                 // Auto-Expand can be toggled, with delay slider
