@@ -216,7 +216,7 @@ struct TerminalNotchInfoView: View {
                     }
                     .buttonStyle(.plain)
                     .popover(isPresented: $showShortcutInfo, arrowEdge: .trailing) {
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .center, spacing: 16) {
                             Text("Accessing Termi-Notch")
                                 .font(.system(size: 15, weight: .semibold))
                             
