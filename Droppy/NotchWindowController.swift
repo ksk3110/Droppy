@@ -108,6 +108,12 @@ final class NotchWindowController: NSObject, ObservableObject {
         // Start monitors only if we have at least one window
         if !notchWindows.isEmpty {
             startMonitors()
+            
+            // Restore hidden state from previous session
+            let wasHidden = UserDefaults.standard.bool(forKey: AppPreferenceKey.isNotchHidden)
+            if wasHidden {
+                setTemporarilyHidden(true)
+            }
         }
     }
     
@@ -198,6 +204,9 @@ final class NotchWindowController: NSObject, ObservableObject {
     /// - Parameter hidden: true to hide, false to show
     func setTemporarilyHidden(_ hidden: Bool) {
         isTemporarilyHidden = hidden
+        
+        // Persist the hidden state so it survives app restarts
+        UserDefaults.standard.set(hidden, forKey: AppPreferenceKey.isNotchHidden)
         
         if hidden {
             // Disable hit testing when hidden

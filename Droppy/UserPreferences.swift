@@ -25,6 +25,7 @@ enum AppPreferenceKey {
     static let useTransparentBackground = "useTransparentBackground"
     static let hideNotchOnExternalDisplays = "hideNotchOnExternalDisplays"
     static let hideNotchFromScreenshots = "hideNotchFromScreenshots"
+    static let isNotchHidden = "isNotchHidden"
     static let externalDisplayUseDynamicIsland = "externalDisplayUseDynamicIsland"
     
     // MARK: - Media Player
@@ -114,6 +115,7 @@ enum PreferenceDefault {
     static let useTransparentBackground = false
     static let hideNotchOnExternalDisplays = false
     static let hideNotchFromScreenshots = false
+    static let isNotchHidden = false
     static let externalDisplayUseDynamicIsland = true
     
     // MARK: - Media Player
