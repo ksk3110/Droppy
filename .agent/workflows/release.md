@@ -6,6 +6,18 @@ description: Release a new version of Droppy
 
 // turbo-all
 
+## 0. Versioning Decision (SemVer)
+
+Before choosing a version number, use this guide:
+
+| Change Type | Version Bump | Example |
+|-------------|--------------|---------|
+| Bug fix, polish, tweaks | **PATCH** (1.0.X) | "Fixed tooltip overlap" |
+| New feature, improvement | **MINOR** (1.X.0) | "Added Smart Export" |
+| Breaking change, milestone | **MAJOR** (X.0.0) | "Complete UI redesign" |
+
+**Rule**: Multiple bug fixes = ONE patch release. Don't release v1.0.1, v1.0.2, v1.0.3 in the same day.
+
 ## 1. Get Version Number
 
 Ask user for the version number (e.g., 7.8.0).
