@@ -745,71 +745,14 @@ struct ClipboardManagerView: View {
     /// Compact grid item for flagged entries
     @ViewBuilder
     private func flaggedGridItem(for item: ClipboardItem) -> some View {
-        let isSelected = selectedItems.contains(item.id)
-        
-        Button {
-            selectedItems = [item.id]
-        } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                // Icon + Title
-                HStack(spacing: 6) {
-                    clipboardItemIcon(for: item)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.secondary)
-                    
-                    Text(item.title)
-                        .font(.system(size: 12, weight: .medium))
-                        .lineLimit(1)
-                        .foregroundStyle(.primary)
-                    
-                    Spacer()
-                    
-                    Image(systemName: "flag.fill")
-                        .font(.system(size: 9))
-                        .foregroundStyle(.red)
-                }
-                
-                // Time
-                Text(item.date, style: .time)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(10)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(isSelected 
-                          ? Color.blue.opacity(0.8)
-                          : Color.red.opacity(0.15))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(isSelected ? Color.blue : Color.red.opacity(0.3), lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
+        FlaggedGridItemView(
+            item: item,
+            isSelected: selectedItems.contains(item.id),
+            onTap: { selectedItems = [item.id] },
+            onPaste: { onPaste(item) },
+            manager: manager
+        )
         .id(item.id)
-        .contextMenu {
-            Button { onPaste(item) } label: {
-                Label("Paste", systemImage: "doc.on.clipboard")
-            }
-            Button {
-                manager.toggleFlag(item)
-            } label: {
-                Label("Remove Flag", systemImage: "flag.slash")
-            }
-            Button {
-                manager.toggleFavorite(item)
-            } label: {
-                Label(item.isFavorite ? "Unfavorite" : "Favorite", systemImage: item.isFavorite ? "star.slash" : "star")
-            }
-            Divider()
-            Button(role: .destructive) {
-                manager.delete(item: item)
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-        }
     }
     
     /// Icon for clipboard item type
@@ -1105,6 +1048,106 @@ struct ClipboardManagerView: View {
         }
 
         .frame(minWidth: 504, maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Flagged Grid Item View
+struct FlaggedGridItemView: View {
+    let item: ClipboardItem
+    let isSelected: Bool
+    let onTap: () -> Void
+    let onPaste: () -> Void
+    @ObservedObject var manager: ClipboardManager
+    
+    @State private var isHovering = false
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 8) {
+                // Left side: Icon + Text stack
+                VStack(alignment: .leading, spacing: 4) {
+                    // Icon + Title
+                    HStack(spacing: 6) {
+                        itemIcon
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        
+                        Text(item.title)
+                            .font(.system(size: 12, weight: .medium))
+                            .lineLimit(1)
+                            .foregroundStyle(.primary)
+                    }
+                    
+                    // Time
+                    Text(item.date, style: .time)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+                
+                // Right side: Flag icon (vertically centered)
+                Image(systemName: "flag.fill")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.red)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(isSelected 
+                          ? Color.blue.opacity(isHovering ? 1.0 : 0.8)
+                          : Color.red.opacity(isHovering ? 0.25 : 0.15))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(isSelected ? Color.blue : Color.red.opacity(0.3), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovering = hovering
+            }
+        }
+        .contextMenu {
+            Button(action: onPaste) {
+                Label("Paste", systemImage: "doc.on.clipboard")
+            }
+            Button {
+                manager.toggleFlag(item)
+            } label: {
+                Label("Remove Flag", systemImage: "flag.slash")
+            }
+            Button {
+                manager.toggleFavorite(item)
+            } label: {
+                Label(item.isFavorite ? "Unfavorite" : "Favorite", systemImage: item.isFavorite ? "star.slash" : "star")
+            }
+            Divider()
+            Button(role: .destructive) {
+                manager.delete(item: item)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var itemIcon: some View {
+        switch item.type {
+        case .text:
+            Image(systemName: "doc.text")
+        case .image:
+            Image(systemName: "photo")
+        case .file:
+            Image(systemName: "doc")
+        case .url:
+            Image(systemName: "link")
+        case .color:
+            Image(systemName: "paintpalette")
+        }
     }
 }
 
