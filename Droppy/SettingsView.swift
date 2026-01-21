@@ -759,6 +759,9 @@ struct SettingsView: View {
                 } else if extensionType == .ffmpegVideoCompression {
                     // FFmpeg Video Compression has its own install view
                     FFmpegInstallView(installCount: nil, rating: nil)
+                } else if extensionType == .menuBarManager {
+                    // Menu Bar Manager has its own configuration view
+                    MenuBarManagerInfoView(installCount: nil, rating: nil)
                 } else {
                     // All other extensions use ExtensionInfoView
                     ExtensionInfoView(extensionType: extensionType) {
@@ -772,7 +775,7 @@ struct SettingsView: View {
                             NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.Keyboard-Settings.extension")!)
                         case .spotify:
                             SpotifyAuthManager.shared.startAuthentication()
-                        case .elementCapture, .aiBackgroundRemoval, .windowSnap, .voiceTranscribe, .ffmpegVideoCompression, .terminalNotch:
+                        case .elementCapture, .aiBackgroundRemoval, .windowSnap, .voiceTranscribe, .ffmpegVideoCompression, .terminalNotch, .menuBarManager:
                             break // No action needed - these have their own configuration UI
                         }
                     }

@@ -44,6 +44,21 @@ struct DroppyMenuContent: View {
         return ExtensionType.windowSnap.isRemoved
     }
     
+    private var isMenuBarManagerDisabled: Bool {
+        _ = shortcutRefreshId // Force refresh
+        return ExtensionType.menuBarManager.isRemoved
+    }
+    
+    private var isMenuBarManagerEnabled: Bool {
+        _ = shortcutRefreshId // Force refresh
+        return MenuBarManager.shared.isEnabled
+    }
+    
+    private var isMenuBarManagerExpanded: Bool {
+        _ = shortcutRefreshId // Force refresh
+        return MenuBarManager.shared.isExpanded
+    }
+    
     // Load saved shortcut for native keyboard shortcut display
     private var savedShortcut: SavedShortcut? {
         // Force re-evaluation when shortcutRefreshId changes
@@ -105,6 +120,19 @@ struct DroppyMenuContent: View {
             }
         }
         
+        // Menu Bar Manager submenu (hidden when disabled)
+        if !isMenuBarManagerDisabled && isMenuBarManagerEnabled {
+            Menu("Menu Bar Manager") {
+                Button(isMenuBarManagerExpanded ? "Hide Icons" : "Show Icons") {
+                    MenuBarManager.shared.toggleExpanded()
+                }
+                Divider()
+                Button("Configure...") {
+                    SettingsWindowController.shared.showSettings(openingExtension: .menuBarManager)
+                }
+            }
+        }
+        
         Divider()
         
         Button("Settings...") {
@@ -126,6 +154,10 @@ struct DroppyMenuContent: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .extensionStateChanged)) { _ in
             // Refresh when extension is disabled/enabled
+            shortcutRefreshId = UUID()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .menuBarManagerStateChanged)) { _ in
+            // Refresh when Menu Bar Manager state changes
             shortcutRefreshId = UUID()
         }
     }
@@ -213,6 +245,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             
             // Initialize Voice Transcribe (restores menu bar if it was enabled)
             _ = VoiceTranscribeManager.shared
+            
+            // Initialize Menu Bar Manager (restores state if it was enabled)
+            _ = MenuBarManager.shared
         }
         
         // Start analytics (anonymous launch tracking)

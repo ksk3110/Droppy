@@ -210,17 +210,16 @@ class DroppyAlertController {
             
             let panel = NSPanel(
                 contentRect: NSRect(x: 0, y: 0, width: 420, height: 150),
-                styleMask: [.titled, .closable, .fullSizeContentView, .nonactivatingPanel],
+                styleMask: [.borderless, .nonactivatingPanel],
                 backing: .buffered,
                 defer: false
             )
             
             panel.center()
-            panel.title = title
             panel.titlebarAppearsTransparent = true
-            panel.titleVisibility = .visible
+            panel.titleVisibility = .hidden
             
-            panel.isMovableByWindowBackground = false
+            panel.isMovableByWindowBackground = true
             panel.backgroundColor = .clear
             panel.isOpaque = false
             panel.hasShadow = true

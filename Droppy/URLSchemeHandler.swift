@@ -152,6 +152,8 @@ struct URLSchemeHandler {
             extensionType = .ffmpegVideoCompression
         case "termi-notch", "terminotch", "terminal", "terminal-notch":
             extensionType = .terminalNotch
+        case "menu-bar-manager", "menubarmanager", "menu-bar":
+            extensionType = .menuBarManager
         default:
             print("⚠️ URLSchemeHandler: Unknown extension ID '\(extensionId)'")
             extensionType = nil

@@ -20,6 +20,7 @@ enum ExtensionType: String, CaseIterable, Identifiable {
     case voiceTranscribe
     case ffmpegVideoCompression
     case terminalNotch
+    case menuBarManager
     
     /// URL-safe ID for deep links
     case finderServices  // Alias for finder

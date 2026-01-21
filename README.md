@@ -35,13 +35,15 @@
 
 ## What is Droppy?
 
-Droppy turns your MacBook notch into something actually useful. Drop files into it, stash them, drag them out anywhere. That's the core — a fast, native file shelf that stays out of your way.
+Droppy is a native productivity layer for macOS. It started as a way to make the MacBook notch actually useful — drop files in, stash them, drag them out anywhere. But it quickly grew into something much bigger.
 
-Everything else is optional. Want clipboard history? Turn it on. Media controls with a live visualizer? It's there. Voice transcription, AI background removal, a terminal right in your notch, window snapping — all available as lightweight extensions you install only if you want them.
+Today, Droppy is a full-fledged productivity suite. A clipboard manager that remembers everything you copy. A menu bar manager to hide icon clutter. Media controls with live visualizers. AI-powered background removal and voice transcription. A quick terminal in your notch. Window snapping. And a growing library of extensions you can install only if you want them.
 
-The app itself is tiny. It launches instantly, never lags, and feels like it belongs on macOS because it's built entirely in Swift. No Electron, no web views.
+No notch? No problem. Droppy works beautifully on any Mac — it shows as a sleek Dynamic Island at the top of your screen, or as a floating basket you can drag to any edge.
 
-Keep it minimal or stack it with everything. Either way, it's free, open-source, and replaces a dozen separate tools.
+The app is built entirely in Swift. It's tiny, launches instantly, and never lags. No Electron, no web views — just a proper Mac app that feels right at home on macOS.
+
+Best of all, it's completely free and open-source. No subscriptions, no paywalls, no tracking. We believe great software should be available to everyone.
 
 ---
 
@@ -115,7 +117,7 @@ Droppy's built-in **Extension Store** adds powerful features on demand. Everythi
 </tr>
 <tr>
 <td align="center"><img src="https://iordv.github.io/Droppy/assets/icons/termi-notch.jpg" height="28"> <strong>Termi-Notch</strong><br>Quick terminal access from your notch</td>
-<td align="center"></td>
+<td align="center"><img src="https://iordv.github.io/Droppy/assets/icons/menu-bar-manager.jpg" height="28"> <strong>Menu Bar Manager</strong><br>Hide and show menu bar icons</td>
 </tr>
 </table>
 
@@ -126,6 +128,14 @@ Droppy's built-in **Extension Store** adds powerful features on demand. Everythi
 
 <p align="center">
   <img src="docs/assets/images/terminal-notch-screenshot.png" alt="Termi-Notch Extension" width="80%">
+</p>
+
+<p align="center">
+  Or Menu Bar Manager — hide unused menu bar icons and reveal them with a click.
+</p>
+
+<p align="center">
+  <img src="docs/assets/screenshots/menu-bar-manager.png" alt="Menu Bar Manager Extension" width="80%">
 </p>
 
 <p align="center">
@@ -383,6 +393,10 @@ We believe in transparency—you can see exactly what the app does and verify it
 - [x] Command execution with timeout
 - [x] Output scrolling
 - [x] Open in Terminal.app handoff
+- [x] Menu Bar Manager
+- [x] Hide/show menu bar icons
+- [x] Click chevron to expand hidden icons
+- [x] State persists across reboots
 - [x] Spotify Integration
 - [x] Alfred Workflow
 - [x] Finder Services
@@ -450,12 +464,13 @@ We believe in transparency—you can see exactly what the app does and verify it
 
 </details>
 
+- [x] Menu Bar Management extension
 - [ ] Live Sports Scores extension
 - [ ] Modular Shelf (customizable widgets)
 - [ ] Weather integration
 - [ ] Calendar integration
 
-**Have an idea?** [Open a feature request](https://github.com/iordv/Droppy/issues/new?template=feature_request.md) or chat on [Discord](https://discord.gg/ghMSjHRa)!
+**Have an idea?** [Open a feature request](https://github.com/iordv/Droppy/issues/new?assignees=&labels=enhancement&projects=&template=feature_request.yml) or chat on [Discord](https://discord.gg/ghMSjHRa)!
 
 ---
 

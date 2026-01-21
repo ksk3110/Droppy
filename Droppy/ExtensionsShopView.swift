@@ -22,6 +22,7 @@ struct ExtensionsShopView: View {
     private var isFFmpegInstalled: Bool { FFmpegInstallManager.shared.isInstalled }
     private var isVoiceTranscribeInstalled: Bool { VoiceTranscribeManager.shared.isModelDownloaded }
     private var isTerminalNotchInstalled: Bool { TerminalNotchManager.shared.isInstalled }
+    private var isMenuBarManagerInstalled: Bool { MenuBarManager.shared.isEnabled }
     
     var body: some View {
         ScrollView {
@@ -121,25 +122,25 @@ struct ExtensionsShopView: View {
                 )
             }
             
-            // Row 2: Video Target Size + Termi-Notch (NEW)
+            // Row 2: Menu Bar Manager (NEW) + Termi-Notch
             HStack(spacing: 12) {
                 FeaturedExtensionCardCompact(
-                    category: "",
-                    title: "Video Target Size",
-                    subtitle: "Compress videos",
-                    iconURL: "https://iordv.github.io/Droppy/assets/icons/video-target-size.png",
-                    screenshotURL: "https://iordv.github.io/Droppy/assets/images/video-target-size-screenshot.png",
-                    accentColor: .green,
-                    isInstalled: isFFmpegInstalled
+                    category: "NEW",
+                    title: "Menu Bar Manager",
+                    subtitle: "Clean up menu bar",
+                    iconURL: "https://iordv.github.io/Droppy/assets/icons/menu-bar-manager.jpg",
+                    screenshotURL: "https://iordv.github.io/Droppy/assets/screenshots/menu-bar-manager.png",
+                    accentColor: .blue,
+                    isInstalled: isMenuBarManagerInstalled
                 ) {
-                    FFmpegInstallView(
-                        installCount: extensionCounts["ffmpegVideoCompression"],
-                        rating: extensionRatings["ffmpegVideoCompression"]
+                    MenuBarManagerInfoView(
+                        installCount: extensionCounts["menuBarManager"],
+                        rating: extensionRatings["menuBarManager"]
                     )
                 }
                 
                 FeaturedExtensionCardCompact(
-                    category: "NEW",
+                    category: "",
                     title: "Termi-Notch",
                     subtitle: "Quick terminal",
                     iconURL: "https://iordv.github.io/Droppy/assets/icons/termi-notch.jpg",
@@ -394,6 +395,21 @@ struct ExtensionsShopView: View {
                 AnyView(TerminalNotchInfoView(
                     installCount: extensionCounts["terminalNotch"],
                     rating: extensionRatings["terminalNotch"]
+                ))
+            },
+            ExtensionListItem(
+                id: "menuBarManager",
+                iconURL: "https://iordv.github.io/Droppy/assets/icons/menu-bar-manager.jpg",
+                title: "Menu Bar Manager",
+                subtitle: "Hide unused icons",
+                category: .productivity,
+                isInstalled: isMenuBarManagerInstalled,
+                analyticsKey: "menuBarManager",
+                extensionType: .menuBarManager
+            ) {
+                AnyView(MenuBarManagerInfoView(
+                    installCount: extensionCounts["menuBarManager"],
+                    rating: extensionRatings["menuBarManager"]
                 ))
             }
         ]
