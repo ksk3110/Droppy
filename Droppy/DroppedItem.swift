@@ -79,20 +79,27 @@ struct DroppedItem: Identifiable, Hashable, Transferable {
     }
     
     /// Copies the file to the clipboard (with actual content for images)
-    func copyToClipboard() {
+    func copyToClipboard() async {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        
+
         // For images, copy the actual image data so it pastes into apps like Outlook
         if let fileType = fileType, fileType.conforms(to: .image) {
-            if let image = NSImage(contentsOf: url) {
-                pasteboard.writeObjects([image])
-                // Also add file URL as fallback
-                pasteboard.writeObjects([url as NSURL])
-                return
+            do {
+                // PERFORMANCE: Use async data loading to avoid blocking the main thread
+                let data = try await URLSession.shared.data(from: url).0
+                if let image = NSImage(data: data) {
+                    pasteboard.writeObjects([image])
+                    // Also add file URL as fallback
+                    pasteboard.writeObjects([url as NSURL])
+                    return
+                }
+            } catch {
+                print("Failed to load image for clipboard: \(error)")
+                // Fallback to URL-based copy
             }
         }
-        
+
         // For PDFs, copy both PDF data and file reference
         if let fileType = fileType, fileType.conforms(to: .pdf) {
             if let pdfData = try? Data(contentsOf: url) {
