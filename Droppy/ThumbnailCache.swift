@@ -10,6 +10,7 @@ import AppKit
 import Foundation
 import QuickLookThumbnailing
 import UniformTypeIdentifiers
+import ImageIO
 
 /// Centralized cache for clipboard image thumbnails
 /// Uses NSCache for automatic memory pressure eviction
@@ -130,7 +131,8 @@ final class ThumbnailCache {
     
     /// Get or create a thumbnail for the given clipboard item
     /// Returns nil if item has no image data
-    func thumbnail(for item: ClipboardItem) -> NSImage? {
+    /// This method is async and thread-safe, running image processing on a detached task
+    func thumbnail(for item: ClipboardItem) async -> NSImage? {
         guard item.type == .image else { return nil }
         
         let cacheKey = item.id.uuidString as NSString
@@ -140,21 +142,32 @@ final class ThumbnailCache {
             return cached
         }
         
-        // Load image data (lazy - from file or legacy inline data)
-        guard let imageData = item.loadImageData() else {
-            return nil
-        }
-        
-        // Generate thumbnail synchronously (called from main thread, should be fast)
-        guard let thumbnail = generateThumbnail(from: imageData) else {
-            return nil
-        }
-        
-        // Store in cache with estimated cost (bytes)
-        let estimatedCost = Int(thumbnailSize.width * thumbnailSize.height * 4)
-        cache.setObject(thumbnail, forKey: cacheKey, cost: estimatedCost)
-        
-        return thumbnail
+        // Offload heavy image processing (loading + resizing) to a background thread
+        // Using Task.detached ensures we don't block the MainActor
+        return await Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self = self else { return nil }
+
+            // Double-check cache inside the task to avoid race conditions
+            if let cached = self.cache.object(forKey: cacheKey) {
+                return cached
+            }
+
+            // Load image data (lazy - from file or legacy inline data)
+            guard let imageData = item.loadImageData() else {
+                return nil
+            }
+
+            // Generate thumbnail using thread-safe ImageIO
+            guard let thumbnail = self.generateThumbnail(from: imageData) else {
+                return nil
+            }
+
+            // Store in cache with estimated cost (bytes)
+            let estimatedCost = Int(self.thumbnailSize.width * self.thumbnailSize.height * 4)
+            self.cache.setObject(thumbnail, forKey: cacheKey, cost: estimatedCost)
+
+            return thumbnail
+        }.value
     }
     
     /// Get cached thumbnail for DroppedItem (returns nil if not cached, use async version to load)
@@ -212,34 +225,27 @@ final class ThumbnailCache {
     }
     
     /// Generate a scaled-down thumbnail from image data
+    /// Uses ImageIO for high-performance, thread-safe resizing without full image decoding
     private func generateThumbnail(from data: Data) -> NSImage? {
-        guard let originalImage = NSImage(data: data) else { return nil }
+        // Use ImageIO to create thumbnail source
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
         
-        let originalSize = originalImage.size
-        guard originalSize.width > 0 && originalSize.height > 0 else { return nil }
+        // Calculate max pixel size (Retina aware)
+        let maxPixelSize = max(thumbnailSize.width, thumbnailSize.height) * 2
         
-        // Calculate aspect-fit size
-        let widthRatio = thumbnailSize.width / originalSize.width
-        let heightRatio = thumbnailSize.height / originalSize.height
-        let scale = min(widthRatio, heightRatio, 1.0) // Don't upscale small images
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+        ]
         
-        let newSize = CGSize(
-            width: originalSize.width * scale,
-            height: originalSize.height * scale
-        )
+        // Generate thumbnail efficiently
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+            return nil
+        }
         
-        // Create thumbnail
-        let thumbnail = NSImage(size: newSize)
-        thumbnail.lockFocus()
-        originalImage.draw(
-            in: NSRect(origin: .zero, size: newSize),
-            from: NSRect(origin: .zero, size: originalSize),
-            operation: .copy,
-            fraction: 1.0
-        )
-        thumbnail.unlockFocus()
-        
-        return thumbnail
+        // Convert to NSImage
+        return NSImage(cgImage: cgImage, size: thumbnailSize)
     }
     
     /// Clear a specific item from cache (e.g., when deleted)
