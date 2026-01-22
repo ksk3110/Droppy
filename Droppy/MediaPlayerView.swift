@@ -496,6 +496,7 @@ struct MediaPlayerView: View {
     private var albumArtViewLarge: some View {
         ZStack {
             // MARK: - Album Art Glow (very subtle blurred halo)
+            // PERFORMANCE FIX (Issue #81): Use drawingGroup() for GPU-accelerated blur rendering
             if musicManager.albumArt.size.width > 0 && musicManager.isPlaying {
                 Image(nsImage: musicManager.albumArt)
                     .resizable()
@@ -504,6 +505,7 @@ struct MediaPlayerView: View {
                     .blur(radius: 18)
                     .scaleEffect(1.05)
                     .opacity(0.2)
+                    .drawingGroup() // GPU compositing for expensive blur
             }
             
             // MARK: - Actual Album Art Button

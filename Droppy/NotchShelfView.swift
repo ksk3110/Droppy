@@ -1053,6 +1053,9 @@ struct NotchShelfView: View {
                 .opacity(isDynamicIslandMode ? 0 : 1)
                 .scaleEffect(isDynamicIslandMode ? 0.85 : 1)
         }
+        // PERFORMANCE FIX (Issue #81): Pre-composite materials before animations
+        // .ultraThinMaterial is expensive to re-render during animations
+        .compositingGroup()
         // PREMIUM shadow applied OUTSIDE the ZStack so it follows the clipped shape
         // This ensures proper rounded shadow that respects the shape, not a square
         // NOTE: Shadow is disabled in transparent mode (glass effect doesn't need shadow)
@@ -1308,11 +1311,12 @@ struct NotchShelfView: View {
                         .contentShape(Rectangle())
                         // Stable identity for animation - prevents jitter on state changes
                         .id("media-player-view")
-                        // Media slides in from RIGHT when appearing (user swiped left)
-                        // Media slides out to RIGHT when disappearing (user swiped right)
+                        // PERFORMANCE FIX (Issue #81): Use scale + opacity instead of .move()
+                        // .move(edge:) transitions cause expensive frame layout recalculations
+                        // Scale + opacity is GPU-accelerated and doesn't trigger layout passes
                         .transition(.asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal: .move(edge: .trailing).combined(with: .opacity)
+                            insertion: .scale(scale: 0.95).combined(with: .opacity),
+                            removal: .scale(scale: 0.95).combined(with: .opacity)
                         ))
                 }
                 // Show empty shelf when no items and no music (or user swiped to hide music)
@@ -1342,11 +1346,11 @@ struct NotchShelfView: View {
             
 
         }
-        // UNIFIED: premium notchState animation for all media state changes
-        // NOTE: isDropTargeted animation REMOVED to prevent sliding effect when files hover over shelf
-        // Internal transitions handle content animations instead
-        .animation(DroppyAnimation.notchState, value: musicManager.isPlaying)
-        .animation(DroppyAnimation.notchState, value: musicManager.wasRecentlyPlaying)
+        // PERFORMANCE FIX (Issue #81): Use .drawingGroup() on the entire content for GPU compositing
+        // This prevents SwiftUI from re-laying out the entire view tree during animations
+        .drawingGroup()
+        // UNIFIED: Single animation modifier for all media state changes (avoids redundant calculations)
+        // Combine all media-related values into a single animation application
         .animation(DroppyAnimation.notchState, value: musicManager.isMediaHUDForced)
         .animation(DroppyAnimation.notchState, value: musicManager.isMediaHUDHidden)
         .onHover { isHovering in
