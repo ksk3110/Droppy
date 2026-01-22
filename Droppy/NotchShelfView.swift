@@ -1053,9 +1053,7 @@ struct NotchShelfView: View {
                 .opacity(isDynamicIslandMode ? 0 : 1)
                 .scaleEffect(isDynamicIslandMode ? 0.85 : 1)
         }
-        // PERFORMANCE FIX (Issue #81): Pre-composite materials before animations
-        // .ultraThinMaterial is expensive to re-render during animations
-        .compositingGroup()
+        // NOTE: .compositingGroup() removed here - also breaks NSViewRepresentable overlays
         // PREMIUM shadow applied OUTSIDE the ZStack so it follows the clipped shape
         // This ensures proper rounded shadow that respects the shape, not a square
         // NOTE: Shadow is disabled in transparent mode (glass effect doesn't need shadow)
@@ -1346,11 +1344,9 @@ struct NotchShelfView: View {
             
 
         }
-        // PERFORMANCE FIX (Issue #81): Use .drawingGroup() on the entire content for GPU compositing
-        // This prevents SwiftUI from re-laying out the entire view tree during animations
-        .drawingGroup()
+        // NOTE: .drawingGroup() removed - breaks NSViewRepresentable views like AudioSpectrumView
+        // which cannot be rasterized into Metal textures (Issue #81 partial rollback)
         // UNIFIED: Single animation modifier for all media state changes (avoids redundant calculations)
-        // Combine all media-related values into a single animation application
         .animation(DroppyAnimation.notchState, value: musicManager.isMediaHUDForced)
         .animation(DroppyAnimation.notchState, value: musicManager.isMediaHUDHidden)
         .onHover { isHovering in
