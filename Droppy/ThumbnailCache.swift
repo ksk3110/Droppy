@@ -42,8 +42,11 @@ final class ThumbnailCache {
         iconCache.countLimit = 200
         iconCache.totalCostLimit = 512 * 1024 // 512KB max
         
-        // NOTE: No synchronous warmup needed - DroppedItem uses placeholder icons
-        // and real icons load asynchronously via loadThumbnailAsync()
+        // CRITICAL: Warmup QuickLook and Metal shaders on background thread during startup
+        // This eliminates the ~1 second lag on first file drop by forcing Metal shader compilation now
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.warmupQuickLook()
+        }
     }
     
     /// Warms up the icon rendering system to preload Metal shaders

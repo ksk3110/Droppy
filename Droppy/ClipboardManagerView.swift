@@ -1100,9 +1100,10 @@ struct FlaggedGridItemView: View {
             )
         }
         .buttonStyle(.plain)
-        .droppyHover { hovering in
+        .onHover { hovering in
             isHovering = hovering
         }
+        .animation(DroppyAnimation.hoverBouncy, value: isHovering)
         .contextMenu {
             Button(action: onPaste) {
                 Label("Paste", systemImage: "doc.on.clipboard")
@@ -1243,9 +1244,10 @@ struct ClipboardItemRow: View {
         )
 
         .contentShape(Rectangle())
-        .droppyHover { hovering in
+        .onHover { hovering in
             isHovering = hovering
         }
+        .animation(DroppyAnimation.hoverBouncy, value: isHovering)
     }
     
     func iconName(for type: ClipboardType) -> String {

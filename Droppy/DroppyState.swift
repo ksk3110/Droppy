@@ -290,9 +290,17 @@ final class DroppyState {
         // Use MAXIMUM of all possible heights - guarantees we cover the actual visual
         var height = max(terminalHeight, max(mediaPlayerHeight, shelfHeight))
         
-        // ALWAYS include generous buffer for floating buttons
-        // Button offset (12 gap + 6 island) + button height (46) + extra margin = 100pt
-        height += 100
+        // DYNAMIC BUTTON SPACE: Only add padding when floating buttons are actually visible
+        // TermiNotch button shows when INSTALLED (not just when terminal output is visible)
+        // Buttons visible when: TermiNotch is installed OR auto-collapse is disabled
+        let terminalButtonVisible = TerminalNotchManager.shared.isInstalled
+        let autoCollapseEnabled = (UserDefaults.standard.object(forKey: "autoCollapseShelf") as? Bool) ?? true
+        let hasFloatingButtons = terminalButtonVisible || !autoCollapseEnabled
+        
+        if hasFloatingButtons {
+            // Button offset (12 gap + 6 island) + button height (46) + extra margin = 100pt
+            height += 100
+        }
         
         return height
     }
@@ -324,23 +332,44 @@ final class DroppyState {
     }
     
     /// Adds an item to an existing stack (for drag-into-stack feature)
+    /// Works for both shelf stacks and basket stacks
     func addItemToStack(_ item: DroppedItem, stackId: UUID) {
-        guard let stackIndex = shelfStacks.firstIndex(where: { $0.id == stackId }) else { return }
-        
-        // Check if item is already in this stack
-        guard !shelfStacks[stackIndex].items.contains(where: { $0.url == item.url }) else { return }
-        
-        // Check if item exists anywhere else - if so, remove it first
-        for i in shelfStacks.indices {
-            if i != stackIndex {
-                shelfStacks[i].items.removeAll { $0.url == item.url }
+        // Try shelf stacks first
+        if let stackIndex = shelfStacks.firstIndex(where: { $0.id == stackId }) {
+            // Check if item is already in this stack
+            guard !shelfStacks[stackIndex].items.contains(where: { $0.url == item.url }) else { return }
+            
+            // Check if item exists anywhere else - if so, remove it first
+            for i in shelfStacks.indices {
+                if i != stackIndex {
+                    shelfStacks[i].items.removeAll { $0.url == item.url }
+                }
             }
+            // Remove empty stacks
+            shelfStacks.removeAll { $0.isEmpty }
+            
+            // Add to the target stack
+            shelfStacks[stackIndex].items.append(item)
+            return
         }
-        // Remove empty stacks
-        shelfStacks.removeAll { $0.isEmpty }
         
-        // Add to the target stack
-        shelfStacks[stackIndex].items.append(item)
+        // Try basket stacks
+        if let stackIndex = basketStacks.firstIndex(where: { $0.id == stackId }) {
+            // Check if item is already in this stack
+            guard !basketStacks[stackIndex].items.contains(where: { $0.url == item.url }) else { return }
+            
+            // Check if item exists anywhere else in basket - if so, remove it first
+            for i in basketStacks.indices {
+                if i != stackIndex {
+                    basketStacks[i].items.removeAll { $0.url == item.url }
+                }
+            }
+            // Remove empty stacks
+            basketStacks.removeAll { $0.isEmpty }
+            
+            // Add to the target stack
+            basketStacks[stackIndex].items.append(item)
+        }
     }
     
     /// Adds multiple items from file URLs (creates a SINGLE stack for all items)

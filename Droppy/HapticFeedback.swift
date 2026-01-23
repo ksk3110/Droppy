@@ -82,4 +82,9 @@ enum HapticFeedback {
     static func pop() {
         HapticFeedback.light.perform()
     }
+    
+    /// Very subtle feedback for hover enter on interactive elements
+    static func hover() {
+        HapticFeedback.light.perform()
+    }
 }

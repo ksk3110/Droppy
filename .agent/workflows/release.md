@@ -52,26 +52,27 @@ git describe --tags --abbrev=0
 git log $(git describe --tags --abbrev=0)..HEAD --pretty=format:"- %s"
 ```
 
-Write to `release_notes.txt` with this format:
+Write to `release_notes.txt` with this **EXACT** format:
 
 ```
-# Droppy vX.X.X
+📢 Important
+- [Any critical announcements, timeline info, or important notices]
 
-## ✨ New Features
-- [Feature description]
+✨ New Features
+- [Feature description in verb + description format]
+- [Another feature]
 
-## 🐛 Bug Fixes
-- [Fix description]
-
-## 🔧 Improvements
-- [Improvement description]
+🐛 Bug Fixes
+- [Fix description in verb + description format]
+- [Another fix]
 ```
 
-**Writing style:**
-- Natural, human language (not robotic)
-- Specific about what changed
-- User-focused (what they get, not technical details)
-- Concise - respect reader's time
+**Formatting rules:**
+- Section headers use emoji prefix (📢 ✨ 🐛)
+- Bullet points for each item
+- Verb + description format (e.g., "Added X", "Fixed Y", "Improved Z")
+- Omit sections with no items (e.g., skip Important if nothing critical)
+- Natural, human language - concise but specific
 
 ## 4. Run Release Script
 

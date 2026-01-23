@@ -88,6 +88,10 @@ struct NotchShelfView: View {
     
     // Media HUD hover state - used to grow notch when showing song title
     @State private var mediaHUDIsHovered: Bool = false
+    @State private var mediaHUDHoverWorkItem: DispatchWorkItem?  // Debounce for hover state
+    
+    // PREMIUM: Dedicated state for hover scale effect - ensures clean single-value animation
+    @State private var hoverScaleActive: Bool = false
     
     // Removed isDropTargeted state as we use shared state now
     
@@ -557,6 +561,16 @@ struct NotchShelfView: View {
                 // NOTE: In notch mode, currentExpandedHeight includes top padding compensation which
                 // naturally pushes buttons lower. Island mode needs extra offset from SSOT to match.
                 .offset(y: currentExpandedHeight + NotchLayoutConstants.floatingButtonGap + (isDynamicIslandMode ? NotchLayoutConstants.floatingButtonIslandCompensation : 0))
+                // CRITICAL: Track hover on floating buttons to prevent auto-collapse
+                // when user moves from shelf content to floating button
+                .onHover { isHovering in
+                    isHoveringExpandedContent = isHovering
+                    if isHovering {
+                        cancelAutoShrinkTimer()
+                    } else {
+                        startAutoShrinkTimer()
+                    }
+                }
                 .opacity(notchController.isTemporarilyHidden ? 0 : 1)
                 .scaleEffect(notchController.isTemporarilyHidden ? 0.5 : 1)
                 .animation(DroppyAnimation.notchState, value: notchController.isTemporarilyHidden)
@@ -609,6 +623,12 @@ struct NotchShelfView: View {
                     withAnimation(DroppyAnimation.state) {
                         mediaHUDIsHovered = isDragging
                     }
+                }
+            }
+            // PREMIUM: Reset hover scale when expanding (smooth transition)
+            .onChange(of: isExpandedOnThisScreen) { _, isExpanded in
+                if isExpanded {
+                    hoverScaleActive = false
                 }
             }
     }
@@ -1080,13 +1100,17 @@ struct NotchShelfView: View {
             height: currentNotchHeight + (isDynamicIslandMode && isExpandedOnThisScreen ? 18 : 0)
         )
         .opacity(shouldShowVisualNotch ? 1.0 : 0.0)
+        // PREMIUM: Subtle scale feedback on hover - "I'm ready to expand!"
+        // Uses dedicated state for clean single-value animation (no two-value dependency)
+        .scaleEffect(hoverScaleActive ? 1.02 : 1.0, anchor: .center)
+        // PREMIUM: Buttery smooth animation for hover scale (dedicated preset)
+        .animation(DroppyAnimation.hoverScale, value: hoverScaleActive)
         // Note: Idle indicator removed - island is now completely invisible when idle
         // Only appears on hover, drag, or when HUDs/media are active
         .overlay(morphingOutline)
         // UNIFIED PREMIUM ANIMATION: Single animation for all state changes
         // Using asymmetric expand/close prevents conflicting spring values
         .animation(state.isExpanded ? DroppyAnimation.expandOpen : DroppyAnimation.expandClose, value: state.isExpanded)
-        // NOTE: isHoveringOnThisScreen animation defined in dropZone to prevent duplicates
         .animation(DroppyAnimation.hoverBouncy, value: dragMonitor.isDragging)
         .animation(DroppyAnimation.hoverBouncy, value: hudIsVisible)
         .animation(DroppyAnimation.notchState, value: musicManager.isPlaying)
@@ -1104,12 +1128,6 @@ struct NotchShelfView: View {
                 Divider()
             }
             
-            Button {
-                NotchWindowController.shared.setTemporarilyHidden(true)
-            } label: {
-                Label("Hide \(isDynamicIslandMode ? "Dynamic Island" : "Notch")", systemImage: "eye.slash")
-            }
-            Divider()
             Button {
                 SettingsWindowController.shared.showSettings()
             } label: {
@@ -1175,11 +1193,28 @@ struct NotchShelfView: View {
                 if let displayID = targetScreen?.displayID ?? NSScreen.builtInWithNotch?.displayID {
                     // Direct state update - animation handled by view-level .animation() modifier
                     if enableNotchShelf {
+                        // PREMIUM: Subtle haptic on hover enter (not when expanded)
+                        if isHovering && !isExpandedOnThisScreen && !state.isHovering(for: displayID) {
+                            HapticFeedback.hover()
+                        }
                         state.setHovering(for: displayID, isHovering: isHovering)
+                        
+                        // PREMIUM: Update hover scale state - only active when hovering AND not expanded
+                        hoverScaleActive = isHovering && !isExpandedOnThisScreen
                     }
                     // Propagate hover to media HUD when music is playing (works independently)
+                    // DEBOUNCED: Prevents animation stacking from rapid hover toggles
                     if showMediaPlayer && musicManager.isPlaying && !isExpandedOnThisScreen {
-                        mediaHUDIsHovered = isHovering
+                        mediaHUDHoverWorkItem?.cancel()
+                        let workItem = DispatchWorkItem { [self] in
+                            // Only update if state actually changed (prevents redundant animations)
+                            if mediaHUDIsHovered != isHovering {
+                                mediaHUDIsHovered = isHovering
+                            }
+                        }
+                        mediaHUDHoverWorkItem = workItem
+                        // 50ms debounce - fast enough to feel responsive, slow enough to filter jitter
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: workItem)
                     }
                 }
             } else if hudIsVisible {
@@ -1188,22 +1223,25 @@ struct NotchShelfView: View {
                 if let displayID = targetScreen?.displayID ?? NSScreen.builtInWithNotch?.displayID {
                     if state.isHovering(for: displayID) || mediaHUDIsHovered {
                         state.setHovering(for: displayID, isHovering: false)
+                        mediaHUDHoverWorkItem?.cancel()  // Cancel pending debounced update
                         mediaHUDIsHovered = false
                     }
                 }
             }
         }
         // STABLE ANIMATIONS: Applied at view level, not inside onHover
-        .animation(DroppyAnimation.hoverBouncy, value: isHoveringOnThisScreen)
-        .animation(DroppyAnimation.hoverBouncy, value: mediaHUDIsHovered)
+        // Use expandOpen for buttery smooth hover animation matching shelf expansion
+        .animation(DroppyAnimation.expandOpen, value: isHoveringOnThisScreen)
+        // STRUCTURAL: mediaHUDIsHovered drives currentNotchHeight, so use notchState animation
+        .animation(DroppyAnimation.notchState, value: mediaHUDIsHovered)
     }
     
     // MARK: - Indicators
     
     private var dropIndicatorContent: some View {
-        // Show NotchFace in the indicator - excited when hovering on notch, idle otherwise
-        NotchFace(size: 26, isExcited: state.isDropTargeted)
-            .padding(10) // Compact padding
+        // PREMIUM: Shelf icon in compact indicator
+        DropZoneIcon(type: .shelf, size: 28, isActive: state.isDropTargeted)
+            .padding(8) // Compact padding
             .background(indicatorBackground)
     }
     
@@ -1267,7 +1305,8 @@ struct NotchShelfView: View {
                 // 1. User forced it via swipe (isMediaHUDForced) - shows even when paused
                 // 2. Music is playing AND user hasn't hidden it (isMediaHUDHidden)
                 // Both require: not idle, not drop targeted, not AirDrop zone targeted, media enabled
-                else if showMediaPlayer && !musicManager.isPlayerIdle && !state.isDropTargeted && !state.isShelfAirDropZoneTargeted &&
+                // CRITICAL: Don't show during file drag - prevents flash when dropping files
+                else if showMediaPlayer && !musicManager.isPlayerIdle && !state.isDropTargeted && !state.isShelfAirDropZoneTargeted && !dragMonitor.isDragging &&
                         (musicManager.isMediaHUDForced || 
                          ((musicManager.isPlaying || musicManager.wasRecentlyPlaying) && !musicManager.isMediaHUDHidden && state.items.isEmpty)) {
                     MediaPlayerView(musicManager: musicManager, notchHeight: isDynamicIslandMode ? 0 : notchHeight)
@@ -1660,72 +1699,112 @@ extension NotchShelfView {
         HStack(spacing: 20) {
             // Main drop zone (left side or full width when AirDrop zone disabled)
             ZStack {
-                // Face reacts to files being dragged - gets excited when drop targeted
-                if enableIdleFace {
-                    NotchFace(size: 50, isExcited: state.isDropTargeted)
-                } else {
-                    // Fallback if idle face is disabled
-                    if state.isDropTargeted {
-                        Image(systemName: "tray.and.arrow.down.fill")
-                            .font(.system(size: 28, weight: .light))
-                            .foregroundStyle(.blue)
-                            .symbolEffect(.bounce, value: state.isDropTargeted)
-                    } else {
-                        Image(systemName: "tray")
-                            .font(.system(size: 28, weight: .light))
-                            .foregroundStyle(.white.opacity(0.4))
-                    }
-                }
+                DropZoneIcon(type: .shelf, size: 44, isActive: state.isDropTargeted)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(10) // Match basket padding for visual consistency
             .overlay(
-                // NOTE: Using strokeBorder instead of stroke to draw INSIDE the shape bounds,
-                // preventing the stroke from being clipped at content edges
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .strokeBorder(
-                        state.isDropTargeted ? Color.blue : Color.white.opacity(0.2),
-                        style: StrokeStyle(
-                            lineWidth: state.isDropTargeted ? 2 : 1.5,
-                            lineCap: .round,
-                            dash: [6, 8],
-                            dashPhase: dropZoneDashPhase
-                        )
-                    )
-            .animation(DroppyAnimation.hoverBouncy, value: state.isDropTargeted)
+                // PREMIUM PRESSED EFFECT: Layered inner glow for 3D depth
+                Group {
+                    if state.isDropTargeted {
+                        ZStack {
+                            // Layer 1: Soft inner border glow - premium edge highlight
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.white.opacity(0.25),
+                                            Color.white.opacity(0.1)
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    lineWidth: 2
+                                )
+                            // Layer 2: Subtle vignette for depth
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .fill(
+                                    RadialGradient(
+                                        colors: [
+                                            Color.clear,
+                                            Color.white.opacity(0.08)
+                                        ],
+                                        center: .center,
+                                        startRadius: 30,
+                                        endRadius: 120
+                                    )
+                                )
+                        }
+                        .allowsHitTesting(false)
+                    } else {
+                        // Subtle dashed outline when not targeted
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .strokeBorder(
+                                Color.white.opacity(0.2),
+                                style: StrokeStyle(
+                                    lineWidth: 1.5,
+                                    lineCap: .round,
+                                    dash: [6, 8],
+                                    dashPhase: dropZoneDashPhase
+                                )
+                            )
+                    }
+                }
+                .animation(DroppyAnimation.expandOpen, value: state.isDropTargeted)
             )
             
             // AirDrop zone (right side, only when enabled)
             if enableShelfAirDropZone {
                 ZStack {
-                    // AirDrop icon - same size as NotchFace
-                    Image("AirDropIcon")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 40, height: 40)
-                        .scaleEffect(state.isShelfAirDropZoneTargeted ? 1.1 : 1.0)
-                        .animation(DroppyAnimation.stateEmphasis, value: state.isShelfAirDropZoneTargeted)
+                    DropZoneIcon(type: .airDrop, size: 44, isActive: state.isShelfAirDropZoneTargeted)
                 }
                 .frame(maxWidth: 90, maxHeight: .infinity)
-                .padding(10) // Match main zone padding
                 .overlay(
-                    // NOTE: Using strokeBorder to draw INSIDE shape bounds
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .strokeBorder(
-                            state.isShelfAirDropZoneTargeted ? Color.blue : Color.white.opacity(0.2),
-                            style: StrokeStyle(
-                                lineWidth: state.isShelfAirDropZoneTargeted ? 2 : 1.5,
-                                lineCap: .round,
-                                dash: [6, 8],
-                                dashPhase: dropZoneDashPhase
-                            )
-                        )
-                        .animation(DroppyAnimation.hoverBouncy, value: state.isShelfAirDropZoneTargeted)
+                    // PREMIUM PRESSED EFFECT: Layered inner glow for AirDrop zone
+                    Group {
+                        if state.isShelfAirDropZoneTargeted {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            colors: [
+                                                Color.white.opacity(0.25),
+                                                Color.white.opacity(0.1)
+                                            ],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        ),
+                                        lineWidth: 2
+                                    )
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                    .fill(
+                                        RadialGradient(
+                                            colors: [Color.clear, Color.white.opacity(0.08)],
+                                            center: .center,
+                                            startRadius: 15,
+                                            endRadius: 60
+                                        )
+                                    )
+                            }
+                            .allowsHitTesting(false)
+                        } else {
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .strokeBorder(
+                                    Color.white.opacity(0.2),
+                                    style: StrokeStyle(
+                                        lineWidth: 1.5,
+                                        lineCap: .round,
+                                        dash: [6, 8],
+                                        dashPhase: dropZoneDashPhase
+                                    )
+                                )
+                        }
+                    }
+                    .animation(DroppyAnimation.expandOpen, value: state.isShelfAirDropZoneTargeted)
                 )
             }
         }
-        // Whole shelf content zooms when either zone is targeted (matches basket behavior)
-        .scaleEffect((state.isDropTargeted || state.isShelfAirDropZoneTargeted) ? 1.03 : 1.0)
+        // 3D PRESSED EFFECT: Scale down when targeted (like button being pushed)
+        .scaleEffect((state.isDropTargeted || state.isShelfAirDropZoneTargeted) ? 0.97 : 1.0)
         .animation(DroppyAnimation.hoverBouncy, value: state.isDropTargeted)
         .animation(DroppyAnimation.hoverBouncy, value: state.isShelfAirDropZoneTargeted)
         // Use SSOT for consistent padding across all expanded views

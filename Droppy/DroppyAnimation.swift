@@ -119,6 +119,11 @@ enum DroppyAnimation {
     /// Use for: small indicators, icons, subtle state changes.
     static let hoverQuick = Animation.easeOut(duration: 0.12)
     
+    /// Buttery smooth hover scale animation - premium feel.
+    /// Use for: notch/island hover feedback, "ready to expand" preview.
+    /// Parameters tuned for subtle, damped response matching Apple's feel.
+    static let hoverScale = Animation.spring(response: 0.5, dampingFraction: 0.85, blendDuration: 0)
+    
     // MARK: - State Transitions
     
     /// Standard state change - natural, fluid.

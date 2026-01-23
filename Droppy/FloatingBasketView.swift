@@ -138,18 +138,16 @@ struct FloatingBasketView: View {
     }
     
     private var mainBasketContainer: some View {
-        ZStack(alignment: .top) {
+        ZStack {
             // Background (extracted to reduce type-checker complexity)
             basketBackground
                 .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 6)
             
-            // Content
+            // Content - use same frame for both states to prevent layout shift
             if state.basketDisplaySlotCount == 0 {
                 emptyContent
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 itemsContent
-                    .frame(maxWidth: .infinity, alignment: .top)
             }
             
             // Selection rectangle overlay
@@ -159,7 +157,8 @@ struct FloatingBasketView: View {
         }
         .frame(width: currentWidth, height: currentHeight)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        .scaleEffect((state.isBasketTargeted || state.isAirDropZoneTargeted) ? 1.03 : 1.0)
+        // 3D PRESSED EFFECT: Scale down when targeted (like button being pushed)
+        .scaleEffect((state.isBasketTargeted || state.isAirDropZoneTargeted) ? 0.97 : 1.0)
         .animation(DroppyAnimation.bouncy, value: state.isBasketTargeted)
         .animation(DroppyAnimation.bouncy, value: state.isAirDropZoneTargeted)
         .animation(DroppyAnimation.bouncy, value: state.basketDisplaySlotCount)
@@ -269,43 +268,87 @@ struct FloatingBasketView: View {
                     }
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
                 
-                // Left zone outline (main basket - blue when targeted)
-                RoundedRectangle(cornerRadius: cornerRadius - 8, style: .continuous)
-                    .stroke(
-                        state.isBasketTargeted ? Color.blue : Color.white.opacity(0.2),
-                        style: StrokeStyle(
-                            lineWidth: state.isBasketTargeted ? 2 : 1.5,
-                            lineCap: .round,
-                            dash: [6, 8],
-                            dashPhase: effectiveDashPhase
-                        )
-                    )
-                    .frame(width: baseWidth - 20, height: currentHeight - 20)
-                    .offset(x: 10)
+                // Left zone - PREMIUM pressed effect when targeted
+                Group {
+                    if state.isBasketTargeted {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: cornerRadius - 8, style: .continuous)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.25), Color.white.opacity(0.1)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    lineWidth: 2
+                                )
+                            RoundedRectangle(cornerRadius: cornerRadius - 8, style: .continuous)
+                                .fill(
+                                    RadialGradient(
+                                        colors: [Color.clear, Color.white.opacity(0.08)],
+                                        center: .center,
+                                        startRadius: 30,
+                                        endRadius: 100
+                                    )
+                                )
+                        }
+                    } else {
+                        RoundedRectangle(cornerRadius: cornerRadius - 8, style: .continuous)
+                            .stroke(
+                                Color.white.opacity(0.2),
+                                style: StrokeStyle(
+                                    lineWidth: 1.5,
+                                    lineCap: .round,
+                                    dash: [6, 8],
+                                    dashPhase: effectiveDashPhase
+                                )
+                            )
+                    }
+                }
+                .frame(width: baseWidth - 20, height: currentHeight - 20)
+                .offset(x: 10)
+                .animation(DroppyAnimation.expandOpen, value: state.isBasketTargeted)
                 
-                // Right zone outline (AirDrop - red when targeted)
-                RoundedRectangle(cornerRadius: cornerRadius - 8, style: .continuous)
-                    .stroke(
-                        state.isAirDropZoneTargeted ? Color.blue : Color.white.opacity(0.2),
-                        style: StrokeStyle(
-                            lineWidth: state.isAirDropZoneTargeted ? 2 : 1.5,
-                            lineCap: .round,
-                            dash: [6, 8],
-                            dashPhase: effectiveDashPhase
-                        )
-                    )
-                    .frame(width: airDropZoneWidth - 15, height: currentHeight - 20)
-                    .offset(x: baseWidth + 5)
+                // Right zone - PREMIUM pressed effect when targeted
+                Group {
+                    if state.isAirDropZoneTargeted {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: cornerRadius - 8, style: .continuous)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.25), Color.white.opacity(0.1)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    lineWidth: 2
+                                )
+                            RoundedRectangle(cornerRadius: cornerRadius - 8, style: .continuous)
+                                .fill(
+                                    RadialGradient(
+                                        colors: [Color.clear, Color.white.opacity(0.08)],
+                                        center: .center,
+                                        startRadius: 10,
+                                        endRadius: 50
+                                    )
+                                )
+                        }
+                    } else {
+                        RoundedRectangle(cornerRadius: cornerRadius - 8, style: .continuous)
+                            .stroke(
+                                Color.white.opacity(0.2),
+                                style: StrokeStyle(
+                                    lineWidth: 1.5,
+                                    lineCap: .round,
+                                    dash: [6, 8],
+                                    dashPhase: effectiveDashPhase
+                                )
+                            )
+                    }
+                }
+                .frame(width: airDropZoneWidth - 15, height: currentHeight - 20)
+                .offset(x: baseWidth + 5)
+                .animation(DroppyAnimation.expandOpen, value: state.isAirDropZoneTargeted)
                 
-                // AirDrop icon centered in the right zone - same size as NotchFace
-                Image("AirDropIcon")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 40, height: 40)
-                    .scaleEffect(state.isAirDropZoneTargeted ? 1.1 : 1.0)
-                    .animation(DroppyAnimation.bouncy, value: state.isAirDropZoneTargeted)
-                    .frame(width: airDropZoneWidth - 15, height: currentHeight - 20)
-                    .offset(x: baseWidth + 5)
+                // AirDrop icon now rendered in emptyContent via DropZoneIcon
             }
         } else {
             // Normal basket layout (AirDrop disabled OR basket has items)
@@ -319,43 +362,74 @@ struct FloatingBasketView: View {
                     }
                 }
                 .overlay(
-                    RoundedRectangle(cornerRadius: cornerRadius - 8, style: .continuous)
-                        .stroke(
-                            state.isBasketTargeted ? Color.blue : Color.white.opacity(0.2),
-                            style: StrokeStyle(
-                                lineWidth: state.isBasketTargeted ? 2 : 1.5,
-                                lineCap: .round,
-                                dash: [6, 8],
-                                dashPhase: effectiveDashPhase
-                            )
-                        )
-                        .padding(12)
+                    // Dashed outline only for empty state, pressed effect when targeted
+                    Group {
+                        if state.isBasketTargeted {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: cornerRadius - 8, style: .continuous)
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            colors: [Color.white.opacity(0.25), Color.white.opacity(0.1)],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        ),
+                                        lineWidth: 2
+                                    )
+                                RoundedRectangle(cornerRadius: cornerRadius - 8, style: .continuous)
+                                    .fill(
+                                        RadialGradient(
+                                            colors: [Color.clear, Color.white.opacity(0.08)],
+                                            center: .center,
+                                            startRadius: 50,
+                                            endRadius: 150
+                                        )
+                                    )
+                            }
+                        } else if state.basketDisplaySlotCount == 0 {
+                            // Only show dashed outline when empty
+                            RoundedRectangle(cornerRadius: cornerRadius - 8, style: .continuous)
+                                .stroke(
+                                    Color.white.opacity(0.2),
+                                    style: StrokeStyle(
+                                        lineWidth: 1.5,
+                                        lineCap: .round,
+                                        dash: [6, 8],
+                                        dashPhase: effectiveDashPhase
+                                    )
+                                )
+                        }
+                    }
+                    .padding(12)
+                    .animation(DroppyAnimation.expandOpen, value: state.isBasketTargeted)
                 )
-                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                // clipShape removed - already applied at mainBasketContainer level
         }
     }
     
     @ViewBuilder
     private var emptyContent: some View {
         if enableAirDropZone {
-            // Split layout when AirDrop zone is enabled
-            HStack(spacing: 0) {
-                // Main basket zone content - face centered within the outline (10pt padding)
-                NotchFace(size: 50, isExcited: state.isBasketTargeted)
-                    .frame(width: baseWidth - 20, height: currentHeight - 20)
-                    .frame(width: baseWidth)
+            // Split layout - icons positioned to match zone outlines exactly
+            // Left zone outline: width=baseWidth-20, offset=10 → center at 10 + (baseWidth-20)/2 = baseWidth/2
+            // Right zone outline: width=airDropZoneWidth-15, offset=baseWidth+5 → center at baseWidth+5 + (airDropZoneWidth-15)/2
+            ZStack {
+                // Main drop zone icon - centered in left zone
+                DropZoneIcon(type: .shelf, size: 44, isActive: state.isBasketTargeted)
+                    .position(x: baseWidth / 2, y: currentHeight / 2)
                 
-                // Empty space - the icon is already in airDropZoneBackground
-                Color.clear
-                    .frame(width: airDropZoneWidth)
+                // AirDrop zone icon - centered in right zone (matches zone outline exactly)
+                DropZoneIcon(type: .airDrop, size: 44, isActive: state.isAirDropZoneTargeted)
+                    .position(x: baseWidth + 5 + (airDropZoneWidth - 15) / 2, y: currentHeight / 2)
             }
+            .frame(width: baseWidth + airDropZoneWidth, height: currentHeight)
             .allowsHitTesting(false)
         } else {
-            // Original layout when AirDrop zone is disabled - centered with padding matching outline
-            NotchFace(size: 50, isExcited: state.isBasketTargeted)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(10)
-                .allowsHitTesting(false)
+            // Single zone layout - perfectly centered
+            ZStack {
+                DropZoneIcon(type: .shelf, size: 44, isActive: state.isBasketTargeted)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .allowsHitTesting(false)
         }
     }
     
@@ -366,7 +440,12 @@ struct FloatingBasketView: View {
             
             // Items grid - wrapped in ZStack with background tap handler for deselection
             basketItemsGrid
+            
+            Spacer(minLength: 0)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
     
     @ViewBuilder

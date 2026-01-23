@@ -115,10 +115,15 @@ class RenameWindowController: NSObject, NSWindowDelegate {
     }
     
     func close() {
-        // Clear content view first to trigger onDisappear and stop animations
-        window.contentView = nil
+        // Hide window immediately for responsive feel
         window.orderOut(nil)
         onRename = nil
+        
+        // Clear content view asynchronously to avoid priority inversion
+        // (user-interactive thread waiting on default QoS cleanup)
+        DispatchQueue.main.async { [weak self] in
+            self?.window.contentView = nil
+        }
     }
     
     // REMOVED: Auto-close on resign key

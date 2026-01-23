@@ -102,15 +102,16 @@ extension ItemStack {
 // MARK: - Stack Transition
 
 extension AnyTransition {
-    /// Transition for stack appearing (drop animation)
+    /// Transition for stack appearing/disappearing (symmetric bounce in/out)
     static var stackDrop: AnyTransition {
         .asymmetric(
             insertion: .scale(scale: 0.6)
                 .combined(with: .opacity)
                 .animation(.spring(response: 0.4, dampingFraction: 0.8)),
-            removal: .scale(scale: 0.85)
+            removal: .scale(scale: 0.6)
                 .combined(with: .opacity)
-                .animation(.spring(response: 0.25, dampingFraction: 1.0))
+                .combined(with: .offset(y: 10))
+                .animation(.spring(response: 0.3, dampingFraction: 0.9))
         )
     }
     
@@ -121,7 +122,10 @@ extension AnyTransition {
                 .combined(with: .offset(y: -15))
                 .combined(with: .opacity)
                 .animation(ItemStack.expandAnimation.delay(ItemStack.staggerDelay(for: index))),
-            removal: .opacity.animation(.easeOut(duration: 0.12))
+            removal: .scale(scale: 0.7)
+                .combined(with: .offset(y: 10))
+                .combined(with: .opacity)
+                .animation(.spring(response: 0.25, dampingFraction: 0.9))
         )
     }
 }

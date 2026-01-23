@@ -248,13 +248,15 @@ struct MediaHUDView: View {
                     .frame(height: 20)
                     .padding(.vertical, 4)
                     .padding(.horizontal, 8)
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .move(edge: .top)),
-                        removal: .opacity.combined(with: .move(edge: .top))
-                    ))
+                    // PREMIUM: Scale + opacity transition with animation timing for smooth appear/disappear
+                    // Matches the shelf's cohesive expand animation pattern
+                    .transition(.scale(scale: 0.9).combined(with: .opacity).animation(DroppyAnimation.notchState))
             }
         }
-        .animation(DroppyAnimation.state, value: isHovered)
+        // UNIFIED ANIMATION: Use the SAME animation preset as the parent (dropZone)
+        // Parent uses .notchState for mediaHUDIsHovered - we MUST match for structural consistency
+        .compositingGroup() // Unity Standard: animate as single layer
+        .animation(DroppyAnimation.notchState, value: isHovered)
         .allowsHitTesting(true)
         .onTapGesture {
             withAnimation(DroppyAnimation.state) {
@@ -339,7 +341,7 @@ struct MarqueeText: View {
     var body: some View {
         GeometryReader { geo in
             // Use native display refresh rate for smooth 120Hz ProMotion scrolling
-            TimelineView(.animation(paused: !needsScroll)) { timeline in
+            TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: !needsScroll)) { timeline in
                 let totalDistance = textWidth + 50
                 let elapsed = timeline.date.timeIntervalSince(startTime)
                 let rawOffset = elapsed * speed
@@ -366,6 +368,9 @@ struct MarqueeText: View {
                     }
                 }
                 .offset(x: offset)
+                // SMOOTH INTERPOLATION: Apply linear animation to interpolate between timeline ticks
+                // This creates buttery 120Hz scrolling by letting the GPU interpolate positions
+                .animation(.linear(duration: 1.0 / 60.0), value: offset)
                 // Center text when it fits, left-align when scrolling
                 .frame(maxWidth: .infinity, alignment: needsScroll ? .leading : .center)
             }

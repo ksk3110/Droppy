@@ -110,12 +110,7 @@ struct StackedItemView: View {
                 }
             },
             onRightClick: {
-                // Right click = select if not selected, show context menu
-                if !state.selectedStacks.contains(stack.id) {
-                    state.deselectAll()
-                    state.selectedStacks.insert(stack.id)
-                    state.selectedItems.formUnion(stack.itemIds)
-                }
+                // Right click = just show context menu, don't select/highlight
             },
             onDragStart: nil,
             onDragComplete: nil,
@@ -137,19 +132,8 @@ struct StackedItemView: View {
                 }
             }
             .frame(width: 76, height: 96)  // Match grid slot exactly
-            // Drop target visual feedback - scale up and glow when files dragged over
+            // Drop target visual feedback - scale up and blue glow when files dragged over
             .scaleEffect(isDropTargeted ? 1.08 : 1.0)
-            .overlay(
-                RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
-                    .stroke(Color.green, lineWidth: 3)
-                    .opacity(isDropTargeted ? 1 : 0)
-                    .padding(6)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
-                    .fill(Color.green.opacity(isDropTargeted ? 0.15 : 0))
-                    .padding(6)
-            )
             .animation(DroppyAnimation.bouncy, value: isDropTargeted)
             // Drop destination - drag files INTO this stack
             .dropDestination(for: URL.self) { urls, location in
@@ -189,6 +173,8 @@ struct StackedItemView: View {
         .animation(ItemStack.peekAnimation, value: isHovering)
         .animation(ItemStack.peekAnimation, value: peekProgress)
         .animation(DroppyAnimation.bouncy, value: isSelected)
+        // Fixed size wrapper - prevents scale from affecting grid layout
+        .frame(width: 76, height: 96)
         .onHover { hovering in
             guard !state.isInteractionBlocked else { return }
             
@@ -234,7 +220,7 @@ struct StackedItemView: View {
                 .fill(.ultraThinMaterial)
         )
         .overlay(
-            // Default gradient border (when not selected)
+            // Default gradient border (when not selected and not drop targeted)
             RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
                 .stroke(
                     LinearGradient(
@@ -244,18 +230,18 @@ struct StackedItemView: View {
                     ),
                     lineWidth: 0.5
                 )
-                .opacity(isSelected ? 0 : 1)
+                .opacity((isSelected || isDropTargeted) ? 0 : 1)
         )
         .overlay(
-            // Selection border (when selected)
+            // Blue border for selection OR drop target
             RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
                 .stroke(Color.blue, lineWidth: 2)
-                .opacity(isSelected ? 1 : 0)
+                .opacity((isSelected || isDropTargeted) ? 1 : 0)
         )
         .background(
-            // Selection glow effect
+            // Blue glow effect for selection OR drop target
             RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
-                .fill(Color.blue.opacity(isSelected ? 0.15 : 0))
+                .fill(Color.blue.opacity((isSelected || isDropTargeted) ? 0.15 : 0))
         )
         .shadow(
             color: .black.opacity(0.2 - Double(index) * 0.03),
@@ -268,6 +254,7 @@ struct StackedItemView: View {
         .rotationEffect(.degrees(peekedRotation(for: index, total: total)))
         .zIndex(Double(total - index))
         .animation(DroppyAnimation.bouncy, value: isSelected)
+        .animation(DroppyAnimation.bouncy, value: isDropTargeted)
     }
     
     // MARK: - Count Badge
@@ -390,72 +377,53 @@ struct StackedItemView: View {
 
 // MARK: - Stack Collapse Button
 
-/// Premium collapse button with visual stacking effect
-/// Shows mini cards converging to indicate "collapse back to stack"
+/// Premium collapse button that looks identical to stacked cards
+/// Features converging card animation on hover to indicate "collapse back to stack"
 struct StackCollapseButton: View {
     let itemCount: Int
     let onCollapse: () -> Void
     
     @State private var isHovering = false
+    @State private var peekProgress: CGFloat = 1.0  // Start peeked (spread), collapse on hover
     
-    // Card dimensions (smaller to show multiple)
-    private let miniCardSize: CGFloat = 28
-    private let cardCornerRadius: CGFloat = 8
+    // Card dimensions - matching StackedItemView exactly
+    private let cardWidth: CGFloat = 64
+    private let cardHeight: CGFloat = 64
+    private let cardCornerRadius: CGFloat = 16
+    
+    // Stacking formulas (matching StackedItemView)
+    private func cardOffset(for index: Int) -> CGFloat {
+        CGFloat(index) * 4
+    }
+    
+    private func cardRotation(for index: Int, total: Int) -> Double {
+        Double(index - total / 2) * 2.0
+    }
+    
+    private func cardScale(for index: Int) -> CGFloat {
+        1.0 - CGFloat(index) * 0.03
+    }
+    
+    // Hover converge: cards come together (opposite of peek)
+    private func convergedOffset(for index: Int) -> CGFloat {
+        cardOffset(for: index) * (1.0 - peekProgress) + (CGFloat(index) * 7 * peekProgress)
+    }
+    
+    private func convergedRotation(for index: Int, total: Int) -> Double {
+        cardRotation(for: index, total: total) * (1.0 - peekProgress) + 
+            (Double(index - total / 2) * 3.0 * Double(peekProgress))
+    }
     
     var body: some View {
         Button(action: {
             HapticFeedback.pop()
             onCollapse()
         }) {
-            VStack(spacing: 6) {
-                // Card container matching NotchItemContent exactly
-                ZStack {
-                    // Stacked cards visual - shows cards converging
-                    // Background card (furthest back)
-                    miniCard(offset: isHovering ? 0 : 6, rotation: isHovering ? 0 : -6, opacity: 0.4)
-                    
-                    // Middle card
-                    miniCard(offset: isHovering ? 0 : 3, rotation: isHovering ? 0 : 3, opacity: 0.6)
-                    
-                    // Front card with icon
-                    ZStack {
-                        RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
-                            .fill(.ultraThinMaterial)
-                        
-                        Image(systemName: "arrow.down.right.and.arrow.up.left")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.9))
-                    }
-                    .frame(width: miniCardSize, height: miniCardSize)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
-                            .stroke(
-                                LinearGradient(
-                                    colors: [.white.opacity(0.3), .white.opacity(0.05)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 0.5
-                            )
-                    )
-                    .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
+            ZStack {
+                // Render 3 stacked cards (back to front)
+                ForEach((0..<3).reversed(), id: \.self) { index in
+                    collapseCard(at: index, total: 3)
                 }
-                .frame(width: 64, height: 64)
-                .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(Color.white.opacity(isHovering ? 0.25 : 0.15), lineWidth: 0.5)
-                )
-                .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
-                
-                // Label matching NotchItemContent filename styling
-                Text("Collapse")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.white.opacity(isHovering ? 0.85 : 0.5))
-                    .lineLimit(1)
             }
             .frame(width: 76, height: 96)
             .contentShape(Rectangle())
@@ -463,25 +431,57 @@ struct StackCollapseButton: View {
         .buttonStyle(.plain)
         .scaleEffect(isHovering ? 1.04 : 1.0)
         .animation(ItemStack.peekAnimation, value: isHovering)
+        .animation(ItemStack.peekAnimation, value: peekProgress)
         .onHover { hovering in
+            isHovering = hovering
             if hovering {
                 HapticFeedback.pop()
+                // Converge cards on hover
+                peekProgress = 0.0
+            } else {
+                // Spread cards when not hovering
+                peekProgress = 1.0
             }
-            isHovering = hovering
         }
     }
     
-    // Mini card for stacking visual
-    private func miniCard(offset: CGFloat, rotation: Double, opacity: Double) -> some View {
-        RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
-            .fill(.ultraThinMaterial.opacity(opacity))
-            .frame(width: miniCardSize, height: miniCardSize)
-            .overlay(
-                RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
-                    .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
-            )
-            .offset(x: offset * 0.5, y: -offset)
-            .rotationEffect(.degrees(rotation))
-            .animation(DroppyAnimation.hover, value: isHovering)
+    // Card matching StackedItemView stackedCard exactly
+    private func collapseCard(at index: Int, total: Int) -> some View {
+        ZStack {
+            // Collapse icon only on front card
+            if index == 0 {
+                Image(systemName: "arrow.down.right.and.arrow.up.left")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.8))
+            }
+        }
+        .frame(width: cardWidth, height: cardHeight)
+        .background(
+            RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            // Gradient border (matching StackedItemView)
+            RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [.white.opacity(0.25), .white.opacity(0.05)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 0.5
+                )
+        )
+        .shadow(
+            color: .black.opacity(0.2 - Double(index) * 0.03),
+            radius: 8 - CGFloat(index) * 1.5,
+            x: 0,
+            y: 4 + CGFloat(index)
+        )
+        .scaleEffect(cardScale(for: index))
+        .offset(x: convergedOffset(for: index) * 0.4, y: -convergedOffset(for: index))
+        .rotationEffect(.degrees(convergedRotation(for: index, total: total)))
+        .zIndex(Double(total - index))
     }
 }
+
