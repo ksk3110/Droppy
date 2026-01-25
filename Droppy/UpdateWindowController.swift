@@ -86,25 +86,25 @@ class UpdateWindowController: NSObject, NSWindowDelegate {
             
             // PREMIUM: CASpringAnimation for bouncy appear
             if let layer = newWindow.contentView?.layer {
-                // Fade in
+                // Fade in (smooth like Quickshare)
                 let fadeAnim = CABasicAnimation(keyPath: "opacity")
                 fadeAnim.fromValue = 0
                 fadeAnim.toValue = 1
-                fadeAnim.duration = 0.2
+                fadeAnim.duration = 0.25  // Smooth fade
                 fadeAnim.timingFunction = CAMediaTimingFunction(name: .easeOut)
                 fadeAnim.fillMode = .forwards
                 fadeAnim.isRemovedOnCompletion = false
                 layer.add(fadeAnim, forKey: "fadeIn")
                 layer.opacity = 1
                 
-                // Scale with spring overshoot
+                // Scale with spring overshoot (smooth like Quickshare)
                 let scaleAnim = CASpringAnimation(keyPath: "transform.scale")
                 scaleAnim.fromValue = 0.85
                 scaleAnim.toValue = 1.0
                 scaleAnim.mass = 1.0
-                scaleAnim.stiffness = 280
-                scaleAnim.damping = 20
-                scaleAnim.initialVelocity = 8
+                scaleAnim.stiffness = 250  // Smooth spring (was 280)
+                scaleAnim.damping = 22
+                scaleAnim.initialVelocity = 6  // Gentler start
                 scaleAnim.duration = scaleAnim.settlingDuration
                 scaleAnim.fillMode = .forwards
                 scaleAnim.isRemovedOnCompletion = false
@@ -112,9 +112,9 @@ class UpdateWindowController: NSObject, NSWindowDelegate {
                 layer.transform = CATransform3DIdentity
             }
             
-            // Fade window alpha
+            // Fade window alpha (smooth like Quickshare)
             NSAnimationContext.runAnimationGroup({ context in
-                context.duration = 0.2
+                context.duration = 0.25
                 context.timingFunction = CAMediaTimingFunction(name: .easeOut)
                 newWindow.animator().alphaValue = 1.0
             })

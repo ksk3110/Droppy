@@ -151,25 +151,25 @@ class ClipboardWindowController: NSObject, NSWindowDelegate {
         
         // PREMIUM: Use CASpringAnimation for true spring physics with visible overshoot
         if let layer = window.contentView?.layer {
-            // Fade in (faster)
+            // Fade in (smooth like Quickshare)
             let fadeAnim = CABasicAnimation(keyPath: "opacity")
             fadeAnim.fromValue = 0
             fadeAnim.toValue = 1
-            fadeAnim.duration = 0.12  // Faster fade
+            fadeAnim.duration = 0.25  // Smooth fade
             fadeAnim.timingFunction = CAMediaTimingFunction(name: .easeOut)
             fadeAnim.fillMode = .forwards
             fadeAnim.isRemovedOnCompletion = false
             layer.add(fadeAnim, forKey: "fadeIn")
             layer.opacity = 1
             
-            // Scale with spring overshoot (snappier - stiffness 420 for fast response)
+            // Scale with spring overshoot (smooth like Quickshare)
             let scaleAnim = CASpringAnimation(keyPath: "transform.scale")
             scaleAnim.fromValue = 0.85
             scaleAnim.toValue = 1.0
             scaleAnim.mass = 1.0
-            scaleAnim.stiffness = 420  // Higher = faster (was 280)
-            scaleAnim.damping = 22     // Slightly more damped for snappy feel
-            scaleAnim.initialVelocity = 10
+            scaleAnim.stiffness = 250  // Smooth spring (was 420)
+            scaleAnim.damping = 22
+            scaleAnim.initialVelocity = 6  // Gentler start
             scaleAnim.duration = scaleAnim.settlingDuration
             scaleAnim.fillMode = .forwards
             scaleAnim.isRemovedOnCompletion = false
@@ -177,9 +177,9 @@ class ClipboardWindowController: NSObject, NSWindowDelegate {
             layer.transform = CATransform3DIdentity
         }
         
-        // Fade window alpha (faster)
+        // Fade window alpha (smooth like Quickshare)
         NSAnimationContext.runAnimationGroup({ context in
-            context.duration = 0.12
+            context.duration = 0.25
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
             window.animator().alphaValue = 1.0
         }, completionHandler: { [weak self] in
