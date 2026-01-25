@@ -291,29 +291,29 @@ struct QuickshareItemRow: View {
         ZStack {
             // Stacked appearance for multi-file zips
             if item.itemCount > 1 {
-                // Back cards (offset to show stacking)
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                // Back cards (offset to show stacking) - circular
+                Circle()
                     .fill(Color.white.opacity(0.05))
                     .frame(width: 28, height: 28)
                     .offset(x: 3, y: -3)
                 
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                Circle()
                     .fill(Color.white.opacity(0.08))
                     .frame(width: 28, height: 28)
                     .offset(x: 1.5, y: -1.5)
             }
             
-            // Main thumbnail
+            // Main thumbnail - circular like clipboard
             if let thumbnail = item.thumbnail {
                 Image(nsImage: thumbnail)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(width: 32, height: 32)
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .clipShape(Circle())
             } else {
-                // Fallback to system icon
+                // Fallback to system icon - circular
                 ZStack {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    Circle()
                         .fill(Color.white.opacity(0.1))
                         .frame(width: 32, height: 32)
                     

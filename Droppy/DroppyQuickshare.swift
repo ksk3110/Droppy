@@ -46,6 +46,10 @@ enum DroppyQuickshare {
             // Upload the file
             let result = uploadTo0x0(fileURL: uploadURL)
             
+            // Generate thumbnail from original file(s) before cleanup
+            let thumbnailData = QuickshareItem.generateThumbnail(from: urls.first!)
+            let itemCount = urls.count
+            
             // Clean up temporary zip if we created one
             if isTemporaryZip {
                 try? FileManager.default.removeItem(at: uploadURL)
@@ -65,7 +69,9 @@ enum DroppyQuickshare {
                         filename: displayFilename,
                         shareURL: result.shareURL,
                         token: result.token,
-                        fileSize: result.fileSize
+                        fileSize: result.fileSize,
+                        thumbnailData: thumbnailData,
+                        itemCount: itemCount
                     )
                     print("🚀 [DroppyQuickshare] Created item, calling addItem...")
                     QuickshareManager.shared.addItem(quickshareItem)
