@@ -137,8 +137,9 @@ final class MenuBarManager: ObservableObject {
     
     private func createStatusItems() {
         // IMPORTANT: Set initial preferred positions if not already set
-        // This ensures the toggle (position 0) and divider (position 1) are immediately adjacent
-        // so users only need to drag icons just to the left of the dot to hide them
+        // Lower position = further RIGHT in menu bar
+        // Toggle should be rightmost (position 0) so it stays visible when divider expands
+        // Divider should be to the LEFT of toggle (higher position number)
         if StatusItemDefaults.preferredPosition(for: toggleAutosaveName) == nil {
             StatusItemDefaults.setPreferredPosition(0, for: toggleAutosaveName)
         }
@@ -146,21 +147,8 @@ final class MenuBarManager: ObservableObject {
             StatusItemDefaults.setPreferredPosition(1, for: dividerAutosaveName)
         }
         
-        // Create the toggle button (always visible, shows dot indicator)
-        toggleItem = NSStatusBar.system.statusItem(withLength: toggleLength)
-        toggleItem?.autosaveName = toggleAutosaveName
-        
-        if let button = toggleItem?.button {
-            button.target = self
-            button.action = #selector(toggleClicked)
-            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
-            print("[MenuBarManager] Toggle button configured with click action")
-        } else {
-            print("[MenuBarManager] ⚠️ WARNING: Toggle button is nil - clicks will not work!")
-        }
-        
-        // Create the divider (expands to hide items)
-        // Positioned immediately to the LEFT of the toggle (position 1 vs toggle's position 0)
+        // Create DIVIDER FIRST (positioned to the LEFT of toggle)
+        // When it expands, it pushes items to ITS left off-screen, not the toggle
         dividerItem = NSStatusBar.system.statusItem(withLength: dividerStandardLength)
         dividerItem?.autosaveName = dividerAutosaveName
         
@@ -171,6 +159,19 @@ final class MenuBarManager: ObservableObject {
             print("[MenuBarManager] Divider configured")
         } else {
             print("[MenuBarManager] ⚠️ WARNING: Divider button is nil - expansion may not work!")
+        }
+        
+        // Create toggle button SECOND (stays to the RIGHT, always visible)
+        toggleItem = NSStatusBar.system.statusItem(withLength: toggleLength)
+        toggleItem?.autosaveName = toggleAutosaveName
+        
+        if let button = toggleItem?.button {
+            button.target = self
+            button.action = #selector(toggleClicked)
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+            print("[MenuBarManager] Toggle button configured with click action")
+        } else {
+            print("[MenuBarManager] ⚠️ WARNING: Toggle button is nil - clicks will not work!")
         }
         
         updateToggleIcon()
