@@ -143,41 +143,46 @@ struct StackedItemView: View {
             selectionSignature: state.selectedStacks.hashValue
         ) {
             // Stack content - EXACTLY matching StackCollapseButton layout
-            VStack(spacing: 6) {
-                // 56x56 icon container matching Collapse button
-                ZStack {
-                    // Glass background matching basket style
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                    
-                    // Subtle border (stronger when selected/hovered)
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.white.opacity(isSelected ? 0.3 : (isHovering ? 0.2 : 0.1)), lineWidth: isSelected ? 2 : 1)
-                    
-                    // Blue selection glow
-                    if isSelected || isDropTargeted {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color.blue.opacity(0.15))
-                        
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(Color.blue, lineWidth: 2)
-                    }
-                    
-                    // Expand icon
-                    Image(systemName: "arrow.up.left.and.arrow.down.right")
-                        .font(.system(size: 24, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.85))
-                }
-                .frame(width: 56, height: 56)
+            // Wrapped in bottom-aligned container to match grid cell positioning
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
                 
-                // Count label like "[4] Files" - matching Collapse text style
-                Text(countLabel)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .lineLimit(1)
-                    .frame(width: 60)
+                VStack(spacing: 6) {
+                    // 56x56 icon container matching Collapse button
+                    ZStack {
+                        // Glass background matching basket style
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                        
+                        // Subtle border (stronger when selected/hovered)
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color.white.opacity(isSelected ? 0.3 : (isHovering ? 0.2 : 0.1)), lineWidth: isSelected ? 2 : 1)
+                        
+                        // Blue selection glow
+                        if isSelected || isDropTargeted {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Color.blue.opacity(0.15))
+                            
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(Color.blue, lineWidth: 2)
+                        }
+                        
+                        // Expand icon
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.85))
+                    }
+                    .frame(width: 56, height: 56)
+                    
+                    // Count label like "[4] Files" - matching Collapse text style
+                    Text(countLabel)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .lineLimit(1)
+                        .frame(width: 60)
+                }
+                .padding(2)
             }
-            .padding(2)
             .frame(width: 64, height: 80)
             // Drop target visual feedback - scale up and blue glow when files dragged over
             .scaleEffect(isDropTargeted ? 1.08 : 1.0)
