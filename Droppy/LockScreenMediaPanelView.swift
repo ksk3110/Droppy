@@ -35,9 +35,10 @@ struct LockScreenMediaPanelView: View {
             
             VStack(spacing: 14) {
                 // Row 1: Album Art + Track Info + Visualizer
-                HStack(alignment: .center, spacing: 12) {
+                HStack(alignment: .center, spacing: 0) {
                     // Album art
                     albumArtView
+                        .padding(.trailing, 12)
                     
                     // Track info (title + artist)
                     VStack(alignment: .leading, spacing: 3) {
@@ -54,7 +55,7 @@ struct LockScreenMediaPanelView: View {
                     
                     Spacer()
                     
-                    // Visualizer (5 bars) - at right edge
+                    // Visualizer (5 bars) - at exact right edge (aligned with timestamp)
                     AudioSpectrumView(
                         isPlaying: musicManager.isPlaying,
                         barCount: 5,
@@ -64,7 +65,6 @@ struct LockScreenMediaPanelView: View {
                         color: .white
                     )
                 }
-                .frame(maxWidth: .infinity)
                 .frame(height: albumArtSize)
                 
                 // Row 2: Progress bar with timestamps
