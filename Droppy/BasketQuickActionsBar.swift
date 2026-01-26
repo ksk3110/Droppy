@@ -77,14 +77,14 @@ struct BasketQuickActionsBar: View {
                             removal: .scale(scale: 0.5).combined(with: .opacity).animation(.easeOut(duration: 0.15))
                         ))
                 } else {
-                    // Collapsed: Zap button - matches basket border style
+                    // Collapsed: Zap button - matches basket and quick action button style
                     // CRITICAL: Also accepts drops to auto-expand when files are dragged over it
                     Circle()
-                        .fill(buttonFill)
+                        .fill(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
                         .frame(width: buttonSize, height: buttonSize)
                         .overlay(
                             Circle()
-                                .stroke(Color.white.opacity(isBoltTargeted ? 0.4 : 0.08), lineWidth: isBoltTargeted ? 2 : 1)
+                                .stroke(Color.white.opacity(isBoltTargeted ? 0.4 : (useTransparentBackground ? 0.12 : 0.06)), lineWidth: isBoltTargeted ? 2 : 1)
                         )
                         .overlay(
                             Image(systemName: "bolt.fill")

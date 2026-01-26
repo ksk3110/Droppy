@@ -116,26 +116,50 @@ struct StackedItemView: View {
             onDragComplete: nil,
             selectionSignature: state.selectedStacks.hashValue
         ) {
-            // Stack content with drop destination - VStack matching BasketItemContent layout
+            // Stack content - Clean glass design matching collapse button
             VStack(spacing: 6) {
-                // 64x64 container for stacked cards
+                // 56x56 icon container with count badge
                 ZStack {
-                    // Stacked cards (up to 3 visible, rendered back to front)
-                    let visibleItems = Array(stack.items.prefix(3))
-                    let totalCount = visibleItems.count
+                    // Glass background matching basket style
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(.ultraThinMaterial)
                     
-                    ForEach(Array(visibleItems.enumerated().reversed()), id: \.element.id) { index, item in
-                        stackedCard(for: item, at: index, total: totalCount)
+                    // Subtle border (stronger when selected)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.white.opacity(isSelected ? 0.3 : (isHovering ? 0.2 : 0.1)), lineWidth: isSelected ? 2 : 1)
+                    
+                    // Blue selection glow
+                    if isSelected || isDropTargeted {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color.blue.opacity(0.15))
+                        
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color.blue, lineWidth: 2)
                     }
                     
-                    // Count badge (only show for 2+ items)
+                    // Expand icon
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.85))
+                    
+                    // Count badge (top-right)
                     if stack.count > 1 {
-                        countBadge
+                        Text("\(stack.count)")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(
+                                Capsule()
+                                    .fill(Color.blue)
+                                    .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
+                            )
+                            .offset(x: 22, y: -22)
                     }
                 }
                 .frame(width: 56, height: 56)
                 
-                // "Expand" text label like regular items
+                // "Expand" text label
                 Text("Expand")
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.white.opacity(0.7))
