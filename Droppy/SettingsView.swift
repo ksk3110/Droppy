@@ -1139,7 +1139,7 @@ struct SettingsView: View {
                                 NSWorkspace.shared.open(URL(fileURLWithPath: workflowPath))
                             }
                         case .finder, .finderServices:
-                            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.Keyboard-Settings.extension")!)
+                            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.Keyboard-Settings")!)
                         case .spotify:
                             SpotifyAuthManager.shared.startAuthentication()
                         case .elementCapture, .aiBackgroundRemoval, .windowSnap, .voiceTranscribe, .ffmpegVideoCompression, .terminalNotch, .menuBarManager, .quickshare:

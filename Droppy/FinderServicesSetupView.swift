@@ -128,7 +128,8 @@ struct FinderServicesSetupView: View {
     
     private func openServicesSettings() {
         // Opens System Settings > Keyboard
-        if let url = URL(string: "x-apple.systempreferences:com.apple.Keyboard-Settings.extension") {
+        // Opens System Settings > Keyboard (user then clicks Keyboard Shortcuts... > Services)
+        if let url = URL(string: "x-apple.systempreferences:com.apple.Keyboard-Settings") {
             NSWorkspace.shared.open(url)
         }
     }
@@ -251,7 +252,8 @@ struct FinderServicesSetupSheetView: View {
     }
     
     private func openServicesSettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.Keyboard-Settings.extension") {
+        // Opens System Settings > Keyboard (user then clicks Keyboard Shortcuts... > Services)
+        if let url = URL(string: "x-apple.systempreferences:com.apple.Keyboard-Settings") {
             NSWorkspace.shared.open(url)
         }
     }
