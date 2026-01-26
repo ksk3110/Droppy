@@ -624,6 +624,7 @@ struct ClipboardManagerView: View {
                                         item: item, 
                                         isSelected: selectedItems.contains(item.id)
                                     )
+                                    .frame(width: 360)  // Fixed width to prevent text expansion
                                 }
                                 // CRITICAL: Make view identity depend on selection state
                                 // This forces SwiftUI to recreate the entire DraggableArea (including NSHostingView)
