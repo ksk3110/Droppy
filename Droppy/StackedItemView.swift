@@ -120,9 +120,9 @@ struct StackedItemView: View {
                     .frame(width: 60)
             }
             .padding(2)
-            .frame(width: 64, height: 80, alignment: .bottom)
             .contentShape(Rectangle())
         }
+        .frame(width: 64, height: 80)
         .buttonStyle(.plain)
         .scaleEffect(isHovering ? 1.05 : 1.0)
         .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isHovering)
