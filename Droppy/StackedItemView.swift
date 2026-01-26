@@ -221,7 +221,7 @@ struct StackedItemView: View {
         .animation(ItemStack.peekAnimation, value: isHovering)
         .animation(ItemStack.peekAnimation, value: peekProgress)
         .animation(DroppyAnimation.bouncy, value: isSelected)
-        // NO extra frame modifiers outside DraggableArea - content already has .frame(width: 64, height: 80)
+        .fixedSize()  // CRITICAL: Prevent grid from stretching this NSViewRepresentable
         .onHover { hovering in
             guard !state.isInteractionBlocked else { return }
             
