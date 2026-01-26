@@ -257,23 +257,6 @@ struct MenuBarManagerInfoView: View {
                 .font(.headline)
                 .foregroundStyle(.primary)
             
-            // Hover to reveal toggle
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Hover to reveal")
-                        .font(.callout)
-                    Text("Show icons when hovering in menu bar area")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Toggle("", isOn: $manager.hoverToRevealEnabled)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-            }
-            
-            Divider()
-            
             // Droppy Bar toggle
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
