@@ -65,10 +65,10 @@ class LockScreenManager: ObservableObject {
             object: nil
         )
         
-        // Session become active = screen unlocked (after login)
+        // Session become active = screen unlocked (after login) - ACTUAL unlock
         workspaceCenter.addObserver(
             self,
-            selector: #selector(handleScreenWake),
+            selector: #selector(handleActualUnlock),
             name: NSWorkspace.sessionDidBecomeActiveNotification,
             object: nil
         )
@@ -81,9 +81,10 @@ class LockScreenManager: ObservableObject {
             object: nil
         )
         
+        // Actual unlock notification - ACTUAL unlock
         DistributedNotificationCenter.default().addObserver(
             self,
-            selector: #selector(handleScreenWake),
+            selector: #selector(handleActualUnlock),
             name: NSNotification.Name("com.apple.screenIsUnlocked"),
             object: nil
         )
@@ -108,14 +109,26 @@ class LockScreenManager: ObservableObject {
     }
     
     @objc private func handleScreenWake() {
-        // Hide lock screen media panel (user is unlocking)
-        LockScreenMediaPanelManager.shared.hidePanel()
-        
-        // Trigger unlock HUD IMMEDIATELY - the notch is visible on lock screen via SkyLight
-        // The user will see the unlock animation on the lock screen before it transitions
+        // Screen wake can happen on lock screen (just screen brightening)
+        // Don't hide panel here - only hide on actual unlock
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            // Prevent duplicate triggers
+            // Re-show panel on screen wake (in case it was hidden during dim)
+            // This ensures panel stays visible when screen dims and wakes while still locked
+            if !self.isUnlocked {
+                LockScreenMediaPanelManager.shared.showPanel()
+            }
+        }
+    }
+    
+    /// Called when user actually unlocks (not just screen wake)
+    @objc private func handleActualUnlock() {
+        // Hide lock screen media panel (user is actually unlocking)
+        LockScreenMediaPanelManager.shared.hidePanel()
+        
+        // Trigger unlock HUD
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
             guard !self.isUnlocked else { return }
             self.isUnlocked = true
             self.lastEvent = .unlocked

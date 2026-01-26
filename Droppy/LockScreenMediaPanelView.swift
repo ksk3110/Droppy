@@ -53,10 +53,8 @@ struct LockScreenMediaPanelView: View {
                     }
                     
                     Spacer()
-                }
-                .frame(height: albumArtSize)
-                .overlay(alignment: .trailing) {
-                    // Visualizer (5 bars) - positioned at trailing edge
+                    
+                    // Visualizer (5 bars) - at right edge
                     AudioSpectrumView(
                         isPlaying: musicManager.isPlaying,
                         barCount: 5,
@@ -66,6 +64,8 @@ struct LockScreenMediaPanelView: View {
                         color: .white
                     )
                 }
+                .frame(maxWidth: .infinity)
+                .frame(height: albumArtSize)
                 
                 // Row 2: Progress bar with timestamps
                 HStack(spacing: 8) {
