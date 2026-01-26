@@ -77,19 +77,18 @@ struct BasketQuickActionsBar: View {
                             removal: .scale(scale: 0.5).combined(with: .opacity).animation(.easeOut(duration: 0.15))
                         ))
                 } else {
-                    // Collapsed: Zap button - matches basket and quick action button style
-                    // CRITICAL: Also accepts drops to auto-expand when files are dragged over it
+                    // Collapsed: Zap button - matches quick action icons with glass material
                     Circle()
                         .fill(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
                         .frame(width: buttonSize, height: buttonSize)
                         .overlay(
                             Circle()
-                                .stroke(Color.white.opacity(isBoltTargeted ? 0.4 : (useTransparentBackground ? 0.12 : 0.06)), lineWidth: isBoltTargeted ? 2 : 1)
+                                .stroke(Color.white.opacity(isBoltTargeted ? 0.3 : (useTransparentBackground ? 0.12 : 0.06)), lineWidth: 1)
                         )
                         .overlay(
                             Image(systemName: "bolt.fill")
                                 .font(.system(size: 20, weight: .semibold))
-                                .foregroundStyle(.white.opacity(isBoltTargeted ? 1.0 : 0.75))
+                                .foregroundStyle(.white.opacity(isBoltTargeted ? 1.0 : 0.85))
                         )
                         .scaleEffect(isBoltTargeted ? 1.15 : 1.0)
                         .contentShape(Circle().scale(1.3))
