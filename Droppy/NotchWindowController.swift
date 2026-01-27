@@ -240,21 +240,9 @@ final class NotchWindowController: NSObject, ObservableObject {
         // Store in dictionary
         notchWindows[displayID] = window
         
-        // Delegate to SkyLight for lock screen visibility (built-in display only)
-        // This makes the notch visible on BOTH lock screen and desktop
-        // SKIP delegation if we're recreating windows after unlock (to fix the zombie window issue)
-        if screen.isBuiltIn && !isRecreatingWindowsAfterUnlock {
-            let enableLockScreenNotch = UserDefaults.standard.preference(
-                AppPreferenceKey.enableLockScreenMediaWidget,
-                default: PreferenceDefault.enableLockScreenMediaWidget
-            )
-            if enableLockScreenNotch {
-                SkyLightOperator.shared.delegateWindow(window)
-                print("NotchWindowController: ✅ Built-in notch window delegated to SkyLight for lock screen visibility")
-            }
-        } else if isRecreatingWindowsAfterUnlock && screen.isBuiltIn {
-            print("NotchWindowController: ⏭️ Skipping SkyLight delegation (window recreation after unlock)")
-        }
+        // Note: We do NOT delegate to SkyLight here eagerly.
+        // Doing so breaks drag-and-drop on the desktop for the built-in screen.
+        // Delegation happens ONLY when the screen is actually locked (via sessionDidResignActive).
     }
     /// Updates the window's visibility in screenshots based on user preference
     func updateScreenshotVisibility() {
