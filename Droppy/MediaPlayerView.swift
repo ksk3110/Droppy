@@ -321,6 +321,30 @@ struct MediaPlayerView: View {
                     contentAppeared = false
                 }
             }
+            // MARK: - Premium Ambient Glow (diagonal from bottom-left to top-right)
+            .background(alignment: .bottomLeading) {
+                if musicManager.albumArt.size.width > 0 {
+                    // Large blurred ellipse positioned at bottom-left, fading towards top-right
+                    Ellipse()
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    musicManager.visualizerColor.opacity(0.25),
+                                    musicManager.visualizerColor.opacity(0.08),
+                                    Color.clear
+                                ],
+                                center: .center,
+                                startRadius: 10,
+                                endRadius: 120
+                            )
+                        )
+                        .frame(width: 200, height: 180)
+                        .blur(radius: 40)
+                        .offset(x: -30, y: 30)
+                        .drawingGroup() // GPU compositing for performance
+                        .animation(.easeInOut(duration: 0.8), value: musicManager.visualizerColor)
+                }
+            }
             // Use SSOT for consistent padding across all expanded views
             .padding(NotchLayoutConstants.contentEdgeInsets(notchHeight: notchHeight))
         }
