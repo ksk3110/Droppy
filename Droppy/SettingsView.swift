@@ -1959,23 +1959,31 @@ struct SettingsView: View {
             
             // MARK: Links
             Section {
-                LinkButton(
-                    title: "Website",
-                    icon: "globe",
-                    url: "https://getdroppy.app"
-                )
-                
-                LinkButton(
-                    title: "GitHub",
-                    icon: "chevron.left.forwardslash.chevron.right",
-                    url: "https://github.com/iordv/Droppy"
-                )
-                
-                LinkButton(
-                    title: "Discord",
-                    icon: "bubble.left.and.bubble.right.fill",
-                    url: "https://discord.gg/uxqynmJb"
-                )
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                    LinkButton(
+                        title: "Website",
+                        icon: "globe",
+                        url: "https://getdroppy.app"
+                    )
+                    
+                    LinkButton(
+                        title: "GitHub",
+                        icon: "chevron.left.forwardslash.chevron.right",
+                        url: "https://github.com/iordv/Droppy"
+                    )
+                    
+                    LinkButton(
+                        title: "Discord",
+                        icon: "bubble.left.and.bubble.right.fill",
+                        url: "https://discord.gg/uxqynmJb"
+                    )
+                    
+                    LinkButton(
+                        title: "Support",
+                        icon: "cup.and.heat.waves.fill",
+                        url: "https://buymeacoffee.com/droppy"
+                    )
+                }
             } header: {
                 Text("Links")
             }

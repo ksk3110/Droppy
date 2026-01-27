@@ -150,11 +150,23 @@ class LockScreenManager: ObservableObject {
             // CRITICAL: Trigger Unlock HUD (2.0s)
             HUDManager.shared.show(.lockScreen, on: NSScreen.builtInWithNotch?.displayID, duration: 2.0)
             
+            // PREMIUM: Play subtle unlock sound
+            self.playUnlockSound()
+            
             // CRITICAL: Restore window to standard desktop state (recycle mechanism)
             // Delay to allow unlock animation to play out (2.0s)
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                  NotchWindowController.shared.returnFromLockScreen()
             }
+        }
+    }
+    
+    /// Plays a premium, subtle unlock sound
+    private func playUnlockSound() {
+        // Use the system "Pop" sound - satisfying clack effect
+        if let sound = NSSound(named: "Pop") {
+            sound.volume = 0.4 // Subtle but audible
+            sound.play()
         }
     }
     

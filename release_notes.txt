@@ -1,5 +1,51 @@
-# v9.5.1 - Permission Cache Fix
+📢 Important
+- Version 10 is our biggest update yet - "The Community Update"!
+- Built with feedback from our Discord community
 
-## Fixes
-- Fixed permission cache issues that could cause features to show as disabled after updating
-- Improved permission detection reliability after app updates
+✨ New Features
+- Added Droppy Quickshare - upload files instantly to 0x0.st for quick sharing
+- Added Notify Me! extension - get notified for important file events
+- Added Apple Music integration - native playback controls
+- Added Lock Screen Now Playing Widget with beautiful glass effect
+- Added Lock/Unlock animations with premium visual feedback
+- Added subtle unlock sound for a satisfying experience
+- Added Window Snap support for external monitors with spatial cycling
+- Redesigned Media HUDs with premium gradient visualizer and rounded progress bars
+- Added gradient text effect for long media titles with smooth fade
+- Added premium blur transitions when switching between HUDs
+- Redesigned file items in Shelf and Basket with native macOS appearance
+- Redesigned folder items with folder peek interactions - view and open folders directly
+- Added interactive folder exploration right from the shelf
+- Redesigned Settings window with better separation and new sections
+- Added new About page with modern layout and 2x2 link grid
+- Added new HUDs settings page for better organization
+- Added premium curvature on notch/HUD top edges
+- Added ambient glow effect to media player using album art dominant colors
+- Added album art color extraction for timestamps and artist names
+- Added menu bar dot indicator replacing chevron
+- Added hover explanations for basket quick action buttons
+- Improved all animations for expanding, collapsing, and swiping between HUDs
+- Added premium blur effects throughout the UI
+
+🐛 Bug Fixes
+- Fixed Termi-Notch crashes and improved stability
+- Fixed Termi-Notch to persist directory changes across commands
+- Fixed tracked folder now opens in the last opened location for basket
+- Fixed Finder Configuration now opens correct System Settings page
+- Fixed quick action buttons are now visible and usable below basket
+- Fixed hover effects for basket quick actions with proper explanations
+- Fixed onboarding now respects transparency setting
+- Fixed window animations with smoother spring timing
+- Fixed menu bar manager icon visibility and drag positioning
+- Fixed menu bar item detection with improved filtering
+- Fixed AI Background Removal install loop on macOS Tahoe
+- Fixed clipboard text truncation to prevent row expansion
+- Fixed basket 'Move to Shelf' now moves all selected items
+- Fixed clipboard item renames now persist to disk
+- Fixed SkyLight hover detection after lock/unlock
+- Fixed lock screen media panel layout matching iPhone style
+- Fixed visualizer alignment and positioning
+- Fixed drag-and-drop on built-in screen after SkyLight delegation
+- Fixed Lock Screen HUD jumping with window recycling mechanism
+- Fixed notification HUD padding with symmetrical layout
+- Fixed preferences default values to prevent menu bar disappearing
