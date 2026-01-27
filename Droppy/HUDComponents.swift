@@ -451,7 +451,6 @@ private class MiniAudioVisualizerState: ObservableObject {
     }
 }
 
-/// Scrolling marquee text view using TimelineView for efficiency
 struct MarqueeText: View {
     let text: String
     let speed: Double // Points per second (unused, kept for API compatibility)
@@ -474,7 +473,7 @@ struct MarqueeText: View {
     
     var body: some View {
         GeometryReader { geo in
-            ZStack(alignment: effectiveAlignment.horizontal == .center ? .center : .leading) {
+            ZStack(alignment: .leading) {
                 Text(text)
                     .fixedSize()
                     .background(
@@ -490,25 +489,49 @@ struct MarqueeText: View {
                                 }
                         }
                     )
-            }
-            // iOS-style fade: mask with gradient to fade out right edge when text overflows
-            .mask {
+                    .frame(maxWidth: geo.size.width, alignment: effectiveAlignment.horizontal == .center ? .center : .leading)
+                    // PREMIUM: Gradient mask to fade out right edge
+                    .mask(
+                        HStack(spacing: 0) {
+                            Rectangle()
+                            if needsFade {
+                                LinearGradient(
+                                    stops: [
+                                        .init(color: .white, location: 0),
+                                        .init(color: .clear, location: 1)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                                .frame(width: 35)
+                            }
+                        }
+                    )
+                
+                // PREMIUM: Blurred overlay at fade edge for soft premium look
                 if needsFade {
-                    // Fade gradient: solid left, fading to transparent on right
-                    HStack(spacing: 0) {
-                        Color.white
-                        LinearGradient(
-                            colors: [.white, .white.opacity(0)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                        .frame(width: 30)
+                    HStack {
+                        Spacer()
+                        Rectangle()
+                            .fill(.clear)
+                            .frame(width: 20)
+                            .background(
+                                Text(text)
+                                    .fixedSize()
+                                    .blur(radius: 6)
+                                    .opacity(0.4)
+                                    .mask(
+                                        LinearGradient(
+                                            colors: [.clear, .white],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                            )
+                            .clipped()
                     }
-                } else {
-                    Color.white
                 }
             }
-            .frame(maxWidth: .infinity, alignment: effectiveAlignment)
             .onAppear {
                 containerWidth = geo.size.width
             }
@@ -516,7 +539,6 @@ struct MarqueeText: View {
                 containerWidth = newWidth
             }
         }
-        .clipped()
     }
 }
 

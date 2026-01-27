@@ -209,8 +209,8 @@ struct SettingsView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .openSmartExportSettings)) { _ in
-            // Navigate to Shelf tab where Smart Export is located
-            selectedTab = .shelf
+            // Navigate to General tab where Smart Export is located
+            selectedTab = .general
         }
     }
     
@@ -1959,35 +1959,23 @@ struct SettingsView: View {
             
             // MARK: Links
             Section {
-                Link(destination: URL(string: "https://getdroppy.app")!) {
-                    HStack {
-                        Label("Website", systemImage: "globe")
-                        Spacer()
-                        Image(systemName: "arrow.up.right")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.tertiary)
-                    }
-                }
+                LinkButton(
+                    title: "Website",
+                    icon: "globe",
+                    url: "https://getdroppy.app"
+                )
                 
-                Link(destination: URL(string: "https://github.com/iordv/Droppy")!) {
-                    HStack {
-                        Label("GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
-                        Spacer()
-                        Image(systemName: "arrow.up.right")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.tertiary)
-                    }
-                }
+                LinkButton(
+                    title: "GitHub",
+                    icon: "chevron.left.forwardslash.chevron.right",
+                    url: "https://github.com/iordv/Droppy"
+                )
                 
-                Link(destination: URL(string: "https://discord.gg/uxqynmJb")!) {
-                    HStack {
-                        Label("Discord", systemImage: "bubble.left.and.bubble.right.fill")
-                        Spacer()
-                        Image(systemName: "arrow.up.right")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.tertiary)
-                    }
-                }
+                LinkButton(
+                    title: "Discord",
+                    icon: "bubble.left.and.bubble.right.fill",
+                    url: "https://discord.gg/uxqynmJb"
+                )
             } header: {
                 Text("Links")
             }

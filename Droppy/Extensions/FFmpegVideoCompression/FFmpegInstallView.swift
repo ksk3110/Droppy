@@ -294,7 +294,7 @@ struct FFmpegInstallView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Auto-Save Compressed Files")
                             .font(.callout.weight(.medium))
-                        Text("Configure export settings in Settings → Shared Features → Smart Export")
+                        Text("Configure export settings in Settings → General → Smart Export")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

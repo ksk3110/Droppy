@@ -15,7 +15,7 @@
     <img src="https://img.shields.io/badge/macOS_14+-000?style=flat-square" alt="Platform">
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square" alt="License"></a>
     <a href="https://buymeacoffee.com/droppy"><img src="https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=flat-square&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee"></a>
-    <a href="https://discord.gg/ghMSjHRa"><img src="https://img.shields.io/badge/Discord-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord"></a>
+    <a href="https://discord.gg/uxqynmJb"><img src="https://img.shields.io/badge/Discord-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord"></a>
 </p>
 
 ---
@@ -32,7 +32,7 @@
   <a href="https://getdroppy.app/"><strong>🌐 Website</strong></a> · 
   <a href="https://github.com/iordv/Droppy/releases/latest"><strong>⬇️ Download</strong></a> · 
   <a href="https://getdroppy.app/extensions.html"><strong>🧩 Extensions</strong></a> · 
-  <a href="https://discord.gg/ghMSjHRa"><strong>💬 Discord</strong></a>
+  <a href="https://discord.gg/uxqynmJb"><strong>💬 Discord</strong></a>
 </p>
 
 <p align="center">

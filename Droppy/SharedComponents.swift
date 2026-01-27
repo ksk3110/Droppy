@@ -340,6 +340,72 @@ struct DisplayModeButton<Icon: View>: View {
         }
     }
 }
+
+// MARK: - Link Button
+
+/// Reusable button for external links, styled to match DisplayModeButton
+struct LinkButton: View {
+    let title: String
+    let icon: String
+    let url: String
+    
+    @State private var iconBounce = false
+    @State private var isHovering = false
+    
+    var body: some View {
+        Link(destination: URL(string: url)!) {
+            HStack(spacing: 12) {
+                // Icon area
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(AdaptiveColors.buttonBackgroundAuto)
+                    Image(systemName: icon)
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(.blue)
+                        .scaleEffect(iconBounce ? 1.2 : 1.0)
+                        .rotationEffect(.degrees(iconBounce ? -5 : 0))
+                }
+                .frame(width: 40, height: 40)
+                
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                
+                Spacer()
+                
+                Image(systemName: "arrow.up.right")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity)
+            .background(AdaptiveColors.buttonBackgroundAuto)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            )
+            .scaleEffect(isHovering ? 1.02 : 1.0)
+            .animation(DroppyAnimation.hover, value: isHovering)
+        }
+        .buttonStyle(.plain)
+        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .onHover { hovering in
+            isHovering = hovering
+            if hovering {
+                withAnimation(.spring(response: DesignConstants.bounceResponse, dampingFraction: DesignConstants.bounceDamping)) {
+                    iconBounce = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    withAnimation(DroppyAnimation.stateEmphasis) {
+                        iconBounce = false
+                    }
+                }
+            }
+        }
+    }
+}
 // MARK: - Animated Sub-Setting Toggle
 
 /// Sub-setting toggle with icon bounce animation and subtitle

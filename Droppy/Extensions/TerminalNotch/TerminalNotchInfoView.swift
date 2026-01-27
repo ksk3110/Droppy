@@ -207,46 +207,36 @@ struct TerminalNotchInfoView: View {
                         .foregroundStyle(.primary)
                     
                     // Info button tooltip
-                    Button {
-                        showShortcutInfo.toggle()
-                    } label: {
-                        Image(systemName: "info.circle")
-                            .font(.system(size: 14))
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(DroppyCircleButtonStyle(size: 18))
-                    .popover(isPresented: $showShortcutInfo, arrowEdge: .trailing) {
-                        VStack(alignment: .center, spacing: 16) {
-                            Text("Accessing Termi-Notch")
-                                .font(.system(size: 15, weight: .semibold))
-                            
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "keyboard")
-                                        .foregroundStyle(.green)
-                                    Text("Use **shortcut** from anywhere")
-                                        .font(.system(size: 13))
-                                }
-                                
-                                HStack(spacing: 8) {
-                                    Image(systemName: "tray.and.arrow.down")
-                                        .foregroundStyle(.blue)
-                                    Text("**Click** terminal icon in expanded shelf")
-                                        .font(.system(size: 13))
-                                }
-                                
-                                HStack(spacing: 8) {
-                                    Image(systemName: "music.note")
-                                        .foregroundStyle(.pink)
-                                    Text("Also visible in **media HUD**")
-                                        .font(.system(size: 13))
-                                }
-                            }
-                            .foregroundStyle(.secondary)
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 18, height: 18)
+                        .onTapGesture { showShortcutInfo.toggle() }
+                        .onHover { hovering in
+                            showShortcutInfo = hovering
                         }
-                        .padding(16)
-                        .frame(width: 280)
-                    }
+                        .popover(isPresented: $showShortcutInfo, arrowEdge: .trailing) {
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "terminal")
+                                        .font(.system(size: 20))
+                                        .foregroundStyle(.green)
+                                    Text("Accessing Termi-Notch")
+                                        .font(.headline)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Label("Use **shortcut** from anywhere", systemImage: "keyboard")
+                                    Label("**Click** terminal icon in expanded shelf", systemImage: "tray.and.arrow.down")
+                                    Label("Also visible in **media HUD**", systemImage: "music.note")
+                                }
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .frame(width: 280)
+                        }
                     
                     Spacer()
                 }

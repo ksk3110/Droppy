@@ -546,6 +546,7 @@ struct MediaPlayerView: View {
                     .foregroundStyle(.white)
                     .frame(height: 20)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .clipped()
             } else {
                 // Keep layout with invisible spacer - MUST use fixed height to match title row
                 Color.clear
@@ -553,10 +554,11 @@ struct MediaPlayerView: View {
                     .frame(maxWidth: .infinity)
             }
             
-            // Audio Visualizer (colored by album art)
+            // Audio Visualizer (colored by album art) - fixedSize to prevent it from being squeezed
             if showVisualizer {
                 AudioVisualizerBars(isPlaying: musicManager.isPlaying, color: visualizerColor)
                     .frame(width: 28, height: 18)
+                    .fixedSize()
             } else {
                 Color.clear.frame(width: 28, height: 18)
             }
