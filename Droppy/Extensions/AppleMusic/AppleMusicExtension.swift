@@ -28,7 +28,7 @@ struct AppleMusicExtension: ExtensionDefinition {
     }
     
     static var iconURL: URL? {
-        URL(string: "https://getdroppy.app/assets/icons/applemusic.png")
+        URL(string: "https://getdroppy.app/assets/icons/apple-music.png")
     }
     
     static let iconPlaceholder = "music.note"

@@ -240,11 +240,14 @@ struct NotchShelfView: View {
     private let mediaPlayerWidth: CGFloat = 450
     
     /// Current expanded width based on what's shown
+    /// Apple Music gets extra width for shuffle, repeat, and love controls
     private var expandedWidth: CGFloat {
         // Media player gets full width, shelf gets narrower width
         if showMediaPlayer && !musicManager.isPlayerIdle && !state.isDropTargeted && !state.isShelfAirDropZoneTargeted && !dragMonitor.isDragging &&
            (musicManager.isMediaHUDForced || ((musicManager.isPlaying || musicManager.wasRecentlyPlaying) && !musicManager.isMediaHUDHidden && state.items.isEmpty)) {
-            return mediaPlayerWidth
+            // Apple Music needs extra width for additional controls (shuffle, repeat, love)
+            let appleMusicExtraWidth: CGFloat = musicManager.isAppleMusicSource ? 50 : 0
+            return mediaPlayerWidth + appleMusicExtraWidth
         }
         return shelfWidth
     }
