@@ -813,7 +813,8 @@ struct FloatingBasketView: View {
                                 state.basketPowerFolders.removeAll { $0.id == folder.id }
                             }
                         },
-                        layoutMode: .list
+                        layoutMode: .list,
+                        listRowWidth: fullGridWidth - (horizontalPadding * 2)  // CRITICAL: Fixed width for text truncation
                     )
                 }
                 
@@ -828,7 +829,8 @@ struct FloatingBasketView: View {
                                 state.removeBasketItem(item)
                             }
                         },
-                        layoutMode: .list
+                        layoutMode: .list,
+                        listRowWidth: fullGridWidth - (horizontalPadding * 2)  // CRITICAL: Fixed width for text truncation
                     )
                 }
             }
@@ -836,7 +838,7 @@ struct FloatingBasketView: View {
             .padding(.top, 24)
             .padding(.bottom, 18)
         }
-        // CRITICAL: Constrain list view to fullGridWidth to prevent items from expanding beyond basket
+        // CRITICAL: Set FIXED width (not max) to force all children to respect bounds
         .frame(width: fullGridWidth)
         // Note: Drop destination handled at container level (mainBasketContainer)
     }

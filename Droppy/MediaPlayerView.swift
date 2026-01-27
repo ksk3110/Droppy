@@ -304,7 +304,7 @@ struct MediaPlayerView: View {
                     // Row 4: Media Controls (centered)
                     // Push controls slightly lower to align button bottoms with album art bottom
                     controlsRowCompact
-                        .padding(.bottom, -8)
+                        .padding(.bottom, 6)
                 }
                 // Controls bottom-aligned with album art bottom edge
                 .frame(maxWidth: .infinity, minHeight: albumArtSize, maxHeight: albumArtSize)

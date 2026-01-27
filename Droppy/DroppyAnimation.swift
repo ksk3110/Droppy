@@ -207,12 +207,30 @@ enum DroppyAnimation {
     
     // MARK: - Notch View Transition
     
-    /// Premium view transition: scale(0.8, anchor: .top) + opacity with smooth duration.
+    /// Premium view transition: scale(0.8, anchor: .top) + blur + opacity with smooth duration.
+    /// Matches the premiumHUD transition pattern for consistent visual language.
     static var notchViewTransition: AnyTransition {
-        AnyTransition.asymmetric(
-            insertion: AnyTransition.scale(scale: 0.8, anchor: .top).combined(with: .opacity),
-            removal: AnyTransition.scale(scale: 0.8, anchor: .top).combined(with: .opacity)
+        .modifier(
+            active: NotchBlurModifier(scale: 0.8, blur: 8, opacity: 0),
+            identity: NotchBlurModifier(scale: 1, blur: 0, opacity: 1)
         ).animation(.smooth(duration: 0.35))
+    }
+}
+
+// MARK: - Notch Blur Modifier
+
+/// Modifier for premium notch view transitions with blur effect.
+/// Combines scale, blur, and opacity for ultra-smooth, Apple-like transitions.
+private struct NotchBlurModifier: ViewModifier {
+    let scale: CGFloat
+    let blur: CGFloat
+    let opacity: Double
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(scale, anchor: .top)
+            .blur(radius: blur)
+            .opacity(opacity)
     }
 }
 

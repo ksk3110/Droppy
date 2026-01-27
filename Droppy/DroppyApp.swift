@@ -430,6 +430,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 TrackedFoldersManager.shared.startMonitoring()
             }
             
+            // 7. Notification HUD (captures macOS notifications for notch display)
+            let notificationHUDInstalled = UserDefaults.standard.bool(forKey: AppPreferenceKey.notificationHUDInstalled)
+            let notificationHUDEnabled = !ExtensionType.notificationHUD.isRemoved
+            if notificationHUDInstalled && notificationHUDEnabled {
+                print("🔔 Droppy: Starting Notification HUD Monitor")
+                NotificationHUDManager.shared.startMonitoring()
+            }
+            
             // 6. AUTO-PROMPT FOR PERMISSIONS
             // If any accessibility-dependent feature is enabled but permission not granted, prompt
             let needsAccessibility = hudEnabled || clipboardEnabled

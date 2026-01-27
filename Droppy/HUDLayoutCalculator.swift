@@ -83,10 +83,12 @@ struct HUDLayoutCalculator {
     
     /// Symmetric padding for icon alignment
     /// In Dynamic Island: matches vertical padding for visual balance
-    /// In Notch mode: ensures icons align with outer edges
+    /// In Notch mode: ensures icons align with outer edges, +10pt for curved wing corners
     func symmetricPadding(for iconSize: CGFloat) -> CGFloat {
         let calculated = (notchHeight - iconSize) / 2
-        return max(calculated, 6) // Minimum 6px for visibility
+        let basePadding = max(calculated, 6) // Minimum 6px for visibility
+        // +10pt compensation for curved wing corners (topCornerRadius) in notch mode only
+        return isDynamicIslandMode ? basePadding : basePadding + 10
     }
     
     // MARK: - Standard Sizes

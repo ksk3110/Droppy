@@ -68,6 +68,15 @@ protocol ExtensionDefinition {
     
     /// Optional SwiftUI view to show instead of screenshot URL
     static var previewView: AnyView? { get }
+    
+    /// Whether this is a community-contributed extension
+    static var isCommunity: Bool { get }
+    
+    /// Creator name for community extensions
+    static var creatorName: String? { get }
+    
+    /// Creator profile URL for community extensions
+    static var creatorURL: URL? { get }
 }
 
 // MARK: - Default Implementations
@@ -84,6 +93,15 @@ extension ExtensionDefinition {
     
     /// Default no preview view (uses screenshotURL instead)
     static var previewView: AnyView? { nil }
+    
+    /// Default is not a community extension
+    static var isCommunity: Bool { false }
+    
+    /// Default no creator name
+    static var creatorName: String? { nil }
+    
+    /// Default no creator URL
+    static var creatorURL: URL? { nil }
 }
 
 // MARK: - Extension Registry
@@ -113,6 +131,7 @@ final class ExtensionRegistry {
         register(MenuBarManagerExtension.self)
         register(QuickshareExtension.self)
         register(AppleMusicExtension.self)
+        register(NotificationHUDExtension.self)
     }
     
     /// Register an extension definition

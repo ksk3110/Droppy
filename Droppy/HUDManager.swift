@@ -27,6 +27,7 @@ final class HUDManager {
         case battery = 70            // Charge state changes
         case capsLock = 60           // Keyboard state
         case lockScreen = 50         // Lock/unlock events
+        case notification = 45       // Notification HUD (extension)
         case dnd = 40                // Focus mode changes
         case update = 35             // App update available
         
@@ -41,6 +42,7 @@ final class HUDManager {
             case .battery: return 2.5           // Medium duration
             case .capsLock: return 1.0          // Very short, just confirmation
             case .lockScreen: return 2.0        // Medium
+            case .notification: return 3.0      // Notification from external app
             case .dnd: return 2.0               // Medium
             case .update: return 4.0            // Longer for user to notice update
             }
@@ -277,6 +279,11 @@ final class HUDManager {
     /// Whether Update HUD is visible
     var isUpdateHUDVisible: Bool {
         activeHUD?.type == .update
+    }
+    
+    /// Whether Notification HUD is visible
+    var isNotificationHUDVisible: Bool {
+        activeHUD?.type == .notification
     }
     
     /// Check if a specific HUD type is currently active

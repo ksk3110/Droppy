@@ -24,6 +24,7 @@ struct ExtensionsShopView: View {
     private var isVoiceTranscribeInstalled: Bool { VoiceTranscribeManager.shared.isModelDownloaded }
     private var isTerminalNotchInstalled: Bool { TerminalNotchManager.shared.isInstalled }
     private var isMenuBarManagerInstalled: Bool { MenuBarManager.shared.isEnabled }
+    private var isNotificationHUDInstalled: Bool { UserDefaults.standard.bool(forKey: AppPreferenceKey.notificationHUDInstalled) }
     
     var body: some View {
         ScrollView {
@@ -124,21 +125,18 @@ struct ExtensionsShopView: View {
                 )
             }
             
-            // Row 2: Menu Bar Manager + Termi-Notch
+            // Row 2: Notify me! + Termi-Notch
             HStack(spacing: 12) {
                 FeaturedExtensionCardCompact(
-                    category: "",
-                    title: "Menu Bar Manager",
-                    subtitle: "Clean up menu bar",
-                    iconURL: "https://getdroppy.app/assets/icons/menu-bar-manager.jpg",
-                    screenshotURL: "https://getdroppy.app/assets/screenshots/menu-bar-manager.png",
-                    accentColor: .blue,
-                    isInstalled: isMenuBarManagerInstalled
+                    category: "COMMUNITY",
+                    title: "Notify me!",
+                    subtitle: "Show notifications",
+                    iconURL: "https://getdroppy.app/assets/icons/notification-hud.png",
+                    screenshotURL: nil,
+                    accentColor: .purple,
+                    isInstalled: isNotificationHUDInstalled
                 ) {
-                    MenuBarManagerInfoView(
-                        installCount: extensionCounts["menuBarManager"],
-                        rating: extensionRatings["menuBarManager"]
-                    )
+                    NotificationHUDInfoView()
                 }
                 
                 FeaturedExtensionCardCompact(
@@ -221,7 +219,8 @@ struct ExtensionsShopView: View {
                         title: ext.title,
                         subtitle: ext.subtitle,
                         isInstalled: ext.isInstalled,
-                        installCount: extensionCounts[ext.analyticsKey]
+                        installCount: extensionCounts[ext.analyticsKey],
+                        isCommunity: ext.isCommunity
                     ) {
                         ext.detailView()
                     }
@@ -451,6 +450,19 @@ struct ExtensionsShopView: View {
                     installCount: extensionCounts["quickshare"],
                     rating: extensionRatings["quickshare"]
                 ))
+            },
+            ExtensionListItem(
+                id: "notificationHUD",
+                iconURL: "https://getdroppy.app/assets/icons/notification-hud.png",
+                title: "Notify me!",
+                subtitle: "Show notifications in notch",
+                category: .productivity,
+                isInstalled: isNotificationHUDInstalled,
+                analyticsKey: "notificationHUD",
+                extensionType: .notificationHUD,
+                isCommunity: true
+            ) {
+                AnyView(NotificationHUDInfoView())
             }
         ]
         
@@ -483,6 +495,7 @@ private struct ExtensionListItem: Identifiable {
     let isInstalled: Bool
     let analyticsKey: String
     let extensionType: ExtensionType
+    var isCommunity: Bool = false
     let detailView: () -> AnyView
 }
 
@@ -904,6 +917,7 @@ struct CompactExtensionRow<DetailView: View>: View {
     let subtitle: String
     let isInstalled: Bool
     var installCount: Int?
+    var isCommunity: Bool = false
     let detailView: () -> DetailView
     
     @State private var showSheet = false
@@ -928,9 +942,24 @@ struct CompactExtensionRow<DetailView: View>: View {
                 
                 // Title + Subtitle
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.primary)
+                    HStack(spacing: 6) {
+                        Text(title)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.primary)
+                        
+                        if isCommunity {
+                            HStack(spacing: 3) {
+                                Image(systemName: "person.2.fill")
+                                    .font(.system(size: 8))
+                                Text("Community")
+                                    .font(.system(size: 9, weight: .medium))
+                            }
+                            .foregroundStyle(.purple.opacity(0.9))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(Color.purple.opacity(0.15)))
+                        }
+                    }
                     
                     Text(subtitle)
                         .font(.system(size: 12))

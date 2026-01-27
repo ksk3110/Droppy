@@ -42,7 +42,7 @@ struct TerminalNotchView: View {
             // Sweeping green pulse on command execution (left to right)
             if manager.showPulse {
                 // Sweeping trim animation
-                RoundedRectangle(cornerRadius: 20)
+                RoundedRectangle(cornerRadius: 24)
                     .trim(from: max(0, manager.pulsePosition - 0.15), to: min(1, manager.pulsePosition))
                     .stroke(
                         LinearGradient(
@@ -77,7 +77,7 @@ struct TerminalNotchView: View {
             // Dotted outline container with marching ants animation (like empty shelf)
             // NOTE: Using strokeBorder instead of stroke to draw INSIDE the shape bounds,
             // preventing the stroke from being clipped at content edges
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .strokeBorder(
                     Color.green.opacity(0.4),
                     style: StrokeStyle(

@@ -93,7 +93,7 @@ struct ShelfView: View {
     private var emptyStateView: some View {
         VStack(spacing: 12) {
             ZStack {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .fill(Color(NSColor.labelColor).opacity(0.05))
                     .frame(width: 60, height: 60)
                 

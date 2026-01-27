@@ -1824,3 +1824,60 @@ struct UpdateHUDIcon: View {
     }
 }
 
+/// Compact animated notification icon for settings rows - orange gradient with bell
+struct NotificationHUDIcon: View {
+    let isEnabled: Bool
+    
+    @State private var bounce = false
+    
+    var body: some View {
+        ZStack {
+            // Red gradient when enabled, gray when disabled
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: isEnabled ? [
+                            Color(hue: 0.0, saturation: 0.55, brightness: 0.98),
+                            Color(hue: 0.98, saturation: 0.75, brightness: 0.70)
+                        ] : [
+                            Color(hue: 0.0, saturation: 0.0, brightness: 0.50),
+                            Color(hue: 0.0, saturation: 0.0, brightness: 0.35)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: 40, height: 40)
+
+            
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.25), Color.clear],
+                        startPoint: .top,
+                        endPoint: .center
+                    )
+                )
+                .frame(width: 40, height: 40)
+            
+            Image(systemName: "bell.badge.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.white)
+                .symbolEffect(.bounce, value: bounce)
+                .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+        }
+        .onAppear {
+            if isEnabled {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    bounce = true
+                }
+            }
+        }
+        .onChange(of: isEnabled) { _, newValue in
+            if newValue {
+                bounce.toggle()
+            }
+        }
+    }
+}
+

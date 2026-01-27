@@ -387,6 +387,9 @@ struct NotchShelfView: View {
             return batteryHudWidth  // Focus/DND HUD uses same width as battery HUD
         } else if HUDManager.shared.isUpdateHUDVisible && enableUpdateHUD {
             return updateHudWidth  // Update HUD uses wider width to fit "Update" + version text
+        } else if HUDManager.shared.isNotificationHUDVisible && NotificationHUDManager.shared.isInstalled {
+            // Notification HUD: mode-aware width
+            return isDynamicIslandMode ? hudWidth : expandedWidth
         } else if shouldShowMediaHUD {
             return hudWidth  // Media HUD uses tighter wings
         } else if enableNotchShelf && isHoveringOnThisScreen {
@@ -422,6 +425,10 @@ struct NotchShelfView: View {
             return notchHeight  // Focus/DND HUD just uses notch height (no slider)
         } else if HUDManager.shared.isUpdateHUDVisible && enableUpdateHUD {
             return notchHeight  // Update HUD just uses notch height (no slider)
+        } else if HUDManager.shared.isNotificationHUDVisible && NotificationHUDManager.shared.isInstalled {
+            // Notification HUD: mode-aware height
+            // Dynamic Island: compact height, Notch: taller to clear physical notch
+            return isDynamicIslandMode ? 70 : 110
         } else if shouldShowMediaHUD {
             // No vertical expansion on media HUD hover - just stay at notch height
             return notchHeight
@@ -1000,7 +1007,7 @@ struct NotchShelfView: View {
             // MARK: - Expanded Shelf Content
             if isExpandedOnThisScreen && enableNotchShelf {
                 expandedShelfContent
-                    // PREMIUM: Scale(0.8, anchor: .top) + opacity transition - matches swipe feel
+                    // PREMIUM: Scale(0.8, anchor: .top) + blur + opacity - ultra-smooth feel
                     .notchTransition()
                     .frame(width: expandedWidth, height: currentExpandedHeight)
                     // PREMIUM: Unified .smooth(0.35) for ALL state changes
@@ -1142,6 +1149,23 @@ struct NotchShelfView: View {
             .transition(.premiumHUD.animation(DroppyAnimation.notchState))
             .zIndex(7)
         }
+        
+        // Notification HUD - uses centralized HUDManager
+        // NOTE: This HUD expands to show beautiful notification content
+        if HUDManager.shared.isNotificationHUDVisible && !hudIsVisible && !isExpandedOnThisScreen,
+           let _ = NotificationHUDManager.shared.currentNotification {
+            let notifWidth = isDynamicIslandMode ? hudWidth : expandedWidth
+            let notifHeight: CGFloat = isDynamicIslandMode ? 70 : 110
+            
+            NotificationHUDView(
+                manager: NotificationHUDManager.shared,
+                hudWidth: notifWidth,
+                targetScreen: targetScreen
+            )
+            .frame(width: notifWidth, height: notifHeight)
+            .transition(.premiumHUD.animation(DroppyAnimation.notchState))
+            .zIndex(5.7)
+        }
     }
     
     // MARK: - Media Player HUD
@@ -1176,8 +1200,8 @@ struct NotchShelfView: View {
             MediaHUDView(musicManager: musicManager, isHovered: $mediaHUDIsHovered, notchWidth: notchWidth, notchHeight: notchHeight, hudWidth: hudWidth, targetScreen: targetScreen, albumArtNamespace: albumArtNamespace, showAlbumArt: false, showVisualizer: false, showTitle: false)
                 .frame(width: hudWidth, alignment: .top)
                 .clipShape(isDynamicIslandMode ? AnyShape(DynamicIslandShape(cornerRadius: 50)) : AnyShape(NotchShape(bottomRadius: 18)))
-                // PREMIUM: Opacity transition with .smooth(0.35) for unified feel
-                .transition(.opacity.animation(.smooth(duration: 0.35)))
+                // PREMIUM: Blur transition with .smooth(0.35) for unified feel
+                .transition(.premiumHUD.animation(.smooth(duration: 0.35)))
                 .zIndex(3)
         }
     }
@@ -1201,7 +1225,7 @@ struct NotchShelfView: View {
             
             // Calculate corner radii
             let hudCornerRadius: CGFloat = isDynamicIslandMode ? hudSize / 2 : 5
-            let expandedCornerRadius: CGFloat = 18
+            let expandedCornerRadius: CGFloat = 24  // Complement outer edge curvature
             let currentCornerRadius = isExpandedOnThisScreen ? expandedCornerRadius : hudCornerRadius
             
             // Calculate position offsets based on contentOverlay frame
@@ -1210,7 +1234,8 @@ struct NotchShelfView: View {
             
             // HUD X position: Album art at left edge with symmetricPadding inset
             // Use FIXED HUD container width to prevent jumping during transitions
-            let hudSymmetricPadding: CGFloat = isDynamicIslandMode ? (notchHeight - hudSize) / 2 : max((notchHeight - hudSize) / 2, 6)
+            // +10pt compensation for curved wing corners (topCornerRadius)
+            let hudSymmetricPadding: CGFloat = isDynamicIslandMode ? (notchHeight - hudSize) / 2 : max((notchHeight - hudSize) / 2, 6) + 10
             // In DI mode, use notchHeight as the fixed HUD height. In notch mode, use actual notchHeight.
             let fixedHUDHeight: CGFloat = isDynamicIslandMode ? notchHeight : notchHeight
             let fixedHUDContainerWidth: CGFloat = isDynamicIslandMode ? 260 : (notchWidth + (mediaWingWidth * 2))
@@ -1228,8 +1253,9 @@ struct NotchShelfView: View {
             // Expanded: Position album art top edge at content padding position
             // SSOT: Must match NotchLayoutConstants.contentEdgeInsets exactly
             // - DI/external mode: top padding = 20 (contentPadding)
-            // - Built-in notch mode: top padding = notchHeight
-            let expandedTopPadding: CGFloat = contentLayoutNotchHeight == 0 ? expandedPadding : contentLayoutNotchHeight
+            // - Built-in notch mode: top padding = notchHeight + 10 (wing corner compensation)
+            let wingCompensation: CGFloat = contentLayoutNotchHeight > 0 ? 10 : 0
+            let expandedTopPadding: CGFloat = contentLayoutNotchHeight == 0 ? expandedPadding : contentLayoutNotchHeight + wingCompensation
             let expandedYOffset = expandedTopPadding
             let currentYOffset = isExpandedOnThisScreen ? expandedYOffset : hudYOffset
             
@@ -1310,8 +1336,9 @@ struct NotchShelfView: View {
             .animation(.interactiveSpring(response: 0.25, dampingFraction: 0.7), value: albumArtParallaxOffset.width)
             .animation(.interactiveSpring(response: 0.25, dampingFraction: 0.7), value: albumArtParallaxOffset.height)
             .animation(.interactiveSpring(response: 0.2, dampingFraction: 0.5), value: albumArtTapScale)
-            // PREMIUM: Scale+opacity appear animation (same as MediaPlayerView controls)
+            // PREMIUM: Scale+blur+opacity appear animation (matches notchTransition pattern)
             .scaleEffect(mediaOverlayAppeared ? 1.0 : 0.8, anchor: .top)
+            .blur(radius: mediaOverlayAppeared ? 0 : 8)
             .opacity(mediaOverlayAppeared ? 1.0 : 0)
             .animation(.smooth(duration: 0.35), value: mediaOverlayAppeared)
             .onAppear {
@@ -1386,7 +1413,8 @@ struct NotchShelfView: View {
             // Calculate position offsets
             // Use fixed dimensions for HUD to prevent jumping on hover
             let fixedHUDHeight: CGFloat = notchHeight
-            let hudSymmetricPadding: CGFloat = isDynamicIslandMode ? (notchHeight - hudHeight) / 2 : max((notchHeight - hudHeight) / 2, 6)
+            // +10pt compensation for curved wing corners (topCornerRadius)
+            let hudSymmetricPadding: CGFloat = isDynamicIslandMode ? (notchHeight - hudHeight) / 2 : max((notchHeight - hudHeight) / 2, 6) + 10
             
             // HUD X: Right side of HUD (mirror of album art position)
             // Use FIXED HUD container width to prevent jumping during transitions
@@ -1410,7 +1438,9 @@ struct NotchShelfView: View {
             let hudYOffset = (fixedHUDHeight - hudHeight) / 2
             // Expanded: in the title row area, aligned with title text
             // SSOT: Must match NotchLayoutConstants.contentEdgeInsets exactly
-            let expandedTopPadding: CGFloat = contentLayoutNotchHeight == 0 ? expandedPadding : contentLayoutNotchHeight
+            // +10pt wing corner compensation in notch mode
+            let wingCompensation: CGFloat = contentLayoutNotchHeight > 0 ? 10 : 0
+            let expandedTopPadding: CGFloat = contentLayoutNotchHeight == 0 ? expandedPadding : contentLayoutNotchHeight + wingCompensation
             let expandedYOffset = expandedTopPadding + 1  // +1 to vertically center visualizer with title row
             let currentYOffset = isExpandedOnThisScreen ? expandedYOffset : hudYOffset
             
@@ -1428,8 +1458,9 @@ struct NotchShelfView: View {
             .frame(width: currentWidth, height: currentHeight)
             .offset(x: currentXOffset, y: currentYOffset)
             .animation(.smooth(duration: 0.35), value: isExpandedOnThisScreen)
-            // PREMIUM: Scale+opacity appear animation (same as album art)
+            // PREMIUM: Scale+blur+opacity appear animation (matches notchTransition pattern)
             .scaleEffect(mediaOverlayAppeared ? 1.0 : 0.8, anchor: .top)
+            .blur(radius: mediaOverlayAppeared ? 0 : 8)
             .opacity(mediaOverlayAppeared ? 1.0 : 0)
             .animation(.smooth(duration: 0.35), value: mediaOverlayAppeared)
             .geometryGroup()  // Bundle as single element for smooth morphing
@@ -1503,8 +1534,9 @@ struct NotchShelfView: View {
                     .geometryGroup()  // Bundle as single element for smooth morphing
                     // PREMIUM: Smooth spring animation for morphing (matches album art)
                     .animation(.smooth(duration: 0.35), value: isExpandedOnThisScreen)
-                    // PREMIUM: Scale+opacity appear animation (same as album art)
+                    // PREMIUM: Scale+blur+opacity appear animation (matches notchTransition pattern)
                     .scaleEffect(mediaOverlayAppeared ? 1.0 : 0.8, anchor: .top)
+                    .blur(radius: mediaOverlayAppeared ? 0 : 8)
                     .opacity(mediaOverlayAppeared ? 1.0 : 0)
                     .animation(.smooth(duration: 0.35), value: mediaOverlayAppeared)
             }
@@ -1645,7 +1677,7 @@ struct NotchShelfView: View {
     // MARK: - Morphing Outline (Disabled)
     
     /// Hover indicator removed - clean design without outline
-    /// Hover feedback is provided by scale/parallax effects instead
+    /// Note: Notch wings are now built into NotchShape via topCornerRadius
     private var morphingOutline: some View {
         EmptyView()
     }
@@ -1793,7 +1825,7 @@ struct NotchShelfView: View {
                 TerminalNotchView(manager: terminalManager, notchHeight: contentLayoutNotchHeight)
                     .frame(height: currentExpandedHeight, alignment: .top)
                     .id("terminal-view")
-                    // PREMIUM: Exact scale(0.8, anchor: .top) + opacity transition
+                    // PREMIUM: Scale(0.8, anchor: .top) + blur + opacity - ultra-smooth feel
                     .notchTransition()
             }
             // Show drop zone when dragging over (takes priority)
@@ -1828,7 +1860,7 @@ struct NotchShelfView: View {
                                             .frame(height: currentExpandedHeight)
                         // Stable identity for animation
                         .id("empty-shelf-view")
-                        // Scale transition matching basket pattern for polished appearance
+                        // Premium blur transition matching basket pattern for polished appearance
                         .notchTransition()
                 }
                 // Show items grid when items exist
@@ -1837,7 +1869,7 @@ struct NotchShelfView: View {
                                             .frame(height: currentExpandedHeight)
                         // Stable identity for animation
                         .id("items-grid-view")
-                        // Scale transition matching basket pattern for polished appearance
+                        // Premium blur transition matching basket pattern for polished appearance
                         .notchTransition()
             }
             
@@ -2016,54 +2048,74 @@ struct NotchShelfView: View {
 }
 
 // MARK: - Custom Notch Shape
+/// U-shaped notch with elegant curved top corners (wings) extending outward
+/// Inspired by Atoll's implementation - creates visual transition to screen edges
 struct NotchShape: Shape {
+    var topCornerRadius: CGFloat
     var bottomRadius: CGFloat
     
-    var animatableData: CGFloat {
-        get { bottomRadius }
-        set { bottomRadius = newValue }
+    init(topCornerRadius: CGFloat = 10, bottomRadius: CGFloat = 16) {
+        self.topCornerRadius = topCornerRadius
+        self.bottomRadius = bottomRadius
+    }
+    
+    var animatableData: AnimatablePair<CGFloat, CGFloat> {
+        get { AnimatablePair(topCornerRadius, bottomRadius) }
+        set {
+            topCornerRadius = newValue.first
+            bottomRadius = newValue.second
+        }
     }
     
     func path(in rect: CGRect) -> Path {
         var path = Path()
         
-        // Start top left
+        // === TOP LEFT WING ===
+        // Start at top-left corner (screen edge)
         path.move(to: CGPoint(x: rect.minX, y: rect.minY))
         
-        // Top edge (straight)
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-        
-        // Right edge
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - bottomRadius))
-        
-        // Bottom Right Corner
-        path.addArc(
-            center: CGPoint(x: rect.maxX - bottomRadius, y: rect.maxY - bottomRadius),
-            radius: bottomRadius,
-            startAngle: Angle(degrees: 0),
-            endAngle: Angle(degrees: 90),
-            clockwise: false
+        // Curve inward from screen edge to notch body
+        path.addQuadCurve(
+            to: CGPoint(x: rect.minX + topCornerRadius, y: rect.minY + topCornerRadius),
+            control: CGPoint(x: rect.minX + topCornerRadius, y: rect.minY)
         )
         
-        // Bottom edge
-        path.addLine(to: CGPoint(x: rect.minX + bottomRadius, y: rect.maxY))
+        // === LEFT EDGE ===
+        path.addLine(to: CGPoint(x: rect.minX + topCornerRadius, y: rect.maxY - bottomRadius))
         
-        // Bottom Left Corner
-        path.addArc(
-            center: CGPoint(x: rect.minX + bottomRadius, y: rect.maxY - bottomRadius),
-            radius: bottomRadius,
-            startAngle: Angle(degrees: 90),
-            endAngle: Angle(degrees: 180),
-            clockwise: false
+        // === BOTTOM LEFT CORNER ===
+        path.addQuadCurve(
+            to: CGPoint(x: rect.minX + topCornerRadius + bottomRadius, y: rect.maxY),
+            control: CGPoint(x: rect.minX + topCornerRadius, y: rect.maxY)
         )
         
-        // Left edge
+        // === BOTTOM EDGE ===
+        path.addLine(to: CGPoint(x: rect.maxX - topCornerRadius - bottomRadius, y: rect.maxY))
+        
+        // === BOTTOM RIGHT CORNER ===
+        path.addQuadCurve(
+            to: CGPoint(x: rect.maxX - topCornerRadius, y: rect.maxY - bottomRadius),
+            control: CGPoint(x: rect.maxX - topCornerRadius, y: rect.maxY)
+        )
+        
+        // === RIGHT EDGE ===
+        path.addLine(to: CGPoint(x: rect.maxX - topCornerRadius, y: rect.minY + topCornerRadius))
+        
+        // === TOP RIGHT WING ===
+        // Curve outward from notch body to screen edge
+        path.addQuadCurve(
+            to: CGPoint(x: rect.maxX, y: rect.minY),
+            control: CGPoint(x: rect.maxX - topCornerRadius, y: rect.minY)
+        )
+        
+        // === TOP EDGE (closing) ===
         path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
         
         path.closeSubpath()
         return path
     }
 }
+
 
 // MARK: - Dynamic Island Shape (Pill/Capsule for non-notch screens)
 /// A fully rounded pill shape for Dynamic Island mode
@@ -2161,7 +2213,7 @@ extension NotchShelfView {
                     if state.isDropTargeted {
                         ZStack {
                             // Layer 1: Soft inner border glow - premium edge highlight
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
                                 .strokeBorder(
                                     LinearGradient(
                                         colors: [
@@ -2174,7 +2226,7 @@ extension NotchShelfView {
                                     lineWidth: 2
                                 )
                             // Layer 2: Subtle vignette for depth
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
                                 .fill(
                                     RadialGradient(
                                         colors: [
@@ -2190,7 +2242,7 @@ extension NotchShelfView {
                         .allowsHitTesting(false)
                     } else {
                         // Subtle dashed outline when not targeted
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
                             .strokeBorder(
                                 Color.white.opacity(0.2),
                                 style: StrokeStyle(
@@ -2216,7 +2268,7 @@ extension NotchShelfView {
                     Group {
                         if state.isShelfAirDropZoneTargeted {
                             ZStack {
-                                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                RoundedRectangle(cornerRadius: 24, style: .continuous)
                                     .strokeBorder(
                                         LinearGradient(
                                             colors: [
@@ -2228,7 +2280,7 @@ extension NotchShelfView {
                                         ),
                                         lineWidth: 2
                                     )
-                                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                RoundedRectangle(cornerRadius: 24, style: .continuous)
                                     .fill(
                                         RadialGradient(
                                             colors: [Color.clear, Color.white.opacity(0.08)],
@@ -2240,7 +2292,7 @@ extension NotchShelfView {
                             }
                             .allowsHitTesting(false)
                         } else {
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
                                 .strokeBorder(
                                     Color.white.opacity(0.2),
                                     style: StrokeStyle(

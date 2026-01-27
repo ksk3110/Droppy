@@ -38,6 +38,8 @@ struct SettingsView: View {
     @AppStorage(AppPreferenceKey.enableLockScreenHUD) private var enableLockScreenHUD = PreferenceDefault.enableLockScreenHUD
     @AppStorage(AppPreferenceKey.enableDNDHUD) private var enableDNDHUD = PreferenceDefault.enableDNDHUD
     @AppStorage(AppPreferenceKey.enableUpdateHUD) private var enableUpdateHUD = PreferenceDefault.enableUpdateHUD
+    @AppStorage(AppPreferenceKey.notificationHUDInstalled) private var isNotificationHUDInstalled = PreferenceDefault.notificationHUDInstalled
+    @AppStorage(AppPreferenceKey.notificationHUDEnabled) private var enableNotificationHUD = PreferenceDefault.notificationHUDEnabled
     @AppStorage(AppPreferenceKey.enableLockScreenMediaWidget) private var enableLockScreenMediaWidget = PreferenceDefault.enableLockScreenMediaWidget
     @AppStorage(AppPreferenceKey.hideNotchMediaHUDWithLockScreen) private var hideNotchMediaHUDWithLockScreen = PreferenceDefault.hideNotchMediaHUDWithLockScreen
     @AppStorage(AppPreferenceKey.showMediaPlayer) private var showMediaPlayer = PreferenceDefault.showMediaPlayer
@@ -1523,6 +1525,22 @@ struct SettingsView: View {
                         }
                     }
                 }
+                
+                // Notify me! (Notification HUD Extension)
+                HStack(spacing: 12) {
+                    NotificationHUDIcon(isEnabled: isNotificationHUDInstalled && enableNotificationHUD)
+                    
+                    // Only show toggle when extension is installed AND enabled
+                    // Otherwise show "Enable under Extensions" message
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Notify me!")
+                            .foregroundStyle(isNotificationHUDInstalled && enableNotificationHUD ? .primary : .secondary)
+                        Text(isNotificationHUDInstalled && enableNotificationHUD ? "Show notifications in the notch" : "Enable under Extensions")
+                            .font(.caption)
+                            .foregroundStyle(.secondary.opacity(isNotificationHUDInstalled && enableNotificationHUD ? 1 : 0.7))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
             } header: {
                 Text("System")
             }
@@ -1650,7 +1668,7 @@ struct SettingsView: View {
                             SpotifyAuthManager.shared.startAuthentication()
                         case .appleMusic:
                             AppleMusicController.shared.refreshState()
-                        case .elementCapture, .aiBackgroundRemoval, .windowSnap, .voiceTranscribe, .ffmpegVideoCompression, .terminalNotch, .menuBarManager, .quickshare:
+                        case .elementCapture, .aiBackgroundRemoval, .windowSnap, .voiceTranscribe, .ffmpegVideoCompression, .terminalNotch, .menuBarManager, .quickshare, .notificationHUD:
                             break // No action needed - these have their own configuration UI
                         }
                     }

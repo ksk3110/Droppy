@@ -94,7 +94,8 @@ struct NotchHUDView: View {
                 // NOTCH MODE: Wide layout - icon + label on left wing, slider on right wing
                 // Using Droppy pattern: 20px icons with symmetricPadding for outer-wing alignment
                 let iconSize: CGFloat = 20
-                let symmetricPadding = max((notchHeight - iconSize) / 2, 6)  // Min 6px for visibility
+                // +10pt compensation for curved wing corners (topCornerRadius)
+                let symmetricPadding = max((notchHeight - iconSize) / 2, 6) + 10
                 
                 HStack(spacing: 0) {
                     // Left wing: Icon + Label

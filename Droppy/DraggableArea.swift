@@ -98,6 +98,10 @@ class DraggableAreaView<Content: View>: NSView, NSDraggingSource {
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(hostingView)
         
+        // CRITICAL: Set low compression resistance so fixed frames are respected
+        hostingView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        hostingView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        
         NSLayoutConstraint.activate([
             hostingView.topAnchor.constraint(equalTo: topAnchor),
             hostingView.bottomAnchor.constraint(equalTo: bottomAnchor),

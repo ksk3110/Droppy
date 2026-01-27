@@ -227,6 +227,7 @@ struct ExtensionInfoView: View {
         case .terminalNotch: return "Configure"
         case .menuBarManager: return "Configure"
         case .quickshare: return "Manage"
+        case .notificationHUD: return "Configure"
         }
     }
     
@@ -244,6 +245,7 @@ struct ExtensionInfoView: View {
         case .terminalNotch: return "Configure"
         case .menuBarManager: return "Configure"
         case .quickshare: return "Manage Uploads"
+        case .notificationHUD: return "Configure"
         }
     }
     
@@ -261,6 +263,7 @@ struct ExtensionInfoView: View {
         case .terminalNotch: return "terminal"
         case .menuBarManager: return "menubar.rectangle"
         case .quickshare: return "tray.full"
+        case .notificationHUD: return "bell.badge"
         }
     }
 }

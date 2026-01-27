@@ -91,12 +91,13 @@ enum NotchLayoutConstants {
         let notch = notchHeight(for: targetScreen)
         
         if notch > 0 {
-            // NOTCH MODE: Top padding = notchHeight (content just below notch)
-            // Left/Right/Bottom = contentPadding (perfectly equal)
+            // NOTCH MODE: Top padding = notchHeight + 10 (wing corner compensation)
+            // Left/Right = contentPadding, Bottom = contentPadding - 10 (to balance)
+            // The curved wing corners add 10pt visual inset at top corners
             return EdgeInsets(
-                top: notch,
+                top: notch + 10,
                 leading: contentPadding,
-                bottom: contentPadding,
+                bottom: contentPadding - 10,
                 trailing: contentPadding
             )
         } else {
@@ -115,11 +116,11 @@ enum NotchLayoutConstants {
     /// - Returns: EdgeInsets for the content
     static func contentEdgeInsets(notchHeight: CGFloat) -> EdgeInsets {
         if notchHeight > 0 {
-            // NOTCH MODE
+            // NOTCH MODE: Top + 10pt wing compensation, Bottom - 10pt to balance
             return EdgeInsets(
-                top: notchHeight,
+                top: notchHeight + 10,
                 leading: contentPadding,
-                bottom: contentPadding,
+                bottom: contentPadding - 10,
                 trailing: contentPadding
             )
         } else {

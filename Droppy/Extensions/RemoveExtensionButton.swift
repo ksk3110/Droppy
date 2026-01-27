@@ -96,6 +96,8 @@ struct DisableExtensionButton: View {
             return "This will remove the menu bar separator and restore all hidden icons. You can enable it again later."
         case .quickshare:
             return "Droppy Quickshare is a core extension and cannot be disabled."
+        case .notificationHUD:
+            return "This will stop notification forwarding to your notch. You can enable it again later."
         }
     }
     
@@ -150,6 +152,9 @@ struct DisableExtensionButton: View {
             case .menuBarManager:
                 // Re-enable the menu bar manager
                 MenuBarManager.shared.enable()
+            case .notificationHUD:
+                // Re-enable notification monitoring
+                NotificationHUDManager.shared.startMonitoring()
             default:
                 break
             }

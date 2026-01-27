@@ -98,6 +98,11 @@ enum AppPreferenceKey {
     // MARK: - Extension: Terminal Notch
     static let terminalNotchInstalled = "terminalNotch_installed"
     
+    // MARK: - Extension: Notification HUD
+    static let notificationHUDInstalled = "notificationHUD_installed"
+    static let notificationHUDEnabled = "notificationHUD_enabled"
+    static let notificationHUDShowPreview = "notificationHUD_showPreview"
+    
     // MARK: - Extension: Video Compression (Legacy - migrated to Smart Export)
     static let compressionAutoSaveToFolder = "compressionAutoSaveToFolder"
     static let compressionAutoSaveFolder = "compressionAutoSaveFolder"  // URL path string
@@ -204,6 +209,11 @@ enum PreferenceDefault {
     
     // MARK: - Extension: Terminal Notch
     static let terminalNotchInstalled = false
+    
+    // MARK: - Extension: Notification HUD
+    static let notificationHUDInstalled = false
+    static let notificationHUDEnabled = true  // Enabled by default when installed
+    static let notificationHUDShowPreview = true
     
     // MARK: - Extension: Video Compression (Legacy)
     static let compressionAutoSaveToFolder = false

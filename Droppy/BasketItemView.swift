@@ -16,6 +16,7 @@ struct BasketItemView: View {
     @Binding var renamingItemId: UUID?
     let onRemove: () -> Void
     var layoutMode: BasketItemLayout = .grid
+    var listRowWidth: CGFloat? = nil  // CRITICAL: Fixed width for list mode to constrain text
     @AppStorage(AppPreferenceKey.useTransparentBackground) private var useTransparentBackground = PreferenceDefault.useTransparentBackground
     @AppStorage(AppPreferenceKey.enableNotchShelf) private var enableNotchShelf = PreferenceDefault.enableNotchShelf
     @AppStorage(AppPreferenceKey.enablePowerFolders) private var enablePowerFolders = PreferenceDefault.enablePowerFolders
@@ -285,30 +286,34 @@ struct BasketItemView: View {
                                     .foregroundStyle(.white.opacity(0.5))
                             }
                         }
+                        // Text container: MUST truncate, never expand
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .clipped()  // CRITICAL: Force text truncation
                         
-                        Spacer(minLength: 8)
-                        
-                        // File extension or folder badge
-                        if item.isDirectory {
-                            Text("FOLDER")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.6))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Capsule().fill(Color.white.opacity(0.1)))
-                        } else if !item.url.pathExtension.isEmpty {
-                            Text(item.url.pathExtension.uppercased())
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.6))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Capsule().fill(Color.white.opacity(0.1)))
+                        // File extension or folder badge - FIXED width, never shrink
+                        Group {
+                            if item.isDirectory {
+                                Text("FOLDER")
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundStyle(.white.opacity(0.6))
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Capsule().fill(Color.white.opacity(0.1)))
+                            } else if !item.url.pathExtension.isEmpty {
+                                Text(item.url.pathExtension.uppercased())
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundStyle(.white.opacity(0.6))
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Capsule().fill(Color.white.opacity(0.1)))
+                            }
                         }
+                        .fixedSize()  // Badge never shrinks
                     }
-                    .frame(maxWidth: .infinity)  // Prevent horizontal expansion - matches ClipboardItemRow
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
+                    // CRITICAL: Fixed width inside DraggableArea to constrain text (matches ClipboardItemRow pattern)
+                    .frame(width: listRowWidth)
                     .background(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .fill(isSelected 
