@@ -42,6 +42,7 @@ struct OnboardingView: View {
     @AppStorage(AppPreferenceKey.enableCapsLockHUD) private var enableCapsLockHUD = PreferenceDefault.enableCapsLockHUD
     @AppStorage(AppPreferenceKey.enableAirPodsHUD) private var enableAirPodsHUD = PreferenceDefault.enableAirPodsHUD
     @AppStorage(AppPreferenceKey.enableDNDHUD) private var enableDNDHUD = PreferenceDefault.enableDNDHUD
+    @AppStorage(AppPreferenceKey.enableUpdateHUD) private var enableUpdateHUD = PreferenceDefault.enableUpdateHUD
     
     // Lock Screen
     @AppStorage(AppPreferenceKey.enableLockScreenHUD) private var enableLockScreenHUD = PreferenceDefault.enableLockScreenHUD
@@ -284,7 +285,8 @@ struct OnboardingView: View {
                 enableBatteryHUD: $enableBatteryHUD,
                 enableCapsLockHUD: $enableCapsLockHUD,
                 enableAirPodsHUD: $enableAirPodsHUD,
-                enableDNDHUD: $enableDNDHUD
+                enableDNDHUD: $enableDNDHUD,
+                enableUpdateHUD: $enableUpdateHUD
             )
         case .lockScreen:
             LockScreenContent(
@@ -452,16 +454,13 @@ private struct ShelfContent: View {
     @Binding var enableAutoClean: Bool
     
     var body: some View {
-        VStack(spacing: 14) {
-            NotchShelfPreview()
-                .scaleEffect(0.78)
-            
+        VStack(spacing: 20) {
             Text("Drag any file to your notch to store it temporarily.\nGrab it later and drop it anywhere you need.")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .lineSpacing(2)
-                .frame(maxWidth: 360)
+                .frame(maxWidth: 380)
             
             VStack(spacing: 10) {
                 OnboardingToggle(icon: "tray.and.arrow.down.fill", title: "Enable Notch Shelf", color: .blue, isOn: $enableShelf)
@@ -471,7 +470,7 @@ private struct ShelfContent: View {
                         .transition(.opacity)
                 }
             }
-            .frame(width: 400)
+            .frame(width: 420)
             .animation(DroppyAnimation.hoverQuick, value: enableShelf)
             
             HStack(spacing: 14) {
@@ -491,10 +490,7 @@ private struct BasketContent: View {
     @Binding var instantBasketOnDrag: Bool
     
     var body: some View {
-        VStack(spacing: 14) {
-            FloatingBasketPreview()
-                .scaleEffect(0.72)
-            
+        VStack(spacing: 20) {
             Text(instantBasketOnDrag
                 ? "A floating drop zone appears instantly when you drag.\nPerfect when your notch is on a different screen."
                 : "Shake files to summon a floating drop zone anywhere.\nPerfect when your notch is on a different screen."
@@ -513,7 +509,7 @@ private struct BasketContent: View {
                         .transition(.opacity)
                 }
             }
-            .frame(width: 400)
+            .frame(width: 420)
             .animation(DroppyAnimation.hoverQuick, value: enableBasket)
             
             HStack(spacing: 14) {
@@ -531,11 +527,8 @@ private struct ClipboardContent: View {
     @Binding var enableClipboard: Bool
     
     var body: some View {
-        VStack(spacing: 14) {
-            ClipboardPreview()
-                .scaleEffect(0.92)
-            
-            // Shortcut badge
+        VStack(spacing: 20) {
+            // Shortcut badge - pill shape
             HStack(spacing: 5) {
                 Image(systemName: "command")
                 Text("+")
@@ -550,17 +543,17 @@ private struct ClipboardContent: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
             .background(Color.cyan.opacity(0.12))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(Capsule())
             .foregroundStyle(.cyan)
             
-            Text("Access everything you've copied. Search instantly,\nextract text from images, and pin your favorites.")
+            Text("Access everything you've copied.\nSearch, extract text from images, and pin favorites.")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .lineSpacing(2)
             
             OnboardingToggle(icon: "doc.on.clipboard.fill", title: "Enable Clipboard Manager", color: .cyan, isOn: $enableClipboard)
-                .frame(width: 400)
+                .frame(width: 420)
             
             HStack(spacing: 14) {
                 FeatureChip(icon: "magnifyingglass", text: "Instant search")
@@ -581,6 +574,7 @@ private struct MediaContent: View {
     @Binding var enableCapsLockHUD: Bool
     @Binding var enableAirPodsHUD: Bool
     @Binding var enableDNDHUD: Bool
+    @Binding var enableUpdateHUD: Bool
     
     var body: some View {
         VStack(spacing: 14) {
@@ -598,12 +592,12 @@ private struct MediaContent: View {
                 
                 HStack(spacing: 8) {
                     HUDToggle(icon: "capslock.fill", title: "Caps Lock", color: .orange, isOn: $enableCapsLockHUD, available: true)
-                    HUDToggle(icon: "airpods", title: "AirPods", color: .white, isOn: $enableAirPodsHUD, available: true)
+                    HUDToggle(icon: "airpods", title: "AirPods", color: Color(hue: 0.58, saturation: 0.15, brightness: 0.65), isOn: $enableAirPodsHUD, available: true)
                 }
                 
                 HStack(spacing: 8) {
                     HUDToggle(icon: "moon.fill", title: "Do Not Disturb", color: .purple, isOn: $enableDNDHUD, available: true)
-                        .frame(width: 195) // Single centered toggle
+                    HUDToggle(icon: "arrow.down.circle.fill", title: "New Update", color: .blue, isOn: $enableUpdateHUD, available: true)
                 }
             }
             .frame(width: 400)
@@ -629,8 +623,13 @@ private struct HUDToggle: View {
     let color: Color
     @Binding var isOn: Bool
     let available: Bool
+    var secondaryColor: Color? = nil
     
     @State private var isHovering = false
+    
+    private var gradientSecondaryColor: Color {
+        secondaryColor ?? color.opacity(0.7)
+    }
     
     var body: some View {
         Button {
@@ -638,10 +637,35 @@ private struct HUDToggle: View {
             isOn.toggle()
         } label: {
             HStack(spacing: 10) {
-                Image(systemName: icon)
-                    .font(.system(size: 15))
-                    .foregroundStyle(available ? color : .secondary)
-                    .frame(width: 22)
+                // Premium gradient squircle icon
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [color, gradientSecondaryColor],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: 28, height: 28)
+                    
+                    // Inner highlight for 3D effect
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.25), Color.clear],
+                                startPoint: .top,
+                                endPoint: .center
+                            )
+                        )
+                        .frame(width: 28, height: 28)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+                }
+                .opacity(available ? 1.0 : 0.5)
                 
                 Text(title)
                     .font(.system(size: 12, weight: .medium))
@@ -664,7 +688,7 @@ private struct HUDToggle: View {
                 }
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.vertical, 10)
             .frame(maxWidth: .infinity)
             .background(isHovering && available ? Color.white.opacity(0.06) : Color.white.opacity(0.04))
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -773,83 +797,24 @@ private struct LockScreenContent: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            // Lock Screen HUD toggle with premium icon
-            VStack(spacing: 8) {
-                HStack(spacing: 14) {
-                    LockScreenHUDIcon()
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Lock and Unlock Animation")
-                            .font(.system(size: 14, weight: .medium))
-                        Text("Show animation when screen locks and unlocks")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    Button {
-                        enableLockScreenHUD.toggle()
-                    } label: {
-                        Image(systemName: enableLockScreenHUD ? "checkmark.circle.fill" : "circle")
-                            .font(.system(size: 22))
-                            .foregroundStyle(enableLockScreenHUD ? .green : .secondary.opacity(0.5))
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-                .background(Color.white.opacity(0.04))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(enableLockScreenHUD ? Color.purple.opacity(0.3) : Color.white.opacity(0.06), lineWidth: 1)
-                )
-            }
-            .frame(width: 420)
+            // Lock Screen HUD toggle
+            LockScreenToggle(
+                icon: { LockScreenHUDIcon() },
+                title: "Lock and Unlock Animation",
+                subtitle: "Show animation when screen locks and unlocks",
+                isOn: $enableLockScreenHUD,
+                accentColor: .purple
+            )
             
-            // Now Playing widget toggle with premium icon
-            VStack(spacing: 8) {
-                HStack(spacing: 14) {
-                    NowPlayingIcon()
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 6) {
-                            Text("Now Playing")
-                                .font(.system(size: 14, weight: .medium))
-                            Text("new")
-                                .font(.system(size: 9, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Capsule().fill(Color.droppyAccent))
-                        }
-                        Text("Show notch & music controls on the lock screen")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    Button {
-                        enableLockScreenMediaWidget.toggle()
-                    } label: {
-                        Image(systemName: enableLockScreenMediaWidget ? "checkmark.circle.fill" : "circle")
-                            .font(.system(size: 22))
-                            .foregroundStyle(enableLockScreenMediaWidget ? .green : .secondary.opacity(0.5))
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-                .background(Color.white.opacity(0.04))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(enableLockScreenMediaWidget ? Color.green.opacity(0.3) : Color.white.opacity(0.06), lineWidth: 1)
-                )
-            }
-            .frame(width: 420)
+            // Now Playing widget toggle
+            LockScreenToggle(
+                icon: { NowPlayingIcon() },
+                title: "Now Playing",
+                subtitle: "Show notch & music controls on the lock screen",
+                isOn: $enableLockScreenMediaWidget,
+                accentColor: .green,
+                isNew: true
+            )
             
             Text("These features work best with a physical notch display")
                 .font(.system(size: 11))
@@ -860,28 +825,107 @@ private struct LockScreenContent: View {
     }
 }
 
+/// Lock screen toggle button with hover animation matching OnboardingToggle
+private struct LockScreenToggle<Icon: View>: View {
+    let icon: () -> Icon
+    let title: String
+    let subtitle: String
+    @Binding var isOn: Bool
+    let accentColor: Color
+    var isNew: Bool = false
+    
+    @State private var isHovering = false
+    @State private var iconBounce = false
+    
+    var body: some View {
+        Button {
+            // Trigger bounce animation
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.4)) {
+                iconBounce = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                withAnimation(DroppyAnimation.stateEmphasis) {
+                    iconBounce = false
+                    isOn.toggle()
+                }
+            }
+        } label: {
+            HStack(spacing: 14) {
+                icon()
+                    .scaleEffect(iconBounce ? 1.15 : 1.0)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Text(title)
+                            .font(.system(size: 14, weight: .medium))
+                        if isNew {
+                            Text("new")
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Capsule().fill(Color.droppyAccent))
+                        }
+                    }
+                    Text(subtitle)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22))
+                    .foregroundStyle(isOn ? .green : .secondary.opacity(0.5))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(Color.white.opacity(0.04))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(isOn ? accentColor.opacity(0.3) : Color.white.opacity(0.06), lineWidth: 1)
+            )
+            .scaleEffect(isHovering ? 1.02 : 1.0)
+        }
+        .buttonStyle(DroppySelectableButtonStyle(isSelected: isOn))
+        .onHover { hovering in
+            withAnimation(DroppyAnimation.hover) {
+                isHovering = hovering
+            }
+        }
+        .frame(width: 420)
+    }
+}
+
 // MARK: - Page 7: Extensions
 
 private struct ExtensionsContent: View {
     var body: some View {
         VStack(spacing: 20) {
-            // Extensions showcase
+            // Extensions showcase - spread across full width
             VStack(spacing: 16) {
                 Text("Powerful Extensions")
                     .font(.system(size: 15, weight: .semibold))
                 
-                // Top row
-                HStack(spacing: 20) {
+                // Top row - spread evenly
+                HStack(spacing: 0) {
                     OnboardingExtensionIcon(definition: VoiceTranscribeExtension.self, name: "Transcribe")
+                        .frame(maxWidth: .infinity)
                     OnboardingExtensionIcon(definition: AIBackgroundRemovalExtension.self, name: "AI Removal")
+                        .frame(maxWidth: .infinity)
                     OnboardingExtensionIcon(definition: TermiNotchExtension.self, name: "Terminal")
+                        .frame(maxWidth: .infinity)
                 }
                 
-                // Bottom row
-                HStack(spacing: 20) {
+                // Bottom row - spread evenly
+                HStack(spacing: 0) {
                     OnboardingExtensionIcon(definition: SpotifyExtension.self, name: "Spotify")
+                        .frame(maxWidth: .infinity)
                     OnboardingExtensionIcon(definition: VideoTargetSizeExtension.self, name: "Compress")
+                        .frame(maxWidth: .infinity)
                     OnboardingExtensionIcon(definition: ElementCaptureExtension.self, name: "Capture")
+                        .frame(maxWidth: .infinity)
                 }
                 
                 Text("And many more...")
@@ -889,7 +933,8 @@ private struct ExtensionsContent: View {
                     .foregroundStyle(.tertiary)
             }
             .padding(.vertical, 20)
-            .padding(.horizontal, 32)
+            .padding(.horizontal, 20)
+            .frame(width: 420)
             .background(Color.white.opacity(0.025))
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
@@ -897,10 +942,10 @@ private struct ExtensionsContent: View {
                     .stroke(Color.white.opacity(0.05), lineWidth: 1)
             )
             
-            // Info card
-            VStack(spacing: 6) {
+            // Info card - also full width
+            HStack(spacing: 10) {
                 Image(systemName: "puzzlepiece.extension.fill")
-                    .font(.system(size: 20))
+                    .font(.system(size: 18))
                     .foregroundStyle(.blue)
                 
                 Text("Enable extensions in Settings → Extensions")
@@ -909,6 +954,7 @@ private struct ExtensionsContent: View {
             }
             .padding(.vertical, 14)
             .padding(.horizontal, 20)
+            .frame(width: 420)
             .background(Color.blue.opacity(0.08))
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
@@ -950,67 +996,58 @@ private struct ReadyContent: View {
     @State private var showCheckmark = false
     @State private var showGuide = false
     @State private var showRows: [Bool] = [false, false, false, false]
-    @State private var showFooter = false
-    @State private var pulseGlow = false
     
     var body: some View {
-        VStack(spacing: 16) {
-            // Success icon with celebration animation
+        VStack(spacing: 24) {
+            // Success icon - constrained to fixed size
             ZStack {
-                // Expanding pulse rings
-                ForEach(0..<3, id: \.self) { i in
-                    Circle()
-                        .stroke(Color.green.opacity(pulseGlow ? 0 : 0.3), lineWidth: 2)
-                        .frame(width: pulseGlow ? 120 + CGFloat(i * 30) : 60, height: pulseGlow ? 120 + CGFloat(i * 30) : 60)
-                        .animation(.easeOut(duration: 1.0).delay(Double(i) * 0.15), value: pulseGlow)
-                }
-                
                 // Glow
                 Circle()
-                    .fill(Color.green.opacity(showCheckmark ? 0.15 : 0))
-                    .frame(width: 90, height: 90)
-                    .blur(radius: 20)
+                    .fill(Color.green.opacity(showCheckmark ? 0.2 : 0))
+                    .frame(width: 70, height: 70)
+                    .blur(radius: 15)
                     .scaleEffect(showCheckmark ? 1 : 0.5)
                     .animation(DroppyAnimation.bouncy, value: showCheckmark)
                 
                 // Checkmark
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 50))
+                    .font(.system(size: 44))
                     .foregroundStyle(.green)
                     .scaleEffect(showCheckmark ? 1 : 0)
                     .rotationEffect(.degrees(showCheckmark ? 0 : -30))
                     .animation(DroppyAnimation.bouncy.delay(0.1), value: showCheckmark)
             }
+            .frame(width: 80, height: 80)
             
             // Quick start guide
-            VStack(spacing: 14) {
+            VStack(spacing: 12) {
                 Text("Quick Start Guide")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .opacity(showGuide ? 1 : 0)
                     .offset(y: showGuide ? 0 : 10)
-                    .animation(DroppyAnimation.viewChange.delay(0.4), value: showGuide)
+                    .animation(DroppyAnimation.viewChange.delay(0.3), value: showGuide)
                 
                 VStack(spacing: 0) {
                     GuideRow(icon: "cursorarrow.motionlines", color: .blue, action: "Move mouse to notch", result: "Opens shelf", isFirst: true)
                         .opacity(showRows[0] ? 1 : 0)
                         .offset(x: showRows[0] ? 0 : -20)
-                        .animation(DroppyAnimation.notchState.delay(0.5), value: showRows[0])
+                        .animation(DroppyAnimation.notchState.delay(0.4), value: showRows[0])
                     
                     GuideRow(icon: "hand.draw.fill", color: .purple, action: "Shake while dragging", result: "Summons basket")
                         .opacity(showRows[1] ? 1 : 0)
                         .offset(x: showRows[1] ? 0 : -20)
-                        .animation(DroppyAnimation.notchState.delay(0.6), value: showRows[1])
+                        .animation(DroppyAnimation.notchState.delay(0.5), value: showRows[1])
                     
                     GuideRow(icon: "command", color: .cyan, action: "Press ⌘⇧Space", result: "Opens clipboard")
                         .opacity(showRows[2] ? 1 : 0)
                         .offset(x: showRows[2] ? 0 : -20)
-                        .animation(DroppyAnimation.notchState.delay(0.7), value: showRows[2])
+                        .animation(DroppyAnimation.notchState.delay(0.6), value: showRows[2])
                     
                     GuideRow(icon: "gearshape.fill", color: .gray, action: "Right-click notch", result: "Opens settings", isLast: true)
                         .opacity(showRows[3] ? 1 : 0)
                         .offset(x: showRows[3] ? 0 : -20)
-                        .animation(DroppyAnimation.notchState.delay(0.8), value: showRows[3])
+                        .animation(DroppyAnimation.notchState.delay(0.7), value: showRows[3])
                 }
                 .background(Color.white.opacity(0.03))
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -1019,19 +1056,17 @@ private struct ReadyContent: View {
                         .stroke(Color.white.opacity(0.05), lineWidth: 1)
                 )
             }
-            .frame(width: 380)
+            .frame(width: 420)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .onAppear {
-            // Trigger staged animations
+            // Trigger animations
             withAnimation {
                 showCheckmark = true
-                pulseGlow = true
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 showGuide = true
                 showRows = [true, true, true, true]
-                showFooter = true
             }
         }
     }
@@ -1047,17 +1082,18 @@ private struct GuideRow: View {
     
     var body: some View {
         HStack(spacing: 0) {
-            // Icon column
-            Image(systemName: icon)
-                .font(.system(size: 14))
-                .foregroundStyle(color)
-                .frame(width: 40)
-            
-            // Action column - fixed width
-            Text(action)
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-                .frame(width: 160, alignment: .leading)
+            // Left section: Icon + Action
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundStyle(color)
+                    .frame(width: 24)
+                
+                Text(action)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
+            .frame(width: 180, alignment: .leading)
             
             // Arrow
             Image(systemName: "chevron.right")
@@ -1065,20 +1101,20 @@ private struct GuideRow: View {
                 .foregroundStyle(.quaternary)
                 .frame(width: 30)
             
-            // Result column - fixed width
+            // Right section: Result
             Text(result)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.primary)
-                .frame(width: 120, alignment: .leading)
+                .frame(width: 130, alignment: .leading)
         }
         .padding(.vertical, 12)
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 20)
         .overlay(alignment: .bottom) {
             if !isLast {
                 Rectangle()
                     .fill(Color.white.opacity(0.04))
                     .frame(height: 1)
-                    .padding(.leading, 40)
+                    .padding(.leading, 56)
             }
         }
     }
@@ -1120,12 +1156,12 @@ private struct StyleButton: View {
                         .frame(width: 90, height: 55)
                     
                     if isNotch {
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(Color.black)
+                        UShape()
+                            .fill(Color.white)
                             .frame(width: 48, height: 14)
                     } else {
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(Color.black)
+                            .fill(Color.white)
                             .frame(width: 40, height: 12)
                     }
                 }

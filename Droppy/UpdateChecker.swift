@@ -72,7 +72,7 @@ class UpdateChecker: ObservableObject {
         }
     }
     
-    /// Perform background check and show update window if available
+    /// Perform background check and show update notification if available
     private func performBackgroundCheck() {
         Task {
             await checkForUpdates()
@@ -81,7 +81,19 @@ class UpdateChecker: ObservableObject {
             UserDefaults.standard.set(Date(), forKey: lastCheckKey)
             
             if updateAvailable {
-                showUpdateWindow()
+                // Check if Update HUD is enabled - if so, show HUD instead of window
+                let enableUpdateHUD = UserDefaults.standard.preference(
+                    AppPreferenceKey.enableUpdateHUD,
+                    default: PreferenceDefault.enableUpdateHUD
+                )
+                
+                if enableUpdateHUD {
+                    // Show HUD notification (display-only, user updates through Settings)
+                    HUDManager.shared.show(.update)
+                } else {
+                    // HUD disabled - show the traditional update window
+                    showUpdateWindow()
+                }
             }
         }
     }

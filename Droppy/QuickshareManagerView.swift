@@ -247,6 +247,7 @@ struct QuickshareItemRow: View {
                 }
                 .disabled(isDeleting)
             }
+            .tint(.primary)
     }
     
     private var rowContent: some View {

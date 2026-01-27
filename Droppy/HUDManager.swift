@@ -28,6 +28,7 @@ final class HUDManager {
         case capsLock = 60           // Keyboard state
         case lockScreen = 50         // Lock/unlock events
         case dnd = 40                // Focus mode changes
+        case update = 35             // App update available
         
         static func < (lhs: HUDType, rhs: HUDType) -> Bool {
             lhs.rawValue < rhs.rawValue
@@ -41,6 +42,7 @@ final class HUDManager {
             case .capsLock: return 1.0          // Very short, just confirmation
             case .lockScreen: return 2.0        // Medium
             case .dnd: return 2.0               // Medium
+            case .update: return 4.0            // Longer for user to notice update
             }
         }
     }
@@ -270,6 +272,11 @@ final class HUDManager {
     /// Whether DND/Focus HUD is visible
     var isDNDHUDVisible: Bool {
         activeHUD?.type == .dnd
+    }
+    
+    /// Whether Update HUD is visible
+    var isUpdateHUDVisible: Bool {
+        activeHUD?.type == .update
     }
     
     /// Check if a specific HUD type is currently active

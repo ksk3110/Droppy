@@ -45,6 +45,7 @@ enum AppPreferenceKey {
     static let enableAirPodsHUD = "enableAirPodsHUD"
     static let enableLockScreenHUD = "enableLockScreenHUD"
     static let enableDNDHUD = "enableDNDHUD"
+    static let enableUpdateHUD = "enableUpdateHUD"
     
     // MARK: - Lock Screen Media Widget
     static let enableLockScreenMediaWidget = "enableLockScreenMediaWidget"
@@ -152,6 +153,7 @@ enum PreferenceDefault {
     static let enableAirPodsHUD = true
     static let enableLockScreenHUD = true
     static let enableDNDHUD = false  // Requires Full Disk Access
+    static let enableUpdateHUD = true  // Show HUD when update is available
     
     // MARK: - Lock Screen Media Widget
     static let enableLockScreenMediaWidget = false  // Uses private APIs, opt-in

@@ -203,3 +203,41 @@ enum DroppyScale {
     /// Large emphasis (1.15)
     static let emphasis: CGFloat = 1.15
 }
+
+// MARK: - Premium HUD Transition
+
+/// Premium blur transition for HUD animations
+/// Combines scale, opacity, and blur for ultra-smooth, Apple-like transitions
+/// Only applies blur during transition phase - no continuous CPU impact
+extension AnyTransition {
+    /// Premium HUD transition with blur effect
+    /// - Parameters:
+    ///   - scale: Scale factor when hidden (default 0.85)
+    ///   - blur: Blur radius when hidden (default 8)
+    /// - Returns: A combined transition with scale, opacity, and blur
+    static func premiumHUD(scale: CGFloat = 0.85, blur: CGFloat = 8) -> AnyTransition {
+        .modifier(
+            active: PremiumBlurModifier(scale: scale, blur: blur, opacity: 0),
+            identity: PremiumBlurModifier(scale: 1, blur: 0, opacity: 1)
+        )
+    }
+    
+    /// Standard premium HUD transition with default values
+    static var premiumHUD: AnyTransition {
+        .premiumHUD(scale: 0.85, blur: 8)
+    }
+}
+
+/// Modifier for premium blur transition
+private struct PremiumBlurModifier: ViewModifier {
+    let scale: CGFloat
+    let blur: CGFloat
+    let opacity: Double
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(scale)
+            .blur(radius: blur)
+            .opacity(opacity)
+    }
+}

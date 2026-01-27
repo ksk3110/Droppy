@@ -28,6 +28,7 @@ struct NotchShelfView: View {
     @AppStorage(AppPreferenceKey.enableAirPodsHUD) private var enableAirPodsHUD = PreferenceDefault.enableAirPodsHUD
     @AppStorage(AppPreferenceKey.enableLockScreenHUD) private var enableLockScreenHUD = PreferenceDefault.enableLockScreenHUD
     @AppStorage(AppPreferenceKey.enableDNDHUD) private var enableDNDHUD = PreferenceDefault.enableDNDHUD
+    @AppStorage(AppPreferenceKey.enableUpdateHUD) private var enableUpdateHUD = PreferenceDefault.enableUpdateHUD
     @AppStorage(AppPreferenceKey.showMediaPlayer) private var showMediaPlayer = PreferenceDefault.showMediaPlayer
     @AppStorage(AppPreferenceKey.autoFadeMediaHUD) private var autoFadeMediaHUD = PreferenceDefault.autoFadeMediaHUD
     @AppStorage(AppPreferenceKey.debounceMediaChanges) private var debounceMediaChanges = PreferenceDefault.debounceMediaChanges
@@ -258,9 +259,10 @@ struct NotchShelfView: View {
     
     /// Fixed wing sizes (area left/right of notch for content)  
     /// Using fixed sizes ensures consistent content positioning across all screen resolutions
-    private let volumeWingWidth: CGFloat = 120  // For volume/brightness - wide for icon + label + slider
+    private let volumeWingWidth: CGFloat = 135  // For volume/brightness - wide for icon + label + slider
     private let batteryWingWidth: CGFloat = 55  // For battery icon + percentage  
     private let mediaWingWidth: CGFloat = 50    // For album art + visualizer
+    private let updateWingWidth: CGFloat = 110  // For Update HUD - icon + "Update" + "Droppy X.X.X"
     
     /// HUD dimensions calculated as notchWidth + (2 * wingWidth)
     /// This ensures wings are FIXED size regardless of notch size
@@ -269,7 +271,7 @@ struct NotchShelfView: View {
         // External monitors (both island and notch mode): use compact 260pt
         // Built-in MacBook notch: use wide layout for proper fit around physical notch
         if isExternalDisplay || isDynamicIslandMode {
-            return 260  // Compact width for external/island mode
+            return 280  // Compact width for external/island mode
         }
         return notchWidth + (volumeWingWidth * 2) + 20  // Wide for built-in notch
     }
@@ -306,6 +308,14 @@ struct NotchShelfView: View {
         return notchWidth + (mediaWingWidth * 2)
     }
     private let hudHeight: CGFloat = 73
+    
+    /// Update HUD - wider wings to fit "Update" + icon on left and "Droppy X.X.X" on right
+    private var updateHudWidth: CGFloat {
+        if isDynamicIslandMode {
+            return 240  // Narrower for Dynamic Island (compact)
+        }
+        return notchWidth + (updateWingWidth * 2)  // Wide wings for notch mode
+    }
     
     /// Whether media player HUD should be shown
     private var shouldShowMediaHUD: Bool {
@@ -361,6 +371,8 @@ struct NotchShelfView: View {
             return batteryHudWidth  // Caps Lock HUD uses same width as battery HUD
         } else if HUDManager.shared.isDNDHUDVisible && enableDNDHUD {
             return batteryHudWidth  // Focus/DND HUD uses same width as battery HUD
+        } else if HUDManager.shared.isUpdateHUDVisible && enableUpdateHUD {
+            return updateHudWidth  // Update HUD uses wider width to fit "Update" + version text
         } else if shouldShowMediaHUD {
             return hudWidth  // Media HUD uses tighter wings
         } else if enableNotchShelf && isHoveringOnThisScreen {
@@ -394,6 +406,8 @@ struct NotchShelfView: View {
             return notchHeight  // Caps Lock HUD just uses notch height (no slider)
         } else if HUDManager.shared.isDNDHUDVisible && enableDNDHUD {
             return notchHeight  // Focus/DND HUD just uses notch height (no slider)
+        } else if HUDManager.shared.isUpdateHUDVisible && enableUpdateHUD {
+            return notchHeight  // Update HUD just uses notch height (no slider)
         } else if shouldShowMediaHUD {
             // No vertical expansion on media HUD hover - just stay at notch height
             return notchHeight
@@ -1040,7 +1054,7 @@ struct NotchShelfView: View {
                 }
             )
             .frame(width: currentHudTypeWidth, height: notchHeight)
-            .transition(.scale(scale: 0.8).combined(with: .opacity).animation(DroppyAnimation.notchState))
+            .transition(.premiumHUD.animation(DroppyAnimation.notchState))
             .zIndex(3)
         }
         
@@ -1052,7 +1066,7 @@ struct NotchShelfView: View {
                 targetScreen: targetScreen
             )
             .frame(width: batteryHudWidth, height: notchHeight)
-            .transition(.scale(scale: 0.8).combined(with: .opacity).animation(DroppyAnimation.notchState))
+            .transition(.premiumHUD.animation(DroppyAnimation.notchState))
             .zIndex(4)
         }
         
@@ -1064,7 +1078,7 @@ struct NotchShelfView: View {
                 targetScreen: targetScreen
             )
             .frame(width: batteryHudWidth, height: notchHeight)
-            .transition(.scale(scale: 0.8).combined(with: .opacity).animation(DroppyAnimation.notchState))
+            .transition(.premiumHUD.animation(DroppyAnimation.notchState))
             .zIndex(5)
         }
         
@@ -1076,8 +1090,19 @@ struct NotchShelfView: View {
                 targetScreen: targetScreen
             )
             .frame(width: batteryHudWidth, height: notchHeight)
-            .transition(.scale(scale: 0.8).combined(with: .opacity).animation(DroppyAnimation.notchState))
+            .transition(.premiumHUD.animation(DroppyAnimation.notchState))
             .zIndex(5.5)
+        }
+        
+        // Update HUD - uses centralized HUDManager
+        if HUDManager.shared.isUpdateHUDVisible && enableUpdateHUD && !hudIsVisible && !isExpandedOnThisScreen {
+            UpdateHUDView(
+                hudWidth: updateHudWidth,
+                targetScreen: targetScreen
+            )
+            .frame(width: updateHudWidth, height: notchHeight)
+            .transition(.premiumHUD.animation(DroppyAnimation.notchState))
+            .zIndex(5.6)
         }
         
         // AirPods HUD - uses centralized HUDManager
@@ -1088,7 +1113,7 @@ struct NotchShelfView: View {
                 targetScreen: targetScreen
             )
             .frame(width: hudWidth, height: notchHeight)
-            .transition(.scale(scale: 0.8).combined(with: .opacity).animation(DroppyAnimation.notchState))
+            .transition(.premiumHUD.animation(DroppyAnimation.notchState))
             .zIndex(6)
         }
         
@@ -1100,7 +1125,7 @@ struct NotchShelfView: View {
                 targetScreen: targetScreen
             )
             .frame(width: batteryHudWidth, height: notchHeight)
-            .transition(.scale(scale: 0.8).combined(with: .opacity).animation(DroppyAnimation.notchState))
+            .transition(.premiumHUD.animation(DroppyAnimation.notchState))
             .zIndex(7)
         }
     }

@@ -8,9 +8,14 @@ struct OnboardingToggle: View {
     let title: String
     let color: Color
     @Binding var isOn: Bool
+    var secondaryColor: Color? = nil
     
     @State private var iconBounce = false
     @State private var isHovering = false
+    
+    private var gradientSecondaryColor: Color {
+        secondaryColor ?? color.opacity(0.7)
+    }
     
     var body: some View {
         Button {
@@ -26,16 +31,36 @@ struct OnboardingToggle: View {
             }
         } label: {
             HStack(spacing: 12) {
+                // Premium gradient squircle icon
                 ZStack {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(isOn ? color.opacity(0.2) : AdaptiveColors.buttonBackgroundAuto)
+                        .fill(
+                            LinearGradient(
+                                colors: [color, gradientSecondaryColor],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: 40, height: 40)
+                    
+                    // Inner highlight for 3D effect
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.25), Color.clear],
+                                startPoint: .top,
+                                endPoint: .center
+                            )
+                        )
+                        .frame(width: 40, height: 40)
+                    
                     Image(systemName: icon)
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(isOn ? color : .secondary)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
                         .scaleEffect(iconBounce ? 1.3 : 1.0)
                         .rotationEffect(.degrees(iconBounce ? -8 : 0))
                 }
-                .frame(width: 40, height: 40)
                 
                 Text(title)
                     .font(.subheadline.weight(.medium))
@@ -49,7 +74,7 @@ struct OnboardingToggle: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background((isOn ? AdaptiveColors.buttonBackgroundAuto : AdaptiveColors.buttonBackgroundAuto))
+            .background(AdaptiveColors.buttonBackgroundAuto)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)

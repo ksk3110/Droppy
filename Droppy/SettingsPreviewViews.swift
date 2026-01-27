@@ -1779,3 +1779,48 @@ struct MediaPlayerHUDIcon: View {
         NowPlayingIcon(size: 40)
     }
 }
+
+/// Compact animated update icon for settings rows - blue gradient with download arrow
+struct UpdateHUDIcon: View {
+    @State private var bounce = false
+    
+    var body: some View {
+        ZStack {
+            // Blue gradient
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(hue: 0.58, saturation: 0.55, brightness: 0.95),
+                            Color(hue: 0.60, saturation: 0.70, brightness: 0.70)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: 40, height: 40)
+            
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.25), Color.clear],
+                        startPoint: .top,
+                        endPoint: .center
+                    )
+                )
+                .frame(width: 40, height: 40)
+            
+            Image(systemName: "arrow.down.circle.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.white)
+                .symbolEffect(.bounce, value: bounce)
+                .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                bounce = true
+            }
+        }
+    }
+}
+

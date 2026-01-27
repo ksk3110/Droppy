@@ -37,6 +37,7 @@ struct SettingsView: View {
     @AppStorage(AppPreferenceKey.enableAirPodsHUD) private var enableAirPodsHUD = PreferenceDefault.enableAirPodsHUD
     @AppStorage(AppPreferenceKey.enableLockScreenHUD) private var enableLockScreenHUD = PreferenceDefault.enableLockScreenHUD
     @AppStorage(AppPreferenceKey.enableDNDHUD) private var enableDNDHUD = PreferenceDefault.enableDNDHUD
+    @AppStorage(AppPreferenceKey.enableUpdateHUD) private var enableUpdateHUD = PreferenceDefault.enableUpdateHUD
     @AppStorage(AppPreferenceKey.enableLockScreenMediaWidget) private var enableLockScreenMediaWidget = PreferenceDefault.enableLockScreenMediaWidget
     @AppStorage(AppPreferenceKey.hideNotchMediaHUDWithLockScreen) private var hideNotchMediaHUDWithLockScreen = PreferenceDefault.hideNotchMediaHUDWithLockScreen
     @AppStorage(AppPreferenceKey.showMediaPlayer) private var showMediaPlayer = PreferenceDefault.showMediaPlayer
@@ -1499,6 +1500,29 @@ struct SettingsView: View {
                         }
                     }
                 }
+                
+                // Droppy Updates
+                HStack(spacing: 12) {
+                    UpdateHUDIcon()
+                    
+                    Toggle(isOn: $enableUpdateHUD) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Droppy Updates")
+                            Text("Show when a new version is available")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .onChange(of: enableUpdateHUD) { _, newValue in
+                    if newValue {
+                        NotchWindowController.shared.setupNotchWindow()
+                    } else {
+                        if !enableNotchShelf && !enableHUDReplacement && !showMediaPlayer && !enableBatteryHUD && !enableCapsLockHUD {
+                            NotchWindowController.shared.closeWindow()
+                        }
+                    }
+                }
             } header: {
                 Text("System")
             }
@@ -1568,15 +1592,21 @@ struct SettingsView: View {
                 }
                 
                 if !DNDManager.shared.hasAccess && enableDNDHUD {
-                    HStack(spacing: 8) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
-                            .font(.system(size: 14))
-                        Text("Requires Full Disk Access")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                                .font(.system(size: 14))
+                            Text("Requires Full Disk Access")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Text("Needed to read Focus Mode state from macOS system files")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                            .padding(.leading, 22)
                     }
-                    .padding(.leading, 52)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             } header: {
                 Text("Focus")
