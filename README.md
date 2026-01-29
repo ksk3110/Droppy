@@ -23,34 +23,34 @@
 
 ---
 
-## 🎬 See Droppy in Action
+## See Droppy in Action
 
 [![Droppy Demo](https://img.youtube.com/vi/k-BQ-TvSVpY/maxresdefault.jpg)](https://www.youtube.com/watch?v=k-BQ-TvSVpY)
 
-> 📺 Click to watch the full demo on YouTube
+> Click to watch the full demo on YouTube
 
 ---
 
-## ✨ Core Features
+## Core Features
 
-### 📁 File Shelf
+### File Shelf
 Drop files into your notch for quick access. Hover to peek, drag out to use anywhere.
 
-### 🧺 Floating Basket  
+### Floating Basket  
 Jiggle your mouse to summon a floating basket for temporary file staging.
 
-### 📋 Clipboard Manager
+### Clipboard Manager
 `⌘⇧Space` opens your clipboard history. Search, pin favorites, and paste with a click.
 
-### 🎵 Beautiful HUDs
+### Beautiful HUDs
 Gorgeous replacements for macOS volume, brightness, and media controls — all in your notch.
 
-### 🎛️ Powerful Extensions
+### Powerful Extensions
 Modular extensions add even more functionality. See the full list below.
 
 ---
 
-## 🧩 Extensions
+## <img src="https://getdroppy.app/assets/icons/extensions.png" width="24"> Extensions
 
 | Icon | Extension | Description |
 |:----:|-----------|-------------|
@@ -70,7 +70,7 @@ Modular extensions add even more functionality. See the full list below.
 
 ---
 
-## ❓ FAQ
+## FAQ
 
 <details>
 <summary><b>Is Droppy really free?</b></summary>
@@ -104,7 +104,7 @@ Absolutely! PRs welcome. Check out the issues for ideas or propose your own.
 
 ---
 
-## ☕ Support Droppy
+## Support Droppy
 
 Droppy is **completely free** and built by a single developer. If you find it useful, please consider supporting development:
 
@@ -123,26 +123,26 @@ Your support helps cover development costs and keeps Droppy free for everyone!
 
 ---
 
-## 🙏 Credits & Acknowledgements
+## Credits & Acknowledgements
 
-### 🧑‍💻 Contributors
+### Contributors
 Thank you to everyone who has contributed code, features, and extensions!
 
-### ✨ Alcove
+### Alcove
 Great inspiration for creating a beautiful notch app. One of the founding fathers of good-looking notch apps on macOS.  
 → [tryalcove.com](https://tryalcove.com/)
 
-### 🌊 Atoll  
+### Atoll  
 Inspired some animations and foundational functionalities. A fork of Boringnotch.  
 → [github.com/Ebullioscopic/Atoll](https://github.com/Ebullioscopic/Atoll)
 
-### 🎯 Boringnotch
+### Boringnotch
 The original project that pioneered notch creativity on macOS.  
 → [github.com/TheBoredTeam/boring.notch](https://github.com/TheBoredTeam/boring.notch)
 
 ---
 
-## 📜 License
+## License
 
 Droppy is released under the [GPL-3.0 License with Commons Clause](LICENSE).
 
