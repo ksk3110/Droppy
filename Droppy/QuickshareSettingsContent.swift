@@ -66,20 +66,22 @@ struct QuickshareSettingsContent: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 20)
                 } else {
-                    // File list
-                    ForEach(manager.items) { item in
-                        QuickshareItemRow(
-                            item: item,
-                            isCopied: copiedItemId == item.id,
-                            isDeleting: manager.isDeletingItem == item.id,
-                            onCopy: { copyItem(item) },
-                            onShare: { shareItem(item) },
-                            onOpenInBrowser: { openInBrowser(item) },
-                            onDelete: { showDeleteConfirmation = item }
-                        )
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                    // File list - use VStack to avoid list row separators
+                    VStack(spacing: 8) {
+                        ForEach(manager.items) { item in
+                            QuickshareItemRow(
+                                item: item,
+                                isCopied: copiedItemId == item.id,
+                                isDeleting: manager.isDeletingItem == item.id,
+                                onCopy: { copyItem(item) },
+                                onShare: { shareItem(item) },
+                                onOpenInBrowser: { openInBrowser(item) },
+                                onDelete: { showDeleteConfirmation = item }
+                            )
+                        }
                     }
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
                 }
             } header: {
                 HStack {
@@ -92,7 +94,6 @@ struct QuickshareSettingsContent: View {
                     }
                 }
             }
-            .listSectionSeparator(.hidden)
             
             // MARK: - About Section
             Section {
