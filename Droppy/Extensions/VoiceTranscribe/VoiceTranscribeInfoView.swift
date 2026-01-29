@@ -354,8 +354,8 @@ struct VoiceTranscribeInfoView: View {
                 VStack(spacing: 12) {
                     HStack {
                         Text("Keyboard Shortcuts")
-                            .font(.headline)
-                            .foregroundStyle(.primary)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.secondary)
                         
                         Spacer()
                     }
@@ -382,8 +382,8 @@ struct VoiceTranscribeInfoView: View {
                 VStack(spacing: 12) {
                     HStack {
                         Text("Installed Models")
-                            .font(.headline)
-                            .foregroundStyle(.primary)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.secondary)
                         
                         Spacer()
                     }

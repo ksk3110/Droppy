@@ -188,8 +188,8 @@ struct WindowSnapInfoView: View {
         VStack(spacing: 12) {
             HStack {
                 Text("Shortcuts")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
                 
                 Spacer()
                 
