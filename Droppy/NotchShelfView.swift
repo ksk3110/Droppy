@@ -1397,7 +1397,7 @@ struct NotchShelfView: View {
                 }
                 .padding(.horizontal, symmetricPadding)
                 .frame(height: layout.notchHeight)
-                .transition(.opacity)
+                .transition(.premiumHUD.animation(DroppyAnimation.notchState))
                 .zIndex(6)
             } else {
                 // NOTCH MODE: Position in wings around the notch
@@ -1430,7 +1430,7 @@ struct NotchShelfView: View {
                     .frame(width: wingWidth)
                 }
                 .frame(width: highAlertHudWidth, height: layout.notchHeight)
-                .transition(.opacity)
+                .transition(.premiumHUD.animation(DroppyAnimation.notchState))
                 .zIndex(6)
             }
         }
