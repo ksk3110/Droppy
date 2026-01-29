@@ -156,7 +156,7 @@ struct CaffeineInfoView: View {
             featureRow(icon: "bolt.fill", text: "Low resource usage")
             
             // Screenshot (animated GIF)
-            AnimatedGIFView(url: URL(string: "https://getdroppy.app/assets/images/high-alert-screenshot.gif"))
+            AnimatedGIFView(url: "https://getdroppy.app/assets/images/high-alert-screenshot.gif")
                 .aspectRatio(contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay(
