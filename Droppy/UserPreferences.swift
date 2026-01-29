@@ -60,6 +60,7 @@ enum AppPreferenceKey {
     static let autoCollapseDelay = "autoCollapseDelay"
     static let autoExpandShelf = "autoExpandShelf"
     static let autoExpandDelay = "autoExpandDelay"
+    static let autoOpenMediaHUDOnShelfExpand = "autoOpenMediaHUDOnShelfExpand"  // Auto-show media HUD when shelf expands
     static let autoShrinkShelf = "autoShrinkShelf"  // Legacy
     static let autoShrinkDelay = "autoShrinkDelay"  // Legacy
     
@@ -71,7 +72,6 @@ enum AppPreferenceKey {
     static let enableAutoClean = "enableAutoClean"
     static let alwaysCopyOnDrag = "alwaysCopyOnDrag"
     static let enableAirDropZone = "enableAirDropZone"
-    static let enableShelfAirDropZone = "enableShelfAirDropZone"
     static let enablePowerFolders = "enablePowerFolders"
     static let enableQuickActions = "enableQuickActions"
     static let enableTrackedFolders = "enableTrackedFolders"
@@ -178,6 +178,7 @@ enum PreferenceDefault {
     static let autoCollapseDelay: Double = 0.10
     static let autoExpandShelf = true
     static let autoExpandDelay: Double = 0.25
+    static let autoOpenMediaHUDOnShelfExpand = false  // Auto-open media HUD when shelf expands (opt-in)
     static let autoShrinkShelf = true  // Legacy
     static let autoShrinkDelay = 3  // Legacy
     
@@ -189,7 +190,6 @@ enum PreferenceDefault {
     static let enableAutoClean = false
     static let alwaysCopyOnDrag = false  // Off by default (standard macOS behavior), advanced users enable for protection
     static let enableAirDropZone = true
-    static let enableShelfAirDropZone = true
     static let enablePowerFolders = true
     static let enableQuickActions = false  // Advanced feature, opt-in
     static let enableTrackedFolders = false  // Advanced feature, opt-in

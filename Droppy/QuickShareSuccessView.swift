@@ -3,22 +3,141 @@
 //  Droppy
 //
 //  Success popup for Droppy Quickshare - shows link created and copied to clipboard
-//  Style matches onboarding window exactly
+//  Now also shows upload progress with animated progress bar
 //
 
 import SwiftUI
 import AppKit
 
-// MARK: - Quick Share Success View
+// MARK: - Upload State
+
+enum QuickShareUploadState {
+    case uploading(filename: String, fileCount: Int)
+    case success(shareURL: String)
+    case failed(error: String)
+}
+
+// MARK: - Quick Share View (supports progress and success)
 
 struct QuickShareSuccessView: View {
-    let shareURL: String
+    @Binding var uploadState: QuickShareUploadState
     let onDismiss: () -> Void
     
     @State private var showCopiedFeedback = false
     @AppStorage(AppPreferenceKey.useTransparentBackground) private var useTransparentBackground = PreferenceDefault.useTransparentBackground
     
     var body: some View {
+        VStack(spacing: 0) {
+            switch uploadState {
+            case .uploading(let filename, let fileCount):
+                uploadingContent(filename: filename, fileCount: fileCount)
+            case .success(let shareURL):
+                successContent(shareURL: shareURL)
+            case .failed(let error):
+                failedContent(error: error)
+            }
+        }
+        .frame(width: 500, height: 330)
+        .background {
+            if useTransparentBackground {
+                Rectangle().fill(.ultraThinMaterial)
+            } else {
+                Color.black
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isUploading)
+    }
+    
+    private var isUploading: Bool {
+        if case .uploading = uploadState { return true }
+        return false
+    }
+    
+    // MARK: - Uploading Content
+    
+    @ViewBuilder
+    private func uploadingContent(filename: String, fileCount: Int) -> some View {
+        VStack(spacing: 0) {
+            // Header with NotchFace
+            VStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(Color.cyan.opacity(0.1))
+                        .frame(width: 65, height: 65)
+                        .blur(radius: 14)
+                    
+                    NotchFace(size: 48, isExcited: false)
+                }
+                
+                Text("Droppy Quickshare")
+                    .font(.system(size: 22, weight: .bold))
+                
+                Text(fileCount > 1 ? "Uploading \(fileCount) items..." : "Uploading file...")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.top, 24)
+            .frame(height: 140)
+            
+            // Content
+            VStack(spacing: 20) {
+                // Filename Display
+                HStack(spacing: 12) {
+                    Image(systemName: "doc.fill")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.cyan)
+                        .frame(width: 22)
+                    
+                    Text(filename)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(Color.white.opacity(0.03))
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                )
+                
+                // Animated progress bar
+                QuickShareProgressBar()
+            }
+            .padding(.horizontal, 30)
+            .frame(height: 120)
+            
+            Spacer()
+            
+            // Cancel button
+            HStack {
+                Spacer()
+                
+                Button(action: onDismiss) {
+                    Text("Cancel")
+                        .fixedSize()
+                }
+                .buttonStyle(DroppyPillButtonStyle(size: .small))
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(16)
+        }
+    }
+    
+    // MARK: - Success Content
+    
+    @ViewBuilder
+    private func successContent(shareURL: String) -> some View {
         VStack(spacing: 0) {
             // Header with NotchFace
             VStack(spacing: 10) {
@@ -86,7 +205,7 @@ struct QuickShareSuccessView: View {
             // Action buttons (matches UpdateView style exactly)
             HStack(spacing: 10) {
                 // Copy again button
-                Button(action: copyToClipboard) {
+                Button(action: { copyToClipboard(shareURL) }) {
                     HStack(spacing: 6) {
                         Image(systemName: "doc.on.doc")
                         Text("Copy Again")
@@ -96,7 +215,7 @@ struct QuickShareSuccessView: View {
                 .buttonStyle(DroppyPillButtonStyle(size: .small))
                 
                 // Open in browser button
-                Button(action: openInBrowser) {
+                Button(action: { openInBrowser(shareURL) }) {
                     HStack(spacing: 6) {
                         Image(systemName: "safari")
                         Text("Open Link")
@@ -127,22 +246,55 @@ struct QuickShareSuccessView: View {
             .fixedSize(horizontal: false, vertical: true)
             .padding(16)
         }
-        .frame(width: 500, height: 330)
-        .background {
-            if useTransparentBackground {
-                Rectangle().fill(.ultraThinMaterial)
-            } else {
-                Color.black
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
-        )
     }
     
-    private func copyToClipboard() {
+    // MARK: - Failed Content
+    
+    @ViewBuilder
+    private func failedContent(error: String) -> some View {
+        VStack(spacing: 0) {
+            // Header with NotchFace
+            VStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(Color.red.opacity(0.1))
+                        .frame(width: 65, height: 65)
+                        .blur(radius: 14)
+                    
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 36))
+                        .foregroundStyle(.red)
+                }
+                
+                Text("Upload Failed")
+                    .font(.system(size: 22, weight: .bold))
+                
+                Text(error)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.top, 24)
+            .frame(height: 140)
+            
+            Spacer()
+            
+            // Dismiss button
+            HStack {
+                Spacer()
+                
+                Button(action: onDismiss) {
+                    Text("Dismiss")
+                        .fixedSize()
+                }
+                .buttonStyle(DroppyPillButtonStyle(size: .small))
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(16)
+        }
+    }
+    
+    private func copyToClipboard(_ shareURL: String) {
         let clipboard = NSPasteboard.general
         clipboard.clearContents()
         clipboard.setString(shareURL, forType: .string)
@@ -155,7 +307,7 @@ struct QuickShareSuccessView: View {
         }
     }
     
-    private func openInBrowser() {
+    private func openInBrowser(_ shareURL: String) {
         if let url = URL(string: shareURL) {
             NSWorkspace.shared.open(url)
         }
@@ -169,28 +321,119 @@ struct QuickShareSuccessView: View {
     }
 }
 
+// MARK: - Animated Progress Bar
+
+struct QuickShareProgressBar: View {
+    @State private var animating = false
+    
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                // Background track
+                Capsule()
+                    .fill(Color.white.opacity(0.1))
+                    .frame(height: 6)
+                
+                // Animated glow bar
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.cyan.opacity(0.3),
+                                Color.cyan,
+                                Color.cyan.opacity(0.3)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: geometry.size.width * 0.4, height: 6)
+                    .offset(x: animating ? geometry.size.width * 0.6 : 0)
+            }
+        }
+        .frame(height: 6)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                animating = true
+            }
+        }
+    }
+}
+
 // MARK: - Window Controller (matches OnboardingWindowController exactly)
+
+/// Observable state for the Quickshare window - allows live updates while window is open
+@Observable
+final class QuickShareWindowState {
+    var uploadState: QuickShareUploadState = .uploading(filename: "", fileCount: 1)
+}
 
 final class QuickShareSuccessWindowController: NSObject, NSWindowDelegate {
     static var shared: QuickShareSuccessWindowController?
     
     private var window: NSPanel?
+    private let windowState = QuickShareWindowState()
     
+    /// Show the window immediately in uploading state
+    static func showUploading(filename: String, fileCount: Int) {
+        // Close existing window if any
+        shared?.close()
+        
+        let controller = QuickShareSuccessWindowController()
+        shared = controller
+        controller.windowState.uploadState = .uploading(filename: filename, fileCount: fileCount)
+        controller.showWindow()
+    }
+    
+    /// Legacy method - show directly with success URL (for backwards compatibility)
     static func show(shareURL: String) {
         // Close existing window if any
         shared?.close()
         
         let controller = QuickShareSuccessWindowController()
         shared = controller
-        controller.showWindow(shareURL: shareURL)
+        controller.windowState.uploadState = .success(shareURL: shareURL)
+        controller.showWindow()
     }
     
-    private func showWindow(shareURL: String) {
-        let contentView = QuickShareSuccessView(shareURL: shareURL) { [weak self] in
-            DispatchQueue.main.async {
-                self?.close()
+    /// Update the current window to show success state
+    static func updateToSuccess(shareURL: String) {
+        guard let controller = shared else {
+            // No window open, create one
+            show(shareURL: shareURL)
+            return
+        }
+        
+        DispatchQueue.main.async {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                controller.windowState.uploadState = .success(shareURL: shareURL)
             }
         }
+    }
+    
+    /// Update the current window to show failed state
+    static func updateToFailed(error: String) {
+        guard let controller = shared else { return }
+        
+        DispatchQueue.main.async {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                controller.windowState.uploadState = .failed(error: error)
+            }
+        }
+    }
+    
+    private func showWindow() {
+        let contentView = QuickShareSuccessView(
+            uploadState: Binding(
+                get: { [weak self] in self?.windowState.uploadState ?? .uploading(filename: "", fileCount: 1) },
+                set: { [weak self] newValue in self?.windowState.uploadState = newValue }
+            ),
+            onDismiss: { [weak self] in
+                DispatchQueue.main.async {
+                    self?.close()
+                }
+            }
+        )
         .preferredColorScheme(.dark)
         
         let hostingView = NSHostingView(rootView: contentView)

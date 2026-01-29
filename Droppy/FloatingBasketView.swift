@@ -55,25 +55,25 @@ struct FloatingBasketView: View {
     
     private let cornerRadius: CGFloat = 28
     
-    // Each item is 64pt wide + 12pt spacing
-    // For 4 items: 4 * 64 + 3 * 12 = 256 + 36 = 292, plus 12pt padding each side = 316
-    private let itemWidth: CGFloat = 64
+    // Each item is 72pt wide + 12pt spacing (in expanded view)
+    // For 4 items: 4 * 72 + 3 * 12 = 288 + 36 = 324, plus 18pt padding each side = 360
+    private let itemWidth: CGFloat = 72
     private let itemSpacing: CGFloat = 12
-    private let horizontalPadding: CGFloat = 12
+    private let horizontalPadding: CGFloat = 18
     private let columnsPerRow: Int = 4
     
     // AirDrop zone width (30% of total when enabled)
     private let airDropZoneWidth: CGFloat = 90
     
-    /// Full width for 4-column grid: 4 * 64 + 3 * 12 + 12 * 2 = 256 + 36 + 24 = 316
-    private let fullGridWidth: CGFloat = 316
+    /// Full width for 4-column grid: 4 * 68 + 3 * 12 + 12 * 2 = 272 + 36 + 24 = 360 (expanded only)
+    private let fullGridWidth: CGFloat = 360
     
     /// Dynamic height that fits content
     private var currentHeight: CGFloat {
         let slotCount = state.basketDisplaySlotCount
         
         if slotCount == 0 {
-            return 260  // Empty basket - SAME size as collapsed
+            return 220  // Empty basket - SAME size as collapsed
         } else if isExpanded {
             let rowCount = ceil(Double(slotCount) / Double(columnsPerRow))
             let headerHeight: CGFloat = 44  // Header + top padding
@@ -98,18 +98,18 @@ struct FloatingBasketView: View {
             }
         } else {
             // Collapsed stacked preview - same as empty
-            return 260
+            return 220
         }
     }
     
     /// Base width - always use full grid width for proper layout
     private var baseWidth: CGFloat {
         if state.basketDisplaySlotCount == 0 {
-            return 240  // Empty state width - SAME as collapsed
+            return 200  // Empty state width - SAME as collapsed
         } else if isExpanded {
-            return fullGridWidth  // Full width when expanded
+            return fullGridWidth  // Full width when expanded (360)
         } else {
-            return 240  // Collapsed width - same as empty
+            return 200  // Collapsed width - same as empty
         }
     }
     
@@ -196,6 +196,37 @@ struct FloatingBasketView: View {
             // Selection rectangle overlay (only in expanded view)
             if isDragSelecting && isExpanded && state.hoveredQuickAction == nil {
                 selectionRectangleOverlay
+            }
+            
+            // PERSISTENT X BUTTON OVERLAY - stays fixed during all content transitions
+            // Only show when NOT expanded (expanded has back button instead)
+            // Hide when hovering quick actions (explanation overlay shows instead)
+            if !isExpanded && state.hoveredQuickAction == nil {
+                VStack {
+                    HStack {
+                        BasketCloseButton {
+                            closeBasket()
+                        }
+                        Spacer()
+                        
+                        // Menu button (only when items exist and not hovering quick action)
+                        if state.basketDisplaySlotCount > 0 && state.hoveredQuickAction == nil {
+                            Menu {
+                                basketContextMenuContent
+                            } label: {
+                                BasketMenuButton { }
+                                    .allowsHitTesting(false)
+                            }
+                            .menuStyle(.borderlessButton)
+                            .menuIndicator(.hidden)
+                            .fixedSize()
+                        }
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.top, 18)
+                    
+                    Spacer()
+                }
             }
         }
         .frame(width: currentWidth, height: currentHeight)
@@ -346,58 +377,37 @@ struct FloatingBasketView: View {
     @ViewBuilder
     private var emptyContent: some View {
         // Dropover-style empty state with "Drop files here" text - PERFECTLY CENTERED
-        ZStack {
-            // Centered text - explicit vertical centering with Spacers
-            VStack {
-                Spacer()
-                Text("Drop files here")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.5))
-                Spacer()
-            }
-            
-            // X button overlay in top-left
-            VStack {
-                HStack {
-                    BasketCloseButton {
-                        closeBasket()
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal, 18)
-                .padding(.top, 18)
-                
-                Spacer()
-            }
+        // X button is now handled by persistent overlay in mainBasketContainer
+        VStack {
+            Spacer()
+            Text("Drop files here")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(.white.opacity(0.5))
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     /// Explanation overlay shown when hovering over quick action buttons
+    /// X button is handled by persistent overlay in mainBasketContainer
     @ViewBuilder
     private func quickActionExplanation(for action: QuickActionType) -> some View {
         ZStack {
-            // Centered text - use frame alignment for proper centering
+            // Opaque background to hide content underneath
+            // Must match basket background style (material for transparent, black for solid)
+            if useTransparentBackground {
+                Rectangle().fill(.ultraThinMaterial)
+            } else {
+                Rectangle().fill(Color.black)
+            }
+            
+            // Centered description text
             Text(action.description)
                 .font(.system(size: 18, weight: .medium))
                 .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-            
-            // X button overlay in top-left
-            VStack {
-                HStack {
-                    BasketCloseButton {
-                        closeBasket()
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal, 18)
-                .padding(.top, 18)
-                
-                Spacer()
-            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -420,31 +430,9 @@ struct FloatingBasketView: View {
     // MARK: - Dropover-Style Collapsed Content
     
     /// Collapsed stacked preview matching Dropover exactly
+    /// X button and menu are handled by persistent overlay in mainBasketContainer
     private var collapsedStackContent: some View {
         VStack(spacing: 0) {
-            // Header with X and chevron buttons
-            HStack {
-                BasketCloseButton {
-                    closeBasket()
-                }
-                
-                Spacer()
-                
-                // Menu button with context menu
-                Menu {
-                    basketContextMenuContent
-                } label: {
-                    BasketMenuButton { }
-                        .allowsHitTesting(false)
-                }
-                .menuStyle(.borderlessButton)
-                .menuIndicator(.hidden)
-                .fixedSize()
-            }
-            // Perfect symmetry: equal distance from left, right, and top edges
-            .padding(.horizontal, 18)
-            .padding(.top, 18)
-            
             Spacer()
             
             // Stacked thumbnail preview - draggable for all files, tappable to expand
@@ -490,6 +478,8 @@ struct FloatingBasketView: View {
             }
             .padding(.bottom, 16)
         }
+        // Add top padding to match header height for proper centering
+        .padding(.top, 50) // 18pt margin + 32pt button height
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     

@@ -1209,8 +1209,9 @@ private struct NotchItemContent: View {
                 Text(item.name)
                     .font(.system(size: 11))
                     .foregroundColor(.white)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(width: 64)
                     .padding(.horizontal, 4)
                     .padding(.vertical, 2)
                     .background {
@@ -1219,7 +1220,6 @@ private struct NotchItemContent: View {
                                 .fill(Color.accentColor)
                         }
                     }
-                    .frame(width: 64)
             }
         }
         .padding(.vertical, 2)

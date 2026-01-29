@@ -215,6 +215,16 @@ enum DroppyAnimation {
             identity: NotchBlurModifier(scale: 1, blur: 0, opacity: 1)
         ).animation(.smooth(duration: 0.35))
     }
+    
+    /// PERFORMANCE: Lightweight transition for complex views (grids with many children).
+    /// Uses scale + opacity only (no blur) to avoid expensive per-child blur calculations.
+    /// Visual result is nearly identical at animation speeds, but much smoother.
+    static var notchViewTransitionLight: AnyTransition {
+        .modifier(
+            active: NotchBlurModifier(scale: 0.85, blur: 0, opacity: 0),
+            identity: NotchBlurModifier(scale: 1, blur: 0, opacity: 1)
+        ).animation(.smooth(duration: 0.35))
+    }
 }
 
 // MARK: - Notch Blur Modifier
@@ -251,9 +261,14 @@ extension View {
         )
     }
     
-    /// Applies premium view transition: scale(0.8, anchor: .top) + opacity with .smooth(0.35).
+    /// Applies premium view transition: scale(0.8, anchor: .top) + blur + opacity with .smooth(0.35).
     func notchTransition() -> some View {
         self.transition(DroppyAnimation.notchViewTransition)
+    }
+    
+    /// PERFORMANCE: Lightweight transition (no blur) for complex views like grids with many items.
+    func notchTransitionLight() -> some View {
+        self.transition(DroppyAnimation.notchViewTransitionLight)
     }
 }
 

@@ -37,13 +37,13 @@ struct NotchShelfView: View {
     @AppStorage(AppPreferenceKey.autoCollapseDelay) private var autoCollapseDelay = PreferenceDefault.autoCollapseDelay
     @AppStorage(AppPreferenceKey.autoCollapseShelf) private var autoCollapseShelf = PreferenceDefault.autoCollapseShelf
     @AppStorage(AppPreferenceKey.autoExpandDelay) private var autoExpandDelay = PreferenceDefault.autoExpandDelay
+    @AppStorage(AppPreferenceKey.autoOpenMediaHUDOnShelfExpand) private var autoOpenMediaHUDOnShelfExpand = PreferenceDefault.autoOpenMediaHUDOnShelfExpand
     @AppStorage(AppPreferenceKey.showClipboardButton) private var showClipboardButton = PreferenceDefault.showClipboardButton
     @AppStorage(AppPreferenceKey.showOpenShelfIndicator) private var showOpenShelfIndicator = PreferenceDefault.showOpenShelfIndicator
     @AppStorage(AppPreferenceKey.showDropIndicator) private var showDropIndicator = PreferenceDefault.showDropIndicator  // Legacy, not migrated
     @AppStorage(AppPreferenceKey.useDynamicIslandStyle) private var useDynamicIslandStyle = PreferenceDefault.useDynamicIslandStyle
     @AppStorage(AppPreferenceKey.useDynamicIslandTransparent) private var useDynamicIslandTransparent = PreferenceDefault.useDynamicIslandTransparent
     @AppStorage(AppPreferenceKey.enableAutoClean) private var enableAutoClean = PreferenceDefault.enableAutoClean
-    @AppStorage(AppPreferenceKey.enableShelfAirDropZone) private var enableShelfAirDropZone = PreferenceDefault.enableShelfAirDropZone
     @AppStorage(AppPreferenceKey.enableRightClickHide) private var enableRightClickHide = PreferenceDefault.enableRightClickHide
     @AppStorage(AppPreferenceKey.enableLockScreenMediaWidget) private var enableLockScreenMediaWidget = PreferenceDefault.enableLockScreenMediaWidget
 
@@ -260,8 +260,8 @@ struct NotchShelfView: View {
     /// Apple Music gets extra width for shuffle, repeat, and love controls
     private var expandedWidth: CGFloat {
         // Media player gets full width, shelf gets narrower width
-        if showMediaPlayer && !musicManager.isPlayerIdle && !state.isDropTargeted && !state.isShelfAirDropZoneTargeted && !dragMonitor.isDragging &&
-           (musicManager.isMediaHUDForced || ((musicManager.isPlaying || musicManager.wasRecentlyPlaying) && !musicManager.isMediaHUDHidden && state.items.isEmpty)) {
+        if showMediaPlayer && !musicManager.isPlayerIdle && !state.isDropTargeted && !dragMonitor.isDragging &&
+           (musicManager.isMediaHUDForced || (autoOpenMediaHUDOnShelfExpand && !musicManager.isMediaHUDHidden) || ((musicManager.isPlaying || musicManager.wasRecentlyPlaying) && !musicManager.isMediaHUDHidden && state.items.isEmpty)) {
             // Apple Music needs extra width for additional controls (shuffle, repeat, love)
             let appleMusicExtraWidth: CGFloat = musicManager.isAppleMusicSource ? 50 : 0
             return mediaPlayerWidth + appleMusicExtraWidth
@@ -497,7 +497,7 @@ struct NotchShelfView: View {
         }
         
         // Determine if we're showing media player or shelf
-        let shouldShowMediaPlayer = musicManager.isMediaHUDForced || 
+        let shouldShowMediaPlayer = musicManager.isMediaHUDForced || (autoOpenMediaHUDOnShelfExpand && !musicManager.isMediaHUDHidden) ||
             ((musicManager.isPlaying || musicManager.wasRecentlyPlaying) && !musicManager.isMediaHUDHidden && state.shelfDisplaySlotCount == 0)
         
         // MEDIA PLAYER: Content height based on layout
@@ -619,7 +619,7 @@ struct NotchShelfView: View {
     @ViewBuilder
     private var idleFaceContent: some View {
         let shelfIsEmpty = state.items.isEmpty
-        let isShowingMediaPlayer = musicManager.isMediaHUDForced && !musicManager.isMediaHUDHidden && !musicManager.isPlayerIdle
+        let isShowingMediaPlayer = (musicManager.isMediaHUDForced || (autoOpenMediaHUDOnShelfExpand && !musicManager.isMediaHUDHidden)) && !musicManager.isPlayerIdle
         let shouldShow = enableIdleFace && isExpandedOnThisScreen && shelfIsEmpty && !isShowingMediaPlayer
         
         if shouldShow {
@@ -634,78 +634,104 @@ struct NotchShelfView: View {
             shelfContent
             
             // Floating buttons (Bottom Centered)
-            // Terminal button: Shows when expanded AND terminal installed (regardless of sticky mode)
-            // Close/Terminal-close button: In sticky mode OR when terminal is visible
-            if enableNotchShelf && isExpandedOnThisScreen && (terminalManager.isInstalled || !autoCollapseShelf) {
-                HStack(spacing: 12) {
-                    // Terminal button (if extension installed)
-                    if terminalManager.isInstalled {
-                        // Open in Terminal.app button (only when terminal is visible)
-                        if terminalManager.isVisible {
-                            Button(action: {
-                                terminalManager.openInTerminalApp()
-                            }) {
-                                Image(systemName: "arrow.up.forward.app")
-                            }
-                            .buttonStyle(DroppyCircleButtonStyle(size: 32, useTransparent: shouldUseFloatingButtonTransparent, solidFill: isDynamicIslandMode ? dynamicIslandGray : .black))
-                            .help("Open in Terminal.app")
-                            .transition(.scale(scale: 0.8).combined(with: .opacity))
-                            
-                            if !terminalManager.lastOutput.isEmpty {
-                                Button(action: {
-                                    terminalManager.clearOutput()
-                                }) {
-                                    Image(systemName: "arrow.counterclockwise")
+            // QUICK ACTIONS: Show when dragging files over expanded shelf (even if empty)
+            // REGULAR BUTTONS: Show otherwise (terminal/close buttons)
+            // SMOOTH MORPH: Uses spring animation for seamless transition
+            if enableNotchShelf && isExpandedOnThisScreen {
+                // FLOATING BUTTONS: ZStack enables smooth crossfade between button states
+                // - Quick Actions: Shown when dragging files
+                // - Regular Buttons: Terminal + Close when NOT dragging
+                ZStack {
+                    // Quick Actions Bar - appears when dragging files
+                    if dragMonitor.isDragging {
+                        ShelfQuickActionsBar(items: state.items, useTransparent: shouldUseFloatingButtonTransparent)
+                            .onHover { isHovering in
+                                isHoveringExpandedContent = isHovering
+                                if isHovering {
+                                    cancelAutoShrinkTimer()
+                                } else {
+                                    startAutoShrinkTimer()
                                 }
-                                .buttonStyle(DroppyCircleButtonStyle(size: 32, useTransparent: shouldUseFloatingButtonTransparent, solidFill: isDynamicIslandMode ? dynamicIslandGray : .black))
-                                .help("Clear terminal output")
-                                .transition(.scale(scale: 0.8).combined(with: .opacity))
                             }
-                        }
-                        // Toggle terminal button (shows terminal icon when hidden, X when visible)
-                        Button(action: {
-                            withAnimation(DroppyAnimation.listChange) {
-                                terminalManager.toggle()
+                            .onDisappear {
+                                state.hoveredShelfQuickAction = nil
+                                state.isShelfQuickActionsTargeted = false
                             }
-                        }) {
-                            Image(systemName: terminalManager.isVisible ? "xmark" : "terminal")
-                        }
-                        .buttonStyle(DroppyCircleButtonStyle(size: 32, useTransparent: shouldUseFloatingButtonTransparent, solidFill: isDynamicIslandMode ? dynamicIslandGray : .black))
-                        .transition(.scale(scale: 0.8).combined(with: .opacity))
+                            .transition(.asymmetric(
+                                insertion: .scale(scale: 0.5).combined(with: .opacity).animation(.spring(response: 0.35, dampingFraction: 0.7)),
+                                removal: .scale(scale: 0.5).combined(with: .opacity).animation(.easeOut(duration: 0.15))
+                            ))
                     }
                     
-                    // Close button (only in sticky mode AND when terminal is not visible)
-                    if !autoCollapseShelf && !terminalManager.isVisible {
-                        Button(action: {
-                            withAnimation(DroppyAnimation.listChange) {
-                                state.expandedDisplayID = nil
-                                state.hoveringDisplayID = nil  // Clear hover on all screens when closing
+                    // Regular floating buttons (terminal/close) - appear when NOT dragging
+                    if !dragMonitor.isDragging && (terminalManager.isInstalled || !autoCollapseShelf) {
+                        HStack(spacing: 12) {
+                            // Terminal button (if extension installed)
+                            if terminalManager.isInstalled {
+                                // Open in Terminal.app button (only when terminal is visible)
+                                if terminalManager.isVisible {
+                                    Button(action: {
+                                        terminalManager.openInTerminalApp()
+                                    }) {
+                                        Image(systemName: "arrow.up.forward.app")
+                                    }
+                                    .buttonStyle(DroppyCircleButtonStyle(size: 32, useTransparent: shouldUseFloatingButtonTransparent, solidFill: isDynamicIslandMode ? dynamicIslandGray : .black))
+                                    .help("Open in Terminal.app")
+                                    .transition(.scale(scale: 0.8).combined(with: .opacity))
+                                    
+                                    if !terminalManager.lastOutput.isEmpty {
+                                        Button(action: {
+                                            terminalManager.clearOutput()
+                                        }) {
+                                            Image(systemName: "arrow.counterclockwise")
+                                        }
+                                        .buttonStyle(DroppyCircleButtonStyle(size: 32, useTransparent: shouldUseFloatingButtonTransparent, solidFill: isDynamicIslandMode ? dynamicIslandGray : .black))
+                                        .help("Clear terminal output")
+                                        .transition(.scale(scale: 0.8).combined(with: .opacity))
+                                    }
+                                }
+                                // Toggle terminal button (shows terminal icon when hidden, X when visible)
+                                Button(action: {
+                                    withAnimation(DroppyAnimation.listChange) {
+                                        terminalManager.toggle()
+                                    }
+                                }) {
+                                    Image(systemName: terminalManager.isVisible ? "xmark" : "terminal")
+                                }
+                                .buttonStyle(DroppyCircleButtonStyle(size: 32, useTransparent: shouldUseFloatingButtonTransparent, solidFill: isDynamicIslandMode ? dynamicIslandGray : .black))
+                                .transition(.scale(scale: 0.8).combined(with: .opacity))
                             }
-                        }) {
-                            Image(systemName: "xmark")
+                            
+                            // Close button (only in sticky mode AND when terminal is not visible)
+                            if !autoCollapseShelf && !terminalManager.isVisible {
+                                Button(action: {
+                                    withAnimation(DroppyAnimation.listChange) {
+                                        state.expandedDisplayID = nil
+                                        state.hoveringDisplayID = nil
+                                    }
+                                }) {
+                                    Image(systemName: "xmark")
+                                }
+                                .buttonStyle(DroppyCircleButtonStyle(size: 32, useTransparent: shouldUseFloatingButtonTransparent, solidFill: isDynamicIslandMode ? dynamicIslandGray : .black))
+                            }
                         }
-                        .buttonStyle(DroppyCircleButtonStyle(size: 32, useTransparent: shouldUseFloatingButtonTransparent, solidFill: isDynamicIslandMode ? dynamicIslandGray : .black))
+                        .onHover { isHovering in
+                            isHoveringExpandedContent = isHovering
+                            if isHovering {
+                                cancelAutoShrinkTimer()
+                            } else {
+                                startAutoShrinkTimer()
+                            }
+                        }
+                        .transition(.scale(scale: 0.5).combined(with: .opacity))
                     }
                 }
-                // Position exactly below the expanded content using SSOT gap
-                // NOTE: In notch mode, currentExpandedHeight includes top padding compensation which
-                // naturally pushes buttons lower. Island mode needs extra offset from SSOT to match.
                 .offset(y: currentExpandedHeight + NotchLayoutConstants.floatingButtonGap + (isDynamicIslandMode ? NotchLayoutConstants.floatingButtonIslandCompensation : 0))
-                // CRITICAL: Track hover on floating buttons to prevent auto-collapse
-                // when user moves from shelf content to floating button
-                .onHover { isHovering in
-                    isHoveringExpandedContent = isHovering
-                    if isHovering {
-                        cancelAutoShrinkTimer()
-                    } else {
-                        startAutoShrinkTimer()
-                    }
-                }
                 .opacity(notchController.isTemporarilyHidden ? 0 : 1)
                 .scaleEffect(notchController.isTemporarilyHidden ? 0.5 : 1)
                 .animation(DroppyAnimation.notchState, value: notchController.isTemporarilyHidden)
+                .animation(.spring(response: 0.3, dampingFraction: 0.75), value: dragMonitor.isDragging)
                 .zIndex(100)
-                .transition(.scale(scale: 0.8).combined(with: .opacity))
             }
 
         }
@@ -861,6 +887,8 @@ struct NotchShelfView: View {
                 
                 if isExpandedOnThis && !wasExpandedOnThis {
                     startAutoShrinkTimer()
+                    // NOTE: Auto-open media HUD setting is handled directly in expandedContent conditions
+                    // Do NOT set isMediaHUDForced here - that's global and affects all displays!
                 } else if wasExpandedOnThis && !isExpandedOnThis {
                     cancelAutoShrinkTimer()
                     isHoveringExpandedContent = false
@@ -1651,8 +1679,8 @@ struct NotchShelfView: View {
         // TERMINOTCH: Don't show morphing overlays when terminal is visible
         guard !(terminalManager.isInstalled && terminalManager.isVisible) else { return false }
         let dragMonitor = DragMonitor.shared
-        return showMediaPlayer && !musicManager.isPlayerIdle && !state.isDropTargeted && !state.isShelfAirDropZoneTargeted && !dragMonitor.isDragging &&
-               (musicManager.isMediaHUDForced || 
+        return showMediaPlayer && !musicManager.isPlayerIdle && !state.isDropTargeted && !dragMonitor.isDragging &&
+               (musicManager.isMediaHUDForced || (autoOpenMediaHUDOnShelfExpand && !musicManager.isMediaHUDHidden) ||
                 ((musicManager.isPlaying || musicManager.wasRecentlyPlaying) && !musicManager.isMediaHUDHidden && state.items.isEmpty))
     }
 
@@ -1913,19 +1941,19 @@ struct NotchShelfView: View {
                     .notchTransition()
             }
             // Show drop zone when dragging over (takes priority)
-            // ALSO show when hovering over AirDrop zone (isShelfAirDropZoneTargeted) to prevent snap-back to media
-            else if (state.isDropTargeted || state.isShelfAirDropZoneTargeted) && state.items.isEmpty {
+            else if state.isDropTargeted && state.items.isEmpty {
                 emptyShelfContent
                     .frame(height: currentExpandedHeight)
                     .notchTransition()
                 }
                 // MEDIA PLAYER VIEW: Show if:
-                // 1. User forced it via swipe (isMediaHUDForced) - shows even when paused
-                // 2. Music is playing AND user hasn't hidden it (isMediaHUDHidden)
-                // Both require: not idle, not drop targeted, not AirDrop zone targeted, media enabled
+                // 1. User forced it via swipe (isMediaHUDForced) - shows even when paused/idle
+                // 2. Auto-open setting enabled AND not hidden by swipe (autoOpenMediaHUDOnShelfExpand && !isMediaHUDHidden)
+                // 3. Music is playing AND user hasn't hidden it (isMediaHUDHidden)
+                // All paths require: not drop targeted, media enabled, not idle
                 // CRITICAL: Don't show during file drag - prevents flash when dropping files
-                else if showMediaPlayer && !musicManager.isPlayerIdle && !state.isDropTargeted && !state.isShelfAirDropZoneTargeted && !dragMonitor.isDragging &&
-                        (musicManager.isMediaHUDForced || 
+                else if showMediaPlayer && !state.isDropTargeted && !dragMonitor.isDragging && !musicManager.isPlayerIdle &&
+                        (musicManager.isMediaHUDForced || (autoOpenMediaHUDOnShelfExpand && !musicManager.isMediaHUDHidden) ||
                          ((musicManager.isPlaying || musicManager.wasRecentlyPlaying) && !musicManager.isMediaHUDHidden && state.items.isEmpty)) {
                     // SSOT: contentLayoutNotchHeight ensures MediaPlayerView and morphing overlays use identical positioning
                     // showTitle: false when morphing overlay handles it (DI mode OR external displays)
@@ -1950,13 +1978,21 @@ struct NotchShelfView: View {
                 // Show items grid when items exist
                 else {
                     itemsGridView
-                                            .frame(height: currentExpandedHeight)
+                        .frame(height: currentExpandedHeight)
                         // Stable identity for animation
                         .id("items-grid-view")
-                        // Premium blur transition matching basket pattern for polished appearance
-                        .notchTransition()
+                        // PERFORMANCE: Use lightweight transition (no blur) for complex grids
+                        // Blur on many-child views is expensive; scale+opacity looks nearly identical
+                        .notchTransitionLight()
             }
             
+            // QUICK ACTION EXPLANATION OVERLAY
+            // Shows action description when hovering over quick action buttons during drag
+            if let action = state.hoveredShelfQuickAction {
+                shelfQuickActionExplanation(for: action)
+                    .frame(height: currentExpandedHeight)
+                    .transition(.opacity.animation(.easeInOut(duration: 0.15)))
+            }
 
         }
         // NOTE: .drawingGroup() removed - breaks NSViewRepresentable views like AudioSpectrumView
@@ -2015,6 +2051,28 @@ struct NotchShelfView: View {
             } label: {
                 Label("Open Settings", systemImage: "gear")
             }
+        }
+    }
+    
+    /// Explanation overlay shown when hovering over shelf quick action buttons
+    @ViewBuilder
+    private func shelfQuickActionExplanation(for action: QuickActionType) -> some View {
+        ZStack {
+            // Opaque background to hide content underneath
+            // Must match shelf background style
+            if shouldUseFloatingButtonTransparent {
+                Rectangle().fill(.ultraThinMaterial)
+            } else {
+                Rectangle().fill(Color.black)
+            }
+            
+            // Centered description text - matches basket style
+            Text(action.description)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(.white.opacity(0.5))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
     }
     
@@ -2085,7 +2143,8 @@ struct NotchShelfView: View {
                                 }
                             }
                         )
-                        .transition(.scale.combined(with: .opacity))
+                        // PERFORMANCE: Skip transitions during bulk add
+                        .transition(state.isBulkAdding ? .identity : .scale.combined(with: .opacity))
                     }
                     
                     // Regular items - flat display (no stacks)
@@ -2100,7 +2159,8 @@ struct NotchShelfView: View {
                                 }
                             }
                         )
-                        .transition(.scale.combined(with: .opacity))
+                        // PERFORMANCE: Skip transitions during bulk add
+                        .transition(state.isBulkAdding ? .identity : .scale.combined(with: .opacity))
                     }
                 }
                 // SSOT: Top padding clears physical notch in built-in notch mode
@@ -2342,62 +2402,10 @@ extension NotchShelfView {
                 }
                 .animation(DroppyAnimation.expandOpen, value: state.isDropTargeted)
             )
-            
-            // AirDrop zone (right side, only when enabled)
-            if enableShelfAirDropZone {
-                ZStack {
-                    DropZoneIcon(type: .airDrop, size: 44, isActive: state.isShelfAirDropZoneTargeted)
-                }
-                .frame(maxWidth: 90, maxHeight: .infinity)
-                .overlay(
-                    // PREMIUM PRESSED EFFECT: Layered inner glow for AirDrop zone
-                    Group {
-                        if state.isShelfAirDropZoneTargeted {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                                    .strokeBorder(
-                                        LinearGradient(
-                                            colors: [
-                                                Color.white.opacity(0.25),
-                                                Color.white.opacity(0.1)
-                                            ],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        ),
-                                        lineWidth: 2
-                                    )
-                                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                                    .fill(
-                                        RadialGradient(
-                                            colors: [Color.clear, Color.white.opacity(0.08)],
-                                            center: .center,
-                                            startRadius: 15,
-                                            endRadius: 60
-                                        )
-                                    )
-                            }
-                            .allowsHitTesting(false)
-                        } else {
-                            RoundedRectangle(cornerRadius: 30, style: .continuous)
-                                .strokeBorder(
-                                    Color.white.opacity(0.2),
-                                    style: StrokeStyle(
-                                        lineWidth: 1.5,
-                                        lineCap: .round,
-                                        dash: [6, 8],
-                                        dashPhase: dropZoneDashPhase
-                                    )
-                                )
-                        }
-                    }
-                    .animation(DroppyAnimation.expandOpen, value: state.isShelfAirDropZoneTargeted)
-                )
-            }
         }
         // 3D PRESSED EFFECT: Scale down when targeted (like button being pushed)
-        .scaleEffect((state.isDropTargeted || state.isShelfAirDropZoneTargeted) ? 0.97 : 1.0)
+        .scaleEffect(state.isDropTargeted ? 0.97 : 1.0)
         .animation(DroppyAnimation.hoverBouncy, value: state.isDropTargeted)
-        .animation(DroppyAnimation.hoverBouncy, value: state.isShelfAirDropZoneTargeted)
         // Use SSOT for consistent padding across all expanded views (v21.68 VERIFIED)
         // - Built-in notch mode: top = notchHeight, left/right = 30pt, bottom = 20pt
         // - External notch style: top/bottom = 20pt, left/right = 30pt

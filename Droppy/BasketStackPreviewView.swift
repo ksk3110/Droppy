@@ -45,7 +45,7 @@ struct BasketStackPreviewView: View {
                 .zIndex(Double(index))
             }
         }
-        .frame(width: 160, height: 140)
+        .frame(width: 130, height: 110)
         .clipped() // Prevent hover animation from affecting surrounding layout
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHovering)
         .onHover { hovering in
@@ -187,28 +187,28 @@ private struct DropoverCard: View {
                 Image(nsImage: thumbnail)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(width: 100, height: 100)
+                    .frame(width: 80, height: 80)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             } else if item.isDirectory {
                 // Folder icon fallback
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(Color.white.opacity(0.1))
-                    .frame(width: 100, height: 100)
+                    .frame(width: 80, height: 80)
                     .overlay(
                         Image(systemName: "folder.fill")
-                            .font(.system(size: 36))
+                            .font(.system(size: 30))
                             .foregroundStyle(.white.opacity(0.6))
                     )
             } else {
                 // Generic file icon fallback
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(Color.white.opacity(0.1))
-                    .frame(width: 100, height: 100)
+                    .frame(width: 80, height: 80)
                     .overlay(
                         Image(nsImage: ThumbnailCache.shared.cachedIcon(forPath: item.url.path))
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 50, height: 50)
+                            .frame(width: 40, height: 40)
                     )
             }
         }

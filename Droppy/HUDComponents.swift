@@ -519,31 +519,39 @@ struct SubtleScrollingText: View {
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
                     .offset(x: -scrollOffset)
-                    // Fade mask at left and right edges when scrolling
+                    // Only apply fade mask when text actually needs scrolling
+                    // This preserves crisp text rendering for non-scrolling text
                     .mask(
-                        HStack(spacing: 0) {
-                            if scrollOffset > 0 {
-                                LinearGradient(
-                                    colors: [.clear, .white],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                                .frame(width: 10)
+                        Group {
+                            if needsScroll {
+                                HStack(spacing: 0) {
+                                    if scrollOffset > 0 {
+                                        LinearGradient(
+                                            colors: [.clear, .white],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                        .frame(width: 10)
+                                    } else {
+                                        Color.white.frame(width: 0)
+                                    }
+                                    
+                                    Rectangle()
+                                    
+                                    if scrollOffset < maxScrollOffset {
+                                        LinearGradient(
+                                            colors: [.white, .clear],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                        .frame(width: 12)
+                                    } else {
+                                        Color.white.frame(width: 0)
+                                    }
+                                }
                             } else {
-                                Color.white.frame(width: 0)
-                            }
-                            
-                            Rectangle()
-                            
-                            if needsScroll && scrollOffset < maxScrollOffset {
-                                LinearGradient(
-                                    colors: [.white, .clear],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                                .frame(width: 12)
-                            } else {
-                                Color.white.frame(width: 0)
+                                // No mask for non-scrolling text - keeps it sharp
+                                Rectangle()
                             }
                         }
                     )
@@ -594,8 +602,8 @@ struct SubtleScrollingText: View {
         
         scrollPhase = .waitingToScroll
         
-        // Wait 0.8 seconds after hover before starting scroll
-        scrollTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { _ in
+        // Wait 1 second after hover before starting scroll
+        scrollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { _ in
             guard isHovering else { return }
             advanceScrollPhase()
         }

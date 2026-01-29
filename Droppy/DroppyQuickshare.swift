@@ -21,10 +21,23 @@ enum DroppyQuickshare {
         DroppyState.shared.isSharingInProgress = true
         DroppyState.shared.quickShareStatus = .uploading
         
+        // Determine display filename for progress window
+        let displayFilename: String
+        if urls.count > 1 {
+            displayFilename = "Droppy Share (\(urls.count) items).zip"
+        } else {
+            displayFilename = urls.first!.lastPathComponent
+        }
+        
+        // Show progress window IMMEDIATELY so user knows upload is in progress
+        DispatchQueue.main.async {
+            QuickShareSuccessWindowController.showUploading(filename: displayFilename, fileCount: urls.count)
+        }
+        
         DispatchQueue.global(qos: .userInitiated).async {
             var uploadURL = urls.first!
             var isTemporaryZip = false
-            var displayFilename = uploadURL.lastPathComponent
+            var finalDisplayFilename = displayFilename
             
             // If multiple files, create a ZIP first
             if urls.count > 1 {
@@ -32,6 +45,7 @@ enum DroppyQuickshare {
                     DispatchQueue.main.async {
                         DroppyState.shared.isSharingInProgress = false
                         DroppyState.shared.quickShareStatus = .failed
+                        QuickShareSuccessWindowController.updateToFailed(error: "Failed to create archive")
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                             DroppyState.shared.quickShareStatus = .idle
                         }
@@ -40,7 +54,7 @@ enum DroppyQuickshare {
                 }
                 uploadURL = zipURL
                 isTemporaryZip = true
-                displayFilename = "Droppy Share (\(urls.count) items).zip"
+                finalDisplayFilename = "Droppy Share (\(urls.count) items).zip"
             }
             
             // Upload the file
@@ -66,7 +80,7 @@ enum DroppyQuickshare {
                     
                     // Store in Quickshare Manager for history
                     let quickshareItem = QuickshareItem(
-                        filename: displayFilename,
+                        filename: finalDisplayFilename,
                         shareURL: result.shareURL,
                         token: result.token,
                         fileSize: result.fileSize,
@@ -81,8 +95,8 @@ enum DroppyQuickshare {
                     DroppyState.shared.quickShareStatus = .success(urls: [result.shareURL])
                     HapticFeedback.copy()
                     
-                    // Show success popup
-                    QuickShareSuccessWindowController.show(shareURL: result.shareURL)
+                    // Update window to success state (transitions smoothly)
+                    QuickShareSuccessWindowController.updateToSuccess(shareURL: result.shareURL)
                     
                     // Call completion handler (e.g. to hide basket)
                     completion?()
@@ -94,6 +108,7 @@ enum DroppyQuickshare {
                 } else {
                     // Upload failed
                     DroppyState.shared.quickShareStatus = .failed
+                    QuickShareSuccessWindowController.updateToFailed(error: "Upload failed. Please try again.")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                         DroppyState.shared.quickShareStatus = .idle
                     }

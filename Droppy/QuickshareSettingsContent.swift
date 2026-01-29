@@ -77,6 +77,7 @@ struct QuickshareSettingsContent: View {
                             onOpenInBrowser: { openInBrowser(item) },
                             onDelete: { showDeleteConfirmation = item }
                         )
+                        .listRowSeparator(.hidden)
                     }
                 }
             } header: {

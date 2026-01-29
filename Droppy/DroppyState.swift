@@ -254,9 +254,21 @@ final class DroppyState {
     /// Used to suppress basket highlight and keep quick actions bar expanded
     var isQuickActionsTargeted: Bool = false
     
+    /// Whether files are being hovered over any quick action button in the shelf
+    /// Used to keep shelf quick actions bar visible during drag
+    var isShelfQuickActionsTargeted: Bool = false
+    
     /// Which quick action is currently being hovered (nil if none)
     /// Used to show action-specific explanations in the basket content area
     var hoveredQuickAction: QuickActionType? = nil
+    
+    /// Which shelf quick action is currently being hovered (nil if none)
+    /// Used to show action-specific explanations in the shelf content area
+    var hoveredShelfQuickAction: QuickActionType? = nil
+    
+    /// Flag to indicate bulk add operation in progress
+    /// When true, item transitions are skipped for performance
+    var isBulkAdding: Bool = false
     
     /// Whether any rename text field is currently active (blocks spacebar Quick Look)
     var isRenaming: Bool = false
@@ -344,8 +356,8 @@ final class DroppyState {
         // Calculate ALL possible content heights
         let terminalHeight: CGFloat = 180 + topPaddingDelta
         let mediaPlayerHeight: CGFloat = 140 + topPaddingDelta
-        // Use shelfDisplaySlotCount for correct row count
-        let rowCount = ceil(Double(DroppyState.shared.shelfDisplaySlotCount) / 5.0)
+        // Use shelfDisplaySlotCount for correct row count - cap at 3 rows (scroll for rest)
+        let rowCount = min(ceil(Double(DroppyState.shared.shelfDisplaySlotCount) / 5.0), 3)
         let shelfHeight: CGFloat = max(1, rowCount) * 110 + notchCompensation
         
         // Use MAXIMUM of all possible heights - guarantees we cover the actual visual
@@ -384,26 +396,55 @@ final class DroppyState {
     }
     
     /// Adds multiple items from file URLs
+    /// PERFORMANCE: Uses isBulkAdding flag to skip per-item animations for bulk operations
+    /// PERFORMANCE: Uses Set for O(1) duplicate checking instead of O(n) contains()
     func addItems(from urls: [URL]) {
-        var regularItems: [DroppedItem] = []
+        guard !urls.isEmpty else { return }
         
-        // DISABLED AUTO-PIN for batch add as well
+        // PERFORMANCE: Skip per-item transitions for bulk adds (>3 items)
+        let isBulk = urls.count > 3
+        if isBulk {
+            isBulkAdding = true
+        }
+        
+        // PERFORMANCE: Build Set of existing URLs for O(1) lookup instead of O(n) contains()
+        // This changes duplicate checking from O(n*m) to O(n+m)
+        let existingShelfURLs = Set(shelfItems.map(\.url))
+        let existingPowerFolderURLs = Set(shelfPowerFolders.map(\.url))
+        
+        var regularItems: [DroppedItem] = []
+        regularItems.reserveCapacity(urls.count) // PERFORMANCE: Pre-allocate array
+        
         for url in urls {
-             // Create item
-             let item = DroppedItem(url: url)
-             
-             // Avoid duplicates in regular list
-             if !shelfItems.contains(where: { $0.url == item.url }) && 
-                !shelfPowerFolders.contains(where: { $0.url == item.url }) {
-                 regularItems.append(item)
-             }
-         }
-         
-         if !regularItems.isEmpty {
-             shelfItems.append(contentsOf: regularItems)
-             triggerAutoExpand()
-             HapticFeedback.drop()
-         }
+            // O(1) duplicate check using Set
+            guard !existingShelfURLs.contains(url) && !existingPowerFolderURLs.contains(url) else {
+                continue
+            }
+            regularItems.append(DroppedItem(url: url))
+        }
+        
+        if !regularItems.isEmpty {
+            // PERFORMANCE: Single animation block for all items
+            if isBulk {
+                // For bulk: no animation, just append immediately
+                shelfItems.append(contentsOf: regularItems)
+                triggerAutoExpand()
+                
+                // Clear bulk flag after a brief delay to allow UI to settle
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                    self?.isBulkAdding = false
+                }
+            } else {
+                // For small adds: use animation
+                withAnimation(DroppyAnimation.state) {
+                    shelfItems.append(contentsOf: regularItems)
+                }
+                triggerAutoExpand()
+            }
+            HapticFeedback.drop()
+        } else if isBulk {
+            isBulkAdding = false
+        }
     }
     
     /// Removes an item from the shelf
@@ -641,11 +682,21 @@ final class DroppyState {
     }
     
     /// Adds multiple items to the basket from file URLs
+    /// PERFORMANCE: Uses isBulkAdding flag to skip per-item animations for bulk operations
     func addBasketItems(from urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        
+        // PERFORMANCE: Skip per-item transitions for bulk adds (>3 items)
+        let isBulk = urls.count > 3
+        if isBulk {
+            isBulkAdding = true
+        }
+        
         let enablePowerFolders = UserDefaults.standard.object(forKey: AppPreferenceKey.enablePowerFolders) as? Bool ?? true
         
         var regularItems: [DroppedItem] = []
         var powerFolders: [DroppedItem] = []
+        regularItems.reserveCapacity(urls.count) // PERFORMANCE: Pre-allocate array
         
         let existingURLs = Set(basketItemsList.map { $0.url } + basketPowerFolders.map { $0.url })
         
@@ -661,11 +712,19 @@ final class DroppyState {
             }
         }
         
-        basketPowerFolders.append(contentsOf: powerFolders)
-        basketItemsList.append(contentsOf: regularItems)
-        
         if !regularItems.isEmpty || !powerFolders.isEmpty {
+            basketPowerFolders.append(contentsOf: powerFolders)
+            basketItemsList.append(contentsOf: regularItems)
             HapticFeedback.drop()
+            
+            if isBulk {
+                // Clear bulk flag after UI settles
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                    self?.isBulkAdding = false
+                }
+            }
+        } else if isBulk {
+            isBulkAdding = false
         }
     }
     
