@@ -155,20 +155,15 @@ struct CaffeineInfoView: View {
             featureRow(icon: "timer", text: "Timed modes (15m, 1h, etc)")
             featureRow(icon: "bolt.fill", text: "Low resource usage")
             
-            // Screenshot
-            CachedAsyncImage(url: URL(string: "https://getdroppy.app/assets/images/high-alert-screenshot.gif")) { image in
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(AdaptiveColors.subtleBorderAuto, lineWidth: 1)
-                    )
-            } placeholder: {
-                EmptyView()
-            }
-            .padding(.top, 8)
+            // Screenshot (animated GIF)
+            AnimatedGIFView(url: URL(string: "https://getdroppy.app/assets/images/high-alert-screenshot.gif"))
+                .aspectRatio(contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(AdaptiveColors.subtleBorderAuto, lineWidth: 1)
+                )
+                .padding(.top, 8)
         }
         // Left-align and fill parent width
         .frame(maxWidth: .infinity, alignment: .leading)
