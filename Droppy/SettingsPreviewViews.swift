@@ -1881,3 +1881,107 @@ struct NotificationHUDIcon: View {
     }
 }
 
+/// Compact animated terminal icon for settings rows - green gradient with terminal
+struct TerminalHUDIcon: View {
+    let isEnabled: Bool
+    
+    @State private var blink = false
+    
+    var body: some View {
+        ZStack {
+            // Green gradient when enabled, gray when disabled
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: isEnabled ? [
+                            Color(hue: 0.38, saturation: 0.55, brightness: 0.90),
+                            Color(hue: 0.36, saturation: 0.75, brightness: 0.65)
+                        ] : [
+                            Color(hue: 0.0, saturation: 0.0, brightness: 0.50),
+                            Color(hue: 0.0, saturation: 0.0, brightness: 0.35)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: 40, height: 40)
+            
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.25), Color.clear],
+                        startPoint: .top,
+                        endPoint: .center
+                    )
+                )
+                .frame(width: 40, height: 40)
+            
+            Image(systemName: "terminal.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.white)
+                .opacity(blink ? 1 : 0.7)
+                .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+        }
+        .onAppear {
+            if isEnabled {
+                Timer.scheduledTimer(withTimeInterval: 0.6, repeats: true) { _ in
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        blink.toggle()
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Compact animated caffeine icon for settings rows - orange gradient with coffee cup
+struct CaffeineHUDIcon: View {
+    let isEnabled: Bool
+    
+    @State private var steam = false
+    
+    var body: some View {
+        ZStack {
+            // Orange gradient when enabled, gray when disabled
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: isEnabled ? [
+                            Color(hue: 0.08, saturation: 0.65, brightness: 0.98),
+                            Color(hue: 0.06, saturation: 0.80, brightness: 0.75)
+                        ] : [
+                            Color(hue: 0.0, saturation: 0.0, brightness: 0.50),
+                            Color(hue: 0.0, saturation: 0.0, brightness: 0.35)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: 40, height: 40)
+            
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.25), Color.clear],
+                        startPoint: .top,
+                        endPoint: .center
+                    )
+                )
+                .frame(width: 40, height: 40)
+            
+            Image(systemName: "cup.and.saucer.fill")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.white)
+                .symbolEffect(.pulse, options: .repeating, isActive: isEnabled && steam)
+                .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+        }
+        .onAppear {
+            if isEnabled {
+                steam = true
+            }
+        }
+        .onChange(of: isEnabled) { _, newValue in
+            steam = newValue
+        }
+    }
+}

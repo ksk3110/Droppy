@@ -40,6 +40,8 @@ struct SettingsView: View {
     @AppStorage(AppPreferenceKey.enableUpdateHUD) private var enableUpdateHUD = PreferenceDefault.enableUpdateHUD
     @AppStorage(AppPreferenceKey.notificationHUDInstalled) private var isNotificationHUDInstalled = PreferenceDefault.notificationHUDInstalled
     @AppStorage(AppPreferenceKey.notificationHUDEnabled) private var enableNotificationHUD = PreferenceDefault.notificationHUDEnabled
+    @AppStorage(AppPreferenceKey.terminalNotchInstalled) private var isTerminalNotchInstalled = PreferenceDefault.terminalNotchInstalled
+    @AppStorage(AppPreferenceKey.caffeineInstalled) private var isCaffeineInstalled = PreferenceDefault.caffeineInstalled
     @AppStorage(AppPreferenceKey.enableLockScreenMediaWidget) private var enableLockScreenMediaWidget = PreferenceDefault.enableLockScreenMediaWidget
     @AppStorage(AppPreferenceKey.showMediaPlayer) private var showMediaPlayer = PreferenceDefault.showMediaPlayer
     @AppStorage(AppPreferenceKey.autoFadeMediaHUD) private var autoFadeMediaHUD = PreferenceDefault.autoFadeMediaHUD
@@ -1547,13 +1549,18 @@ struct SettingsView: View {
                         }
                     }
                 }
-                
+            } header: {
+                Text("System")
+            }
+            
+            // MARK: Extensions (Notify Me, Terminal Notch, Caffeine)
+            Section {
                 // Notify me! (Notification HUD Extension)
                 HStack(spacing: 12) {
                     NotificationHUDIcon(isEnabled: isNotificationHUDInstalled && enableNotificationHUD)
                     
                     if isNotificationHUDInstalled {
-                        // Extension is enabled - show toggle
+                        // Extension is installed - show on/off toggle
                         Toggle(isOn: $enableNotificationHUD) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Notify me!")
@@ -1563,19 +1570,92 @@ struct SettingsView: View {
                             }
                         }
                     } else {
-                        // Extension is not enabled - show message
+                        // Extension is not installed - greyed out
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Notify me!")
                                 .foregroundStyle(.secondary)
-                            Text("Enable under Extensions")
+                            Text("Enable in Extension Store")
                                 .font(.caption)
-                                .foregroundStyle(.secondary.opacity(0.7))
+                                .foregroundStyle(.orange)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                
+                // Terminal Notch Extension
+                HStack(spacing: 12) {
+                    TerminalHUDIcon(isEnabled: isTerminalNotchInstalled)
+                    
+                    if isTerminalNotchInstalled {
+                        // Extension is installed - show on/off toggle (controls visibility via manager)
+                        Toggle(isOn: Binding(
+                            get: { TerminalNotchManager.shared.isInstalled },
+                            set: { newValue in
+                                if newValue {
+                                    TerminalNotchManager.shared.install()
+                                } else {
+                                    TerminalNotchManager.shared.uninstall()
+                                }
+                            }
+                        )) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Terminal Notch")
+                                Text("Quick command bar in the shelf")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    } else {
+                        // Extension is not installed - greyed out
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Terminal Notch")
+                                .foregroundStyle(.secondary)
+                            Text("Enable in Extension Store")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                
+                // Caffeine Extension
+                HStack(spacing: 12) {
+                    CaffeineHUDIcon(isEnabled: isCaffeineInstalled && CaffeineManager.shared.isActive)
+                    
+                    if isCaffeineInstalled {
+                        // Extension is installed - show on/off toggle (controls installation state)
+                        Toggle(isOn: $isCaffeineInstalled) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text("Caffeine")
+                                    if CaffeineManager.shared.isActive {
+                                        Text(CaffeineManager.shared.formattedRemaining)
+                                            .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                            .foregroundStyle(.orange)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Capsule().fill(Color.orange.opacity(0.15)))
+                                    }
+                                }
+                                Text("Keep your Mac awake")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    } else {
+                        // Extension is not installed - greyed out
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Caffeine")
+                                .foregroundStyle(.secondary)
+                            Text("Enable in Extension Store")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
             } header: {
-                Text("System")
+                Text("Extensions")
             }
             
             // MARK: Peripherals
@@ -1701,7 +1781,7 @@ struct SettingsView: View {
                             SpotifyAuthManager.shared.startAuthentication()
                         case .appleMusic:
                             AppleMusicController.shared.refreshState()
-                        case .elementCapture, .aiBackgroundRemoval, .windowSnap, .voiceTranscribe, .ffmpegVideoCompression, .terminalNotch, .menuBarManager, .quickshare, .notificationHUD:
+                        case .elementCapture, .aiBackgroundRemoval, .windowSnap, .voiceTranscribe, .ffmpegVideoCompression, .terminalNotch, .menuBarManager, .quickshare, .notificationHUD, .caffeine:
                             break // No action needed - these have their own configuration UI
                         }
                     }
