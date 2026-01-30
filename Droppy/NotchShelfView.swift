@@ -1850,6 +1850,10 @@ struct NotchShelfView: View {
         // TERMINOTCH: Don't show morphing overlays when terminal is visible (and enabled)
         let terminalEnabled = UserDefaults.standard.preference(AppPreferenceKey.terminalNotchEnabled, default: PreferenceDefault.terminalNotchEnabled)
         guard !(terminalManager.isInstalled && terminalEnabled && terminalManager.isVisible) else { return false }
+        // HIGH ALERT: Don't show morphing overlays when caffeine view is visible (and enabled)
+        let caffeineEnabled = UserDefaults.standard.preference(AppPreferenceKey.caffeineEnabled, default: PreferenceDefault.caffeineEnabled)
+        let caffeineShouldShow = UserDefaults.standard.preference(AppPreferenceKey.caffeineInstalled, default: PreferenceDefault.caffeineInstalled) && caffeineEnabled
+        guard !(showCaffeineView && caffeineShouldShow) else { return false }
         let dragMonitor = DragMonitor.shared
         return showMediaPlayer && !musicManager.isPlayerIdle && !state.isDropTargeted && !dragMonitor.isDragging &&
                (musicManager.isMediaHUDForced || (autoOpenMediaHUDOnShelfExpand && !musicManager.isMediaHUDHidden) ||
