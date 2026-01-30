@@ -35,7 +35,7 @@ struct PremiumSettingsIcon: View {
     var body: some View {
         ZStack {
             // Gradient background
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [primaryColor, secondaryColor],
@@ -46,7 +46,7 @@ struct PremiumSettingsIcon: View {
                 .frame(width: size, height: size)
             
             // Subtle inner highlight at top for 3D effect
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [Color.white.opacity(0.25), Color.clear],
@@ -60,7 +60,7 @@ struct PremiumSettingsIcon: View {
             Image(systemName: icon)
                 .font(.system(size: iconSize, weight: .semibold))
                 .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+                .droppyTextShadow()
         }
     }
 }
@@ -72,7 +72,7 @@ struct NowPlayingIcon: View {
     var body: some View {
         ZStack {
             // Pink gradient background (squircle)
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [
@@ -86,7 +86,7 @@ struct NowPlayingIcon: View {
                 .frame(width: size, height: size)
             
             // Subtle inner highlight
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [Color.white.opacity(0.30), Color.clear],
@@ -100,7 +100,7 @@ struct NowPlayingIcon: View {
             Image(systemName: "play.fill")
                 .font(.system(size: size * 0.45, weight: .semibold))
                 .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+                .droppyTextShadow()
         }
     }
 }
@@ -112,9 +112,9 @@ struct FeaturePreviewGIF: View {
         AnimatedGIFView(url: url)
             .frame(maxWidth: 500, maxHeight: 200)
             .frame(maxWidth: .infinity, alignment: .center)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                     .strokeBorder(
                         LinearGradient(
                             stops: [
@@ -128,7 +128,7 @@ struct FeaturePreviewGIF: View {
                         lineWidth: 1
                     )
             )
-            .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+            .droppyCardShadow()
             .padding(.vertical, 8)
     }
 }
@@ -144,7 +144,7 @@ struct FeaturePreviewImage: View {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
             } else {
                 ProgressView()
                     .frame(height: 60)
@@ -417,7 +417,7 @@ struct MediaPlayerPreview: View {
                     // Left wing - Album art
                     HStack {
                         Spacer(minLength: 0)
-                        RoundedRectangle(cornerRadius: 4)
+                        RoundedRectangle(cornerRadius: DroppyRadius.xs)
                             .fill(LinearGradient(colors: [.purple, .pink], startPoint: .topLeading, endPoint: .bottomTrailing))
                             .frame(width: 22, height: 22)
                             .overlay(
@@ -490,11 +490,11 @@ struct ClipboardPreview: View {
             ClipboardMockRow(icon: "link", title: "https://getdroppy.app", subtitle: "Chrome • 10:38", isSelected: false)
             ClipboardMockRow(icon: "photo", title: "Screenshot.png", subtitle: "Finder • 10:35", isSelected: false, showStar: true)
         }
-        .padding(8)
+        .padding(DroppySpacing.sm)
         .background(Color.black)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
         )
         .frame(width: 240)
@@ -531,7 +531,7 @@ private struct ClipboardMockGridItem: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(Color.red.opacity(0.15))
         )
     }
@@ -549,7 +549,7 @@ private struct ClipboardMockRow: View {
         HStack(spacing: 8) {
             // Icon in squircle - matches real 32x32 squircle
             ZStack {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.sm, style: .continuous)
                     .fill(Color.white.opacity(0.1))
                     .frame(width: 24, height: 24)
                 
@@ -582,7 +582,7 @@ private struct ClipboardMockRow: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(isSelected
                       ? Color.blue.opacity(0.8)
                       : Color.white.opacity(0.12))
@@ -1052,7 +1052,7 @@ struct FloatingBasketPreview: View {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .stroke(Color.white.opacity(0.15), lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
+        .droppyCardShadow()
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
     }
@@ -1068,7 +1068,7 @@ private struct MockStackedFile: View {
         // Document icon with folded corner effect
         ZStack {
             // Page background
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.xs, style: .continuous)
                 .fill(Color.white)
                 .frame(width: 50, height: 60)
             
@@ -1080,7 +1080,7 @@ private struct MockStackedFile: View {
                         .frame(width: .random(in: 25...38), height: 3)
                 }
             }
-            .padding(8)
+            .padding(DroppySpacing.sm)
         }
         .shadow(color: .black.opacity(0.3), radius: 4, x: 2, y: 2)
         .rotationEffect(.degrees(rotation))
@@ -1103,7 +1103,7 @@ struct PeekPreview: View {
     var body: some View {
         ZStack {
             // Container representing the screen
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                 .fill(Color.gray.opacity(0.12))
                 .overlay(
                     Text("Screen")
@@ -1126,9 +1126,9 @@ struct PeekPreview: View {
                 .animation(.easeInOut(duration: isPeeking ? 0.55 : 0.25), value: isPeeking)
         }
         .frame(width: containerWidth, height: containerHeight)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
         .frame(maxWidth: .infinity)
@@ -1300,7 +1300,7 @@ private struct MockFileItem: View {
                 .foregroundStyle(color)
                 .frame(width: 44, height: 44)
                 .background(Color.white.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
             
             Text(name)
                 .font(.system(size: 7))
@@ -1343,7 +1343,7 @@ struct NotchShelfPreview: View {
                                     ),
                                     lineWidth: 1.5
                                 )
-                                .padding(4)
+                                .padding(DroppySpacing.xs)
                             
                             // Layer 2: Vignette - clear in center, white glow on edges
                             RadialGradient(
@@ -1356,7 +1356,7 @@ struct NotchShelfPreview: View {
                                 endRadius: 100
                             )
                             .clipShape(NotchShape(bottomRadius: 12))
-                            .padding(6)
+                            .padding(DroppySpacing.xsm) // Split difference between xs(4) and sm(8)
                         }
                     )
                     .overlay(
@@ -1391,7 +1391,7 @@ private struct MockShelfItem: View {
             .foregroundStyle(color)
             .frame(width: 36, height: 36)
             .background(Color.white.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
     }
 }
 
@@ -1414,13 +1414,13 @@ struct OpenShelfIndicatorPreview: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.xxl, style: .continuous)
                 .fill(Color.black)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.xxl, style: .continuous)
                         .stroke(Color.white.opacity(0.2), lineWidth: 1)
                 )
-                .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
+                .droppyCardShadow()
         )
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
@@ -1438,15 +1438,15 @@ struct DropIndicatorPreview: View {
     
     var body: some View {
         NotchFace(size: 40, isExcited: isHovered)
-            .padding(16) // Symmetrical padding for centered appearance
+            .padding(DroppySpacing.lg) // Symmetrical padding for centered appearance
             .background(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.xxl, style: .continuous)
                     .fill(Color.black)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.xxl, style: .continuous)
                             .stroke(Color.white.opacity(0.2), lineWidth: 1)
                     )
-                    .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
+                    .droppyCardShadow()
             )
             .onHover { hovering in
                 withAnimation(DroppyAnimation.state) {
@@ -1501,6 +1501,7 @@ enum ExtensionCategory: String, CaseIterable, Identifiable {
 /// Compact animated volume/brightness icon for settings rows - morphs between both
 struct VolumeHUDIcon: View {
     @State private var showBrightness = false
+    @State private var animationTimer: Timer?
     
     private var icon: String {
         showBrightness ? "sun.max.fill" : "speaker.wave.3.fill"
@@ -1517,7 +1518,7 @@ struct VolumeHUDIcon: View {
     
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [primaryColor, secondaryColor],
@@ -1527,7 +1528,7 @@ struct VolumeHUDIcon: View {
                 )
                 .frame(width: 40, height: 40)
             
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [Color.white.opacity(0.25), Color.clear],
@@ -1541,14 +1542,18 @@ struct VolumeHUDIcon: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.white)
                 .contentTransition(.symbolEffect(.replace.byLayer))
-                .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+                .droppyTextShadow()
         }
         .onAppear {
-            Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+            animationTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
                 withAnimation(DroppyAnimation.transition) {
                     showBrightness.toggle()
                 }
             }
+        }
+        .onDisappear {
+            animationTimer?.invalidate()
+            animationTimer = nil
         }
     }
 }
@@ -1556,11 +1561,12 @@ struct VolumeHUDIcon: View {
 /// Compact animated battery icon for settings rows
 struct BatteryHUDIcon: View {
     @State private var isCharging = true
+    @State private var animationTimer: Timer?
     
     var body: some View {
         ZStack {
             // Green gradient
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [
@@ -1573,7 +1579,7 @@ struct BatteryHUDIcon: View {
                 )
                 .frame(width: 40, height: 40)
             
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [Color.white.opacity(0.25), Color.clear],
@@ -1587,12 +1593,16 @@ struct BatteryHUDIcon: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.white)
                 .symbolEffect(.pulse, options: .repeating, isActive: isCharging)
-                .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+                .droppyTextShadow()
         }
         .onAppear {
-            Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+            animationTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
                 withAnimation { isCharging.toggle() }
             }
+        }
+        .onDisappear {
+            animationTimer?.invalidate()
+            animationTimer = nil
         }
     }
 }
@@ -1600,11 +1610,12 @@ struct BatteryHUDIcon: View {
 /// Compact animated caps lock icon for settings rows
 struct CapsLockHUDIcon: View {
     @State private var isOn = true
+    @State private var animationTimer: Timer?
     
     var body: some View {
         ZStack {
             // Green gradient when on, gray when off
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: isOn ? [
@@ -1620,7 +1631,7 @@ struct CapsLockHUDIcon: View {
                 )
                 .frame(width: 40, height: 40)
             
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [Color.white.opacity(0.25), Color.clear],
@@ -1635,12 +1646,16 @@ struct CapsLockHUDIcon: View {
                 .foregroundStyle(.white)
                 .contentTransition(.symbolEffect(.replace))
                 .symbolEffect(.pulse, options: .repeating, isActive: isOn)
-                .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+                .droppyTextShadow()
         }
         .onAppear {
-            Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+            animationTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
                 withAnimation(DroppyAnimation.transition) { isOn.toggle() }
             }
+        }
+        .onDisappear {
+            animationTimer?.invalidate()
+            animationTimer = nil
         }
     }
 }
@@ -1650,7 +1665,7 @@ struct AirPodsHUDIcon: View {
     var body: some View {
         ZStack {
             // White/gray gradient
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [
@@ -1663,7 +1678,7 @@ struct AirPodsHUDIcon: View {
                 )
                 .frame(width: 40, height: 40)
             
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [Color.white.opacity(0.35), Color.clear],
@@ -1684,11 +1699,12 @@ struct AirPodsHUDIcon: View {
 /// Compact animated lock icon for settings rows
 struct LockScreenHUDIcon: View {
     @State private var isLocked = true
+    @State private var animationTimer: Timer?
     
     var body: some View {
         ZStack {
             // Gray/silver gradient
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [
@@ -1701,7 +1717,7 @@ struct LockScreenHUDIcon: View {
                 )
                 .frame(width: 40, height: 40)
             
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [Color.white.opacity(0.25), Color.clear],
@@ -1715,12 +1731,16 @@ struct LockScreenHUDIcon: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.white)
                 .contentTransition(.symbolEffect(.replace))
-                .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+                .droppyTextShadow()
         }
         .onAppear {
-            Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
+            animationTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
                 withAnimation(DroppyAnimation.transition) { isLocked.toggle() }
             }
+        }
+        .onDisappear {
+            animationTimer?.invalidate()
+            animationTimer = nil
         }
     }
 }
@@ -1728,11 +1748,12 @@ struct LockScreenHUDIcon: View {
 /// Compact animated focus mode icon for settings rows
 struct FocusModeHUDIcon: View {
     @State private var isOn = true
+    @State private var animationTimer: Timer?
     
     var body: some View {
         ZStack {
             // Purple gradient when on, gray when off
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: isOn ? [
@@ -1748,7 +1769,7 @@ struct FocusModeHUDIcon: View {
                 )
                 .frame(width: 40, height: 40)
             
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [Color.white.opacity(0.25), Color.clear],
@@ -1763,12 +1784,16 @@ struct FocusModeHUDIcon: View {
                 .foregroundStyle(.white)
                 .contentTransition(.symbolEffect(.replace))
                 .symbolEffect(.pulse, options: .repeating, isActive: isOn)
-                .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+                .droppyTextShadow()
         }
         .onAppear {
-            Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+            animationTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
                 withAnimation(DroppyAnimation.transition) { isOn.toggle() }
             }
+        }
+        .onDisappear {
+            animationTimer?.invalidate()
+            animationTimer = nil
         }
     }
 }
@@ -1787,7 +1812,7 @@ struct UpdateHUDIcon: View {
     var body: some View {
         ZStack {
             // Blue gradient
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [
@@ -1800,7 +1825,7 @@ struct UpdateHUDIcon: View {
                 )
                 .frame(width: 40, height: 40)
             
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [Color.white.opacity(0.25), Color.clear],
@@ -1814,7 +1839,7 @@ struct UpdateHUDIcon: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.white)
                 .symbolEffect(.bounce, value: bounce)
-                .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+                .droppyTextShadow()
         }
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -1833,7 +1858,7 @@ struct NotificationHUDIcon: View {
     var body: some View {
         ZStack {
             // Red gradient when enabled, gray when disabled
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: isEnabled ? [
@@ -1850,7 +1875,7 @@ struct NotificationHUDIcon: View {
                 .frame(width: 40, height: 40)
 
             
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [Color.white.opacity(0.25), Color.clear],
@@ -1864,7 +1889,7 @@ struct NotificationHUDIcon: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.white)
                 .symbolEffect(.bounce, value: bounce)
-                .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+                .droppyTextShadow()
         }
         .onAppear {
             if isEnabled {
@@ -1886,11 +1911,12 @@ struct TerminalHUDIcon: View {
     let isEnabled: Bool
     
     @State private var blink = false
+    @State private var animationTimer: Timer?
     
     var body: some View {
         ZStack {
             // Green gradient when enabled, gray when disabled
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: isEnabled ? [
@@ -1906,7 +1932,7 @@ struct TerminalHUDIcon: View {
                 )
                 .frame(width: 40, height: 40)
             
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [Color.white.opacity(0.25), Color.clear],
@@ -1920,16 +1946,20 @@ struct TerminalHUDIcon: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.white)
                 .opacity(blink ? 1 : 0.7)
-                .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+                .droppyTextShadow()
         }
         .onAppear {
             if isEnabled {
-                Timer.scheduledTimer(withTimeInterval: 0.6, repeats: true) { _ in
+                animationTimer = Timer.scheduledTimer(withTimeInterval: 0.6, repeats: true) { _ in
                     withAnimation(.easeInOut(duration: 0.3)) {
                         blink.toggle()
                     }
                 }
             }
+        }
+        .onDisappear {
+            animationTimer?.invalidate()
+            animationTimer = nil
         }
     }
 }
@@ -1943,7 +1973,7 @@ struct HighAlertHUDIcon: View {
     var body: some View {
         ZStack {
             // Orange gradient when enabled, gray when disabled
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: isEnabled ? [
@@ -1959,7 +1989,7 @@ struct HighAlertHUDIcon: View {
                 )
                 .frame(width: 40, height: 40)
             
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [Color.white.opacity(0.25), Color.clear],
@@ -1975,7 +2005,7 @@ struct HighAlertHUDIcon: View {
                 .foregroundStyle(.white)
                 .scaleEffect(wideAwake && isEnabled ? 1.15 : 1.0)
                 .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: wideAwake)
-                .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+                .droppyTextShadow()
         }
         .onAppear {
             if isEnabled {

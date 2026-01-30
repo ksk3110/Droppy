@@ -219,15 +219,15 @@ struct HUDOverlayView: View {
     }
     
     private var hudBackground: some View {
-        RoundedRectangle(cornerRadius: 20, style: .continuous)
+        RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous)
             .fill(.ultraThinMaterial)
             .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous)
                     .fill(Color.black.opacity(0.6))
             )
             // Specular rim lighting
             .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous)
                     .stroke(
                         LinearGradient(
                             stops: [
@@ -306,7 +306,7 @@ class HUDStateManager {
         
         VStack {
             // Simulate notch background
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: DroppyRadius.xl)
                 .fill(Color.black)
                 .frame(width: 280, height: 90)
                 .overlay {
@@ -321,7 +321,7 @@ class HUDStateManager {
             
             Spacer().frame(height: 40)
             
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: DroppyRadius.xl)
                 .fill(Color.black)
                 .frame(width: 280, height: 90)
                 .overlay {

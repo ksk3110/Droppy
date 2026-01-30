@@ -95,13 +95,13 @@ struct PoofEffect: View {
         }
         
         // Checkmark pops in with bounce
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.5).delay(0.1)) {
+        withAnimation(DroppyAnimation.onboardingBounce.delay(0.1)) {
             checkmarkScale = 1.2
             checkmarkOpacity = 1.0
         }
         
         // Checkmark settles to normal size
-        withAnimation(.spring(response: 0.2, dampingFraction: 0.7).delay(0.25)) {
+        withAnimation(DroppyAnimation.hover.delay(0.25)) {
             checkmarkScale = 1.0
         }
         

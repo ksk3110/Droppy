@@ -1414,7 +1414,7 @@ final class NotchWindowController: NSObject, ObservableObject {
                 if isExpanded || isHovering {
                     // Throttle log to once per minute to avoid console spam
                     let now = Date()
-                    if Self.lastWatchdogLogTime == nil || now.timeIntervalSince(Self.lastWatchdogLogTime!) > 60 {
+                    if Self.lastWatchdogLogTime.map({ now.timeIntervalSince($0) > 60 }) ?? true {
                         print("⚠️ Watchdog: Self-healing - window stuck with ignoresMouseEvents=true")
                         Self.lastWatchdogLogTime = now
                     }
@@ -1442,7 +1442,7 @@ final class NotchWindowController: NSObject, ObservableObject {
             if deviation > sizeDeviationTolerance {
                 // Throttle log to once per minute per display
                 let now = Date()
-                if Self.lastSizeHealLogTime == nil || now.timeIntervalSince(Self.lastSizeHealLogTime!) > 60 {
+                if Self.lastSizeHealLogTime.map({ now.timeIntervalSince($0) > 60 }) ?? true {
                     print("⚠️ Watchdog: Self-healing - window size drifted by \(Int(deviation))pt (expected: \(Int(correctHeight)), actual: \(Int(currentHeight)))")
                     Self.lastSizeHealLogTime = now
                 }
@@ -1956,8 +1956,8 @@ class NotchWindow: NSPanel {
         let mouseLocation: NSPoint
         if (event.window?.screen ?? notchScreen) != nil {
             // Convert window-relative location to screen coordinates
-            if event.window != nil {
-                mouseLocation = event.window!.convertPoint(toScreen: event.locationInWindow)
+            if let window = event.window {
+                mouseLocation = window.convertPoint(toScreen: event.locationInWindow)
             } else {
                 // For events without a window (global monitor), the locationInWindow
                 // is already in screen coordinates for global monitors

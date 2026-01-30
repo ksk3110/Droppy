@@ -329,12 +329,12 @@ struct ClipboardManagerView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
             .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous)
                     .stroke(Color.white.opacity(0.1), lineWidth: 1)
             )
-            .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
+            .droppyCardShadow()
             .padding(.bottom, 24)
             .transition(.move(edge: .bottom).combined(with: .opacity))
         }
@@ -422,7 +422,8 @@ struct ClipboardManagerView: View {
     private func bulkSaveSelectedItems() {
         guard !selectedItems.isEmpty else { return }
         
-        let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+        let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads")
         var savedCount = 0
         
         for item in selectedItemsArray {
@@ -523,11 +524,11 @@ struct ClipboardManagerView: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
                 .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                         .fill(Color.black.opacity(0.3))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                         .stroke(
                             Color.accentColor.opacity(0.8),
                             style: StrokeStyle(
@@ -879,11 +880,11 @@ struct ClipboardManagerView: View {
             }
             .buttonStyle(DroppyAccentButtonStyle(color: .orange, size: .small))
         }
-        .padding(12)
+        .padding(DroppySpacing.md)
         .background(Color.orange.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                 .stroke(Color.orange.opacity(0.2), lineWidth: 1)
         )
         .padding(.horizontal, 20)
@@ -1137,7 +1138,7 @@ struct FlaggedGridItemView: View {
             HStack(spacing: 10) {
                 // Icon/Thumbnail - squircle like ClipboardItemRow
                 ZStack {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.sm, style: .continuous)
                         .fill(Color.white.opacity(0.1))
                         .frame(width: 32, height: 32)
                     
@@ -1147,7 +1148,7 @@ struct FlaggedGridItemView: View {
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .frame(width: 32, height: 32)
-                            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.sm, style: .continuous))
                     } else {
                         itemIcon
                             .foregroundStyle(.white)
@@ -1194,7 +1195,7 @@ struct FlaggedGridItemView: View {
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                     .fill(isSelected 
                           ? Color.blue.opacity(isHovering ? 1.0 : 0.8)
                           : Color.red.opacity(isHovering ? 0.22 : 0.15))
@@ -1259,7 +1260,7 @@ struct ClipboardItemRow: View {
         HStack(spacing: 10) {
             // Icon/Thumbnail - smaller and shows real image for images
             ZStack {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.sm, style: .continuous)
                     .fill(Color.white.opacity(0.1))
                     .frame(width: 32, height: 32)
                 
@@ -1269,7 +1270,7 @@ struct ClipboardItemRow: View {
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(width: 32, height: 32)
-                        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.sm, style: .continuous))
                 } else {
                     Image(systemName: iconName(for: item.type))
                         .foregroundStyle(.white)
@@ -1347,7 +1348,7 @@ struct ClipboardItemRow: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                 .fill(isSelected 
                       ? Color.blue.opacity(isHovering ? 1.0 : 0.8) 
                       : item.isFlagged
@@ -1456,7 +1457,7 @@ struct ClipboardPreviewView: View {
         
         // Animate out
         let exitOffset: CGFloat = direction == .left ? -300 : 300
-        withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+        withAnimation(DroppyAnimation.hoverScale) {
             swipeOffset = exitOffset
         }
         
@@ -1476,7 +1477,7 @@ struct ClipboardPreviewView: View {
                 isLoadingPage = false
                 
                 // Animate in
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                withAnimation(DroppyAnimation.state) {
                     swipeOffset = 0
                 }
             }
@@ -1504,7 +1505,8 @@ struct ClipboardPreviewView: View {
     private func saveToFile() {
         isSavingFile = true
         
-        let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+        let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads")
         let fileName: String
         let fileExtension: String
         
@@ -1586,7 +1588,7 @@ struct ClipboardPreviewView: View {
                             .font(.system(.body, design: .monospaced))
                             .scrollContentBackground(.hidden)
                             .foregroundStyle(.white)
-                            .padding(12)
+                            .padding(DroppySpacing.md)
 
                     } else {
                         ScrollView {
@@ -1623,7 +1625,7 @@ struct ClipboardPreviewView: View {
                             .font(.system(.body, design: .monospaced))
                             .scrollContentBackground(.hidden)
                             .foregroundStyle(.white)
-                            .padding(12)
+                            .padding(DroppySpacing.md)
                     } else {
                         URLPreviewCard(
                             item: item,
@@ -1644,7 +1646,7 @@ struct ClipboardPreviewView: View {
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .frame(maxHeight: 220)
-                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
                             
                             // OCR Button
                             Button {
@@ -1678,7 +1680,7 @@ struct ClipboardPreviewView: View {
                                 }
                             }
                             .buttonStyle(DroppyPillButtonStyle(size: .small))
-                            .padding(12)
+                            .padding(DroppySpacing.md)
                         }
                     } else if isLoadingPreview {
                         ProgressView()
@@ -1698,8 +1700,8 @@ struct ClipboardPreviewView: View {
                                 VideoPlayer(player: player)
                                     .aspectRatio(16/9, contentMode: .fit)
                                     .frame(maxHeight: 280)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                    .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
+                                    .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
+                                    .droppyCardShadow(opacity: 0.3)
                                     .onAppear {
                                         player.play()
                                     }
@@ -1714,14 +1716,14 @@ struct ClipboardPreviewView: View {
                                             .resizable()
                                             .aspectRatio(contentMode: .fit)
                                             .frame(maxHeight: 280)
-                                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                            .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
+                                            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
+                                            .droppyCardShadow(opacity: 0.3)
                                             .offset(x: swipeOffset)
-                                            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: swipeOffset)
+                                            .animation(DroppyAnimation.state, value: swipeOffset)
                                     } else if isLoadingPreview || isLoadingPage {
                                         ProgressView()
                                             .controlSize(.large)
-                                            .padding(40)
+                                            .padding(DroppySpacing.xxxl + DroppySpacing.sm) // 40pt for large empty state
                                     } else {
                                         Image(nsImage: ThumbnailCache.shared.cachedIcon(forPath: path))
                                             .resizable()
@@ -1747,7 +1749,7 @@ struct ClipboardPreviewView: View {
                                                 navigateToPage(currentPageIndex - 1, path: path, direction: .right)
                                             } else {
                                                 // Snap back
-                                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                                withAnimation(DroppyAnimation.state) {
                                                     swipeOffset = 0
                                                 }
                                             }
@@ -1781,7 +1783,7 @@ struct ClipboardPreviewView: View {
                                                         .fill(index == currentPageIndex ? Color.white : Color.white.opacity(0.3))
                                                         .frame(width: 6, height: 6)
                                                         .scaleEffect(index == currentPageIndex ? 1.2 : 1.0)
-                                                        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: currentPageIndex)
+                                                        .animation(DroppyAnimation.hover, value: currentPageIndex)
                                                         .onTapGesture {
                                                             if index != currentPageIndex {
                                                                 let direction: SwipeDirection = index > currentPageIndex ? .left : .right
@@ -1889,11 +1891,11 @@ struct ClipboardPreviewView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                     .fill(isEditing ? Color.black.opacity(0.3) : Color.white.opacity(0.05))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                     .strokeBorder(
                         Color.accentColor.opacity(isEditing ? 0.8 : 0),
                         style: StrokeStyle(
@@ -2059,7 +2061,7 @@ struct ClipboardPreviewView: View {
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 6)
                                     .background(item.tagId == tag.id ? Color.white.opacity(0.1) : Color.clear)
-                                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                    .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.sm, style: .continuous))
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -2087,10 +2089,10 @@ struct ClipboardPreviewView: View {
                                 Text("No tags yet")
                                     .font(.system(size: 11))
                                     .foregroundStyle(.secondary)
-                                    .padding(8)
+                                    .padding(DroppySpacing.sm)
                             }
                         }
-                        .padding(8)
+                        .padding(DroppySpacing.sm)
                         .frame(minWidth: 140)
                         .background(.ultraThinMaterial)
                     }
@@ -2153,7 +2155,7 @@ struct ClipboardPreviewView: View {
             }
             .buttonStyle(DroppyCardButtonStyle())
         }
-        .padding(20)
+        .padding(DroppySpacing.xl)
         .onDisappear {
             // Release cached images when view disappears to free memory
             cachedImage = nil
@@ -2370,8 +2372,8 @@ struct ZoomedDocumentPreviewSheet: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .scaleEffect(zoomScale, anchor: .center)
                             .offset(x: swipeOffset + offset.width, y: offset.height)
-                            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: swipeOffset)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .animation(DroppyAnimation.state, value: swipeOffset)
+                            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                             .shadow(color: .black.opacity(0.4), radius: 20, y: 10)
                             .gesture(
                                 MagnificationGesture()
@@ -2380,7 +2382,7 @@ struct ZoomedDocumentPreviewSheet: View {
                                         zoomScale = min(max(newScale, minZoom), maxZoom)
                                     }
                                     .onEnded { _ in
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                        withAnimation(DroppyAnimation.state) {
                                             // Snap to 1x if close
                                             if zoomScale < 1.1 {
                                                 zoomScale = 1.0
@@ -2411,7 +2413,7 @@ struct ZoomedDocumentPreviewSheet: View {
                                             let maxOffsetX = geometry.size.width * (zoomScale - 1) / 2
                                             let maxOffsetY = geometry.size.height * (zoomScale - 1) / 2
                                             
-                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                            withAnimation(DroppyAnimation.state) {
                                                 offset = CGSize(
                                                     width: min(max(offset.width, -maxOffsetX), maxOffsetX),
                                                     height: min(max(offset.height, -maxOffsetY), maxOffsetY)
@@ -2426,7 +2428,7 @@ struct ZoomedDocumentPreviewSheet: View {
                                             } else if value.translation.width > threshold && currentPage > 0 {
                                                 navigateToPage(currentPage - 1, direction: .right)
                                             } else {
-                                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                                withAnimation(DroppyAnimation.state) {
                                                     swipeOffset = 0
                                                 }
                                             }
@@ -2436,7 +2438,7 @@ struct ZoomedDocumentPreviewSheet: View {
                             .gesture(
                                 TapGesture(count: 2)
                                     .onEnded {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                        withAnimation(DroppyAnimation.state) {
                                             if zoomScale > 1.0 {
                                                 // Reset to 1x
                                                 zoomScale = 1.0
@@ -2460,7 +2462,7 @@ struct ZoomedDocumentPreviewSheet: View {
                                 HStack(spacing: 8) {
                                     // Zoom out
                                     Button {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                        withAnimation(DroppyAnimation.state) {
                                             zoomScale = max(zoomScale - 0.5, minZoom)
                                             lastZoomScale = zoomScale
                                             if zoomScale <= 1.0 {
@@ -2484,7 +2486,7 @@ struct ZoomedDocumentPreviewSheet: View {
                                     
                                     // Zoom in
                                     Button {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                        withAnimation(DroppyAnimation.state) {
                                             zoomScale = min(zoomScale + 0.5, maxZoom)
                                             lastZoomScale = zoomScale
                                         }
@@ -2498,7 +2500,7 @@ struct ZoomedDocumentPreviewSheet: View {
                                     // Reset zoom (only show when zoomed)
                                     if zoomScale > 1.0 {
                                         Button {
-                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                            withAnimation(DroppyAnimation.state) {
                                                 zoomScale = 1.0
                                                 lastZoomScale = 1.0
                                                 offset = .zero
@@ -2511,13 +2513,13 @@ struct ZoomedDocumentPreviewSheet: View {
                                         .transition(.scale.combined(with: .opacity))
                                     }
                                 }
-                                .padding(8)
+                                .padding(DroppySpacing.sm)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                    RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous)
                                         .fill(.ultraThinMaterial)
                                 )
                             }
-                            .padding(12)
+                            .padding(DroppySpacing.md)
                         }
                     } else if isLoading {
                         ProgressView()
@@ -2555,7 +2557,7 @@ struct ZoomedDocumentPreviewSheet: View {
                                     .fill(index == currentPage ? Color.white : Color.white.opacity(0.3))
                                     .frame(width: 8, height: 8)
                                     .scaleEffect(index == currentPage ? 1.3 : 1.0)
-                                    .animation(.spring(response: 0.25, dampingFraction: 0.7), value: currentPage)
+                                    .animation(DroppyAnimation.hover, value: currentPage)
                                     .onTapGesture {
                                         if index != currentPage {
                                             navigateToPage(index, direction: index > currentPage ? .left : .right)
@@ -2687,7 +2689,7 @@ struct ZoomedDocumentPreviewSheet: View {
         
         // Animate out
         let exitOffset: CGFloat = direction == .left ? -400 : 400
-        withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+        withAnimation(DroppyAnimation.hoverScale) {
             swipeOffset = exitOffset
         }
         
@@ -2713,7 +2715,7 @@ struct ZoomedDocumentPreviewSheet: View {
                 isLoading = false
                 
                 // Animate in
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                withAnimation(DroppyAnimation.state) {
                     swipeOffset = 0
                 }
             }
@@ -2872,7 +2874,7 @@ struct MultiSelectPreviewView: View {
                 .buttonStyle(DroppyCircleButtonStyle(size: 40))
             }
         }
-        .padding(20)
+        .padding(DroppySpacing.xl)
     }
 }
 
@@ -2899,7 +2901,7 @@ struct StackedCardView: View {
         VStack(spacing: 8) {
             // Icon
             ZStack {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                     .fill(Color.white.opacity(0.15))
                     .frame(width: 48, height: 48)
                 
@@ -2916,14 +2918,14 @@ struct StackedCardView: View {
                 .multilineTextAlignment(.center)
                 .frame(width: 100)
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
         .frame(width: 130, height: 120)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                 .fill(.ultraThinMaterial)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                 .stroke(
                     LinearGradient(
                         colors: [.white.opacity(0.3), .white.opacity(0.05)],
@@ -2933,7 +2935,7 @@ struct StackedCardView: View {
                     lineWidth: 1
                 )
         )
-        .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+        .droppyCardShadow()
         .scaleEffect(scale)
         .offset(x: offset, y: -offset)
         .rotationEffect(.degrees(rotation))
@@ -3016,7 +3018,7 @@ struct URLPreviewCard: View {
                         }
                     }
                     .background(Color.black.opacity(0.2))
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
                     
                     MetadataInfoStrip(
                         item: item,
@@ -3075,7 +3077,7 @@ struct MetadataInfoStrip: View {
                     }
                 }
                 .frame(width: 32, height: 32)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
                 
                 VStack(alignment: .leading, spacing: 4) {
                     if let title = title {
@@ -3116,9 +3118,9 @@ struct MetadataInfoStrip: View {
             }
             .padding(.top, 4)
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
         .background(Color.white.opacity(0.03))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
     }
 }
 
@@ -3133,12 +3135,12 @@ struct URLTypeBadge: View {
             .padding(.vertical, 6)
             .background(.ultraThinMaterial)
             .background(Color.black.opacity(0.4))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                     .stroke(Color.white.opacity(0.25), lineWidth: 1)
             )
-            .shadow(color: .black.opacity(0.25), radius: 4, x: 0, y: 2)
+            .droppyCardShadow()
     }
 }
 
@@ -3225,7 +3227,7 @@ struct TagFilterPopover: View {
                 Text("No tags yet")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
-                    .padding(12)
+                    .padding(DroppySpacing.md)
             }
         }
         .frame(width: 200)
@@ -3297,11 +3299,11 @@ struct TagManagementSheet: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
                 .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                         .fill(Color.black.opacity(0.3))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                         .stroke(
                             isTextFieldFocused ? selectedColor.opacity(0.8) : Color.white.opacity(0.2),
                             style: StrokeStyle(
@@ -3331,9 +3333,9 @@ struct TagManagementSheet: View {
                                     .opacity(selectedColorIndex == index ? 1 : 0)
                             )
                             .scaleEffect(selectedColorIndex == index ? 1.1 : 1.0)
-                            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: selectedColorIndex)
+                            .animation(DroppyAnimation.hover, value: selectedColorIndex)
                             .onTapGesture {
-                                withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+                                withAnimation(DroppyAnimation.hover) {
                                     selectedColorIndex = index
                                 }
                             }
@@ -3424,7 +3426,7 @@ struct TagManagementSheet: View {
                                 tags: manager.tags,
                                 draggingTagId: $draggingTagId,
                                 onReorder: { from, to in
-                                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                    withAnimation(DroppyAnimation.hover) {
                                         manager.reorderTags(from: from, to: to)
                                     }
                                 }
@@ -3449,11 +3451,11 @@ struct TagManagementSheet: View {
                 }
                 .buttonStyle(DroppyAccentButtonStyle(color: .cyan, size: .small))
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
         }
         .frame(width: 340, height: 630)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color(white: 0.1)))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
     }
     
     private func addTag() {
@@ -3497,9 +3499,9 @@ struct TagRowView: View {
                                     .stroke(Color.white, lineWidth: editingColorIndex == index ? 1.5 : 0)
                             )
                             .scaleEffect(editingColorIndex == index ? 1.15 : 1.0)
-                            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: editingColorIndex)
+                            .animation(DroppyAnimation.hoverBouncy, value: editingColorIndex)
                             .onTapGesture {
-                                withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                                withAnimation(DroppyAnimation.hoverBouncy) {
                                     editingColorIndex = index
                                 }
                             }

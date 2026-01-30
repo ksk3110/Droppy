@@ -35,7 +35,7 @@ struct UpdateHUDView: View {
         hudContent
             .onAppear {
                 // Trigger bounce animation
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) {
+                withAnimation(DroppyAnimation.scalePop) {
                     animationTrigger = true
                 }
             }

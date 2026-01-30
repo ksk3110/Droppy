@@ -318,14 +318,14 @@ private struct DroppyToggleButtonContent: View {
                     .strokeBorder(borderColor, lineWidth: isOn ? 2 : 1)
             )
             .scaleEffect(configuration.isPressed ? 0.95 : (isHovering ? 1.02 : 1.0))
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+            .animation(DroppyAnimation.hover, value: configuration.isPressed)
             .animation(.easeOut(duration: 0.15), value: isHovering)
             .onHover { hovering in
                 isHovering = hovering
             }
             .onChange(of: isOn) { _, newValue in
                 if newValue {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) {
+                    withAnimation(DroppyAnimation.transition) {
                         iconBounce = true
                     }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
@@ -413,7 +413,7 @@ private struct DroppyCardButtonContent: View {
     var body: some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.98 : (isHovering ? 1.01 : 1.0))
-            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+            .animation(DroppyAnimation.hover, value: configuration.isPressed)
             .animation(.easeOut(duration: 0.2), value: isHovering)
             .onHover { hovering in
                 isHovering = hovering

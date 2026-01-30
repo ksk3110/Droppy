@@ -189,9 +189,9 @@ struct VoiceRecordingOverlayView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(Color.red.opacity(0.8))
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                         .stroke(Color.white.opacity(0.08), lineWidth: 1)
                 )
             }
@@ -210,9 +210,9 @@ struct VoiceRecordingOverlayView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
             .background(AdaptiveColors.buttonBackgroundAuto)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                     .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
             
@@ -249,11 +249,11 @@ struct VoiceRecordingOverlayView: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
                     .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                             .fill(Color.blue.opacity(0.2))
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                             .stroke(Color.white.opacity(0.08), lineWidth: 1)
                     )
             }
@@ -269,13 +269,13 @@ struct VoiceRecordingOverlayView: View {
                 // Progress bar (matching download style)
                 ZStack(alignment: .leading) {
                     // Background track
-                    RoundedRectangle(cornerRadius: 6)
+                    RoundedRectangle(cornerRadius: DroppyRadius.sm)
                         .fill(Color.blue.opacity(0.3))
                         .frame(height: 8)
                     
                     // Progress fill (solid blue like download)
                     GeometryReader { geo in
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: DroppyRadius.sm)
                             .fill(Color.blue)
                             .frame(width: geo.size.width * max(0.02, manager.transcriptionProgress))
                             .animation(DroppyAnimation.viewChange, value: manager.transcriptionProgress)
@@ -289,12 +289,12 @@ struct VoiceRecordingOverlayView: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
             .frame(maxWidth: .infinity)
             .background(AdaptiveColors.buttonBackgroundAuto)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                     .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
             

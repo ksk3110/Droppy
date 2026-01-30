@@ -46,7 +46,7 @@ struct TerminalNotchView: View {
             // Sweeping green pulse on command execution (left to right)
             if manager.showPulse {
                 // Sweeping trim animation
-                RoundedRectangle(cornerRadius: 24)
+                RoundedRectangle(cornerRadius: DroppyRadius.xxl + 2)
                     .trim(from: max(0, manager.pulsePosition - 0.15), to: min(1, manager.pulsePosition))
                     .stroke(
                         LinearGradient(
@@ -81,7 +81,7 @@ struct TerminalNotchView: View {
             // Dotted outline container with marching ants animation (like empty shelf)
             // NOTE: Using strokeBorder instead of stroke to draw INSIDE the shape bounds,
             // preventing the stroke from being clipped at content edges
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.xxl + 2, style: .continuous)
                 .strokeBorder(
                     Color.green.opacity(0.4),
                     style: StrokeStyle(
@@ -152,12 +152,12 @@ struct TerminalNotchView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
                 .background(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: DroppyRadius.medium)
                         .fill(Color.white.opacity(0.05))
                 )
             }
             // Content padding inside the dotted outline
-            .padding(24)
+            .padding(DroppySpacing.xxl)
         }
         // Use SSOT for consistent padding across all expanded views
         .padding(contentPadding)
@@ -294,7 +294,7 @@ struct TerminalNotchView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(12)
+                    .padding(DroppySpacing.md)
                 }
                 
                 // Input line
@@ -333,14 +333,14 @@ struct TerminalNotchView: View {
     // MARK: - Background
     
     private var terminalBackground: some View {
-        RoundedRectangle(cornerRadius: 16, style: .continuous)
+        RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
             .fill(.ultraThinMaterial)
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                     .fill(Color.black.opacity(0.7))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                     .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
             )
     }

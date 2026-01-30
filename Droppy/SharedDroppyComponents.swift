@@ -41,7 +41,7 @@ struct MagicProcessingOverlay: View {
     var body: some View {
         ZStack {
             // Semi-transparent background
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                 .fill(.black.opacity(0.5))
             
             // Subtle rotating circle

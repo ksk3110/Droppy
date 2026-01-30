@@ -18,22 +18,22 @@ struct TerminalNotchButton: View {
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 26, height: 26)
-                .padding(10)
+                .padding(DroppySpacing.smd)
                 .background(buttonBackground)
         }
-        .buttonStyle(DroppyCardButtonStyle(cornerRadius: 18))
+        .buttonStyle(DroppyCardButtonStyle(cornerRadius: DroppyRadius.lx))
         .help("Toggle Terminal (Ctrl + `)")
     }
     
     private var buttonBackground: some View {
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
+        RoundedRectangle(cornerRadius: DroppyRadius.lx, style: .continuous)
             .fill(.ultraThinMaterial)
             .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.lx, style: .continuous)
                     .fill(Color.black.opacity(0.4))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.lx, style: .continuous)
                     .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
             )
             .shadow(color: .black.opacity(0.4), radius: 6, y: 3)

@@ -134,6 +134,10 @@ enum DroppyAnimation {
     /// Use for: favorites, flags, important state changes.
     static let stateEmphasis = Animation.spring(response: 0.35, dampingFraction: 0.6)
     
+    /// Icon bounce animation - playful, attention-grabbing.
+    /// Use for: toggle icon animations, success feedback.
+    static let bounce = Animation.spring(response: 0.2, dampingFraction: 0.4)
+    
     // MARK: - Layout Animations
     
     /// List reordering animation - smooth, avoids jank.
@@ -201,9 +205,48 @@ enum DroppyAnimation {
     /// Smooth ease-in-out curve.
     static let easeInOut = Animation.spring(response: 0.3, dampingFraction: 0.7)
     
+    // MARK: - Media Player Animations
     
-    /// Quick linear (for progress indicators).
-    static let linear = Animation.linear(duration: 0.1)
+    /// Media button press - quick, snappy response for play/pause/skip.
+    /// Exact match: response: 0.16, dampingFraction: 0.72
+    static let mediaPress = Animation.spring(response: 0.16, dampingFraction: 0.72)
+    
+    /// Media button release - smooth settle after press.
+    /// Exact match: response: 0.26, dampingFraction: 0.8
+    static let mediaRelease = Animation.spring(response: 0.26, dampingFraction: 0.8)
+    
+    /// Media emphasis - bouncy attention-grabbing effect.
+    /// Exact match: response: 0.18, dampingFraction: 0.52
+    static let mediaEmphasis = Animation.spring(response: 0.18, dampingFraction: 0.52)
+    
+    /// Media settle - smooth recovery after emphasis.
+    /// Exact match: response: 0.32, dampingFraction: 0.76
+    static let mediaSettle = Animation.spring(response: 0.32, dampingFraction: 0.76)
+    
+    // MARK: - Onboarding Animations
+    
+    /// Onboarding bounce - playful, attention-grabbing.
+    /// Exact match: response: 0.2, dampingFraction: 0.45
+    static let onboardingBounce = Animation.spring(response: 0.2, dampingFraction: 0.45)
+    
+    /// Onboarding settle - comfortable recovery.
+    /// Exact match: response: 0.35, dampingFraction: 0.55
+    static let onboardingSettle = Animation.spring(response: 0.35, dampingFraction: 0.55)
+    
+    /// Onboarding pop - extra bouncy for emphasis.
+    /// Exact match: response: 0.2, dampingFraction: 0.4
+    static let onboardingPop = Animation.spring(response: 0.2, dampingFraction: 0.4)
+    
+    // MARK: - Basket/Shelf Animations
+    
+    /// Basket transition - smooth slot count and layout changes.
+    /// Exact match: response: 0.4, dampingFraction: 0.8
+    static let basketTransition = Animation.spring(response: 0.4, dampingFraction: 0.8)
+    
+    /// Item insertion - slightly quicker than transition.
+    /// Exact match: response: 0.35, dampingFraction: 0.7
+    static let itemInsertion = Animation.spring(response: 0.35, dampingFraction: 0.7)
+    
     
     // MARK: - Notch View Transition
     

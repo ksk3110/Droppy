@@ -55,7 +55,7 @@ struct HUDSlider: View {
         }
         .frame(height: 20)
         // PREMIUM: Smooth width animation when text changes size (e.g. 9→10, 99→100)
-        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: Int(value * 100))
+        .animation(DroppyAnimation.state, value: Int(value * 100))
         // PREMIUM: Delayed mute color transition - bar drains first, then color changes
         .onChange(of: isMuted) { _, newMuted in
             if newMuted {
@@ -131,7 +131,7 @@ struct HUDSlider: View {
             .frame(height: trackHeight)
             .frame(maxHeight: .infinity, alignment: .center)
             .scaleEffect(y: isExpanded ? 1.08 : 1.0, anchor: .center)
-            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isExpanded)
+            .animation(DroppyAnimation.hover, value: isExpanded)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
@@ -172,7 +172,7 @@ private struct AnimatedPercentageText: View {
             .foregroundStyle(.white.opacity(0.85))
             .monospacedDigit()
             .contentTransition(.numericText(value: Double(percentage)))
-            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: percentage)
+            .animation(DroppyAnimation.state, value: percentage)
     }
 }
 

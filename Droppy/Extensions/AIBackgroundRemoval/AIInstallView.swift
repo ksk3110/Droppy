@@ -93,7 +93,7 @@ struct AIInstallView: View {
         .frame(width: 450)
         .fixedSize(horizontal: true, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
         .sheet(isPresented: $showReviewsSheet) {
             ExtensionReviewsSheet(extensionType: .aiBackgroundRemoval)
         }
@@ -157,7 +157,7 @@ struct AIInstallView: View {
                     Image(systemName: "brain.head.profile").font(.system(size: 32)).foregroundStyle(.blue)
                 }
                 .frame(width: 64, height: 64)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
                 .shadow(color: manager.isInstalled ? .green.opacity(0.4) : .blue.opacity(0.3), radius: 8, y: 4)
                 .scaleEffect(manager.isInstalled ? 1.05 : 1.0)
                 .animation(DroppyAnimation.stateEmphasis, value: manager.isInstalled)
@@ -274,9 +274,9 @@ struct AIInstallView: View {
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                             .strokeBorder(AdaptiveColors.subtleBorderAuto, lineWidth: 1)
                     )
                     .padding(.top, 8)
@@ -365,7 +365,7 @@ struct AIInstallView: View {
             // For AI, Disable also uninstalls the package
             DisableExtensionButton(extensionType: .aiBackgroundRemoval)
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
         .animation(DroppyAnimation.transition, value: manager.isInstalled)
     }
 }

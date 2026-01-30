@@ -38,7 +38,7 @@ struct TargetSizeDialogView: View {
                 
                 Spacer()
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
             
             Divider()
                 .padding(.horizontal, 16)
@@ -69,9 +69,9 @@ struct TargetSizeDialogView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(AdaptiveColors.buttonBackgroundAuto)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                                 .stroke(
                                     Color.accentColor.opacity(0.8),
                                     style: StrokeStyle(
@@ -89,7 +89,7 @@ struct TargetSizeDialogView: View {
                     }
                 }
             }
-            .padding(14)
+            .padding(DroppySpacing.mdl)
             
             Divider()
                 .padding(.horizontal, 16)
@@ -117,7 +117,7 @@ struct TargetSizeDialogView: View {
                 .disabled(targetBytes == nil || targetBytes! >= currentSize)
                 .opacity(targetBytes == nil || targetBytes! >= currentSize ? 0.5 : 1.0)
             }
-            .padding(14)
+            .padding(DroppySpacing.mdl)
         }
         .frame(width: 380)
         .fixedSize(horizontal: false, vertical: true)

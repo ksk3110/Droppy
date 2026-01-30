@@ -25,7 +25,7 @@ struct QuickshareManagerView: View {
             .frame(width: 380)
             .fixedSize(horizontal: true, vertical: true)
             .background(backgroundStyle)
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
             .alert("Delete from Server?", isPresented: deleteAlertBinding) {
                 Button("Cancel", role: .cancel) {
                     showDeleteConfirmation = nil
@@ -108,9 +108,9 @@ struct QuickshareManagerView: View {
             .background(Color.white.opacity(0.02))
         }
         .background(Color.white.opacity(0.03))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                 .stroke(Color.white.opacity(0.05), lineWidth: 1)
         )
         .padding(.horizontal, 24)
@@ -153,7 +153,7 @@ struct QuickshareManagerView: View {
             }
             .buttonStyle(DroppyAccentButtonStyle(color: .blue, size: .small))
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
     }
     
     @ViewBuilder
@@ -298,12 +298,12 @@ struct QuickshareItemRow: View {
             // Stacked appearance for multi-file zips
             if item.itemCount > 1 {
                 // Back cards (offset to show stacking) - squircle
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.sm, style: .continuous)
                     .fill(Color.white.opacity(0.05))
                     .frame(width: 28, height: 28)
                     .offset(x: 3, y: -3)
                 
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.sm, style: .continuous)
                     .fill(Color.white.opacity(0.08))
                     .frame(width: 28, height: 28)
                     .offset(x: 1.5, y: -1.5)
@@ -315,11 +315,11 @@ struct QuickshareItemRow: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(width: 32, height: 32)
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.sm, style: .continuous))
             } else {
                 // Fallback to system icon - squircle
                 ZStack {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.sm, style: .continuous)
                         .fill(Color.white.opacity(0.1))
                         .frame(width: 32, height: 32)
                     
@@ -333,7 +333,7 @@ struct QuickshareItemRow: View {
     }
     
     private var rowBackground: some View {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
+        RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
             .fill(isCopied
                   ? Color.green.opacity(isHovering ? 0.4 : 0.3)
                   : Color.white.opacity(isHovering ? 0.18 : 0.12))

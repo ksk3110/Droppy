@@ -179,7 +179,7 @@ struct BasketItemView: View {
                                         .aspectRatio(contentMode: .fill)
                                 } else {
                                     // Native macOS icon (folders, zip, dmg, etc.) - matches grid view
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous)
                                         .fill(Color.white.opacity(0.08))
                                         .overlay(
                                             Image(nsImage: NSWorkspace.shared.icon(forFile: item.url.path))
@@ -190,11 +190,11 @@ struct BasketItemView: View {
                                 }
                             }
                             .frame(width: 36, height: 36)
-                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous))
                             
                             // Activity indicator overlay
                             if isConverting || isCompressing || isRemovingBackground || isExtractingText || isCreatingZIP {
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous)
                                     .fill(.ultraThinMaterial)
                                     .frame(width: 36, height: 36)
                                     .overlay(
@@ -206,7 +206,7 @@ struct BasketItemView: View {
                             
                             // Poof overlay
                             if isPoofing {
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous)
                                     .fill(Color.green.opacity(0.8))
                                     .frame(width: 36, height: 36)
                                     .overlay(
@@ -243,7 +243,7 @@ struct BasketItemView: View {
                                 .frame(height: 20)
                                 .padding(.horizontal, 4)
                                 .padding(.vertical, 2)
-                                .background(RoundedRectangle(cornerRadius: 4).fill(Color.white.opacity(0.15)))
+                                .background(RoundedRectangle(cornerRadius: DroppyRadius.xs).fill(Color.white.opacity(0.15)))
                                 .onAppear {
                                     renamingText = item.url.deletingPathExtension().lastPathComponent
                                 }
@@ -315,7 +315,7 @@ struct BasketItemView: View {
                     // CRITICAL: Fixed width inside DraggableArea to constrain text (matches ClipboardItemRow pattern)
                     .frame(width: listRowWidth)
                     .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                             .fill(isSelected 
                                   ? Color.blue.opacity(isHovering ? 1.0 : 0.8)
                                   : Color.white.opacity(isHovering ? 0.18 : 0.12))
@@ -345,7 +345,7 @@ struct BasketItemView: View {
                     .overlay(alignment: .center) {
                         if isShakeAnimating {
                             ZStack {
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                                     .fill(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
                                     .frame(width: 44, height: 44)
                                     .shadow(radius: 4)
@@ -378,7 +378,7 @@ struct BasketItemView: View {
             .overlay {
                 // Visual feedback when dropping files onto pinned folder
                 if isDropTargeted && item.isPinned {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                         .stroke(Color.yellow, lineWidth: 3)
                         .frame(width: 60, height: 60)
                         .offset(y: -12)
@@ -1321,7 +1321,7 @@ private struct BasketItemContent: View {
                         Image(nsImage: thumbnail)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xs, style: .continuous))
                     } else {
                         // Native icon (folders, dmg, zip, etc): keep original shape
                         Image(nsImage: NSWorkspace.shared.icon(forFile: item.url.path))
@@ -1334,7 +1334,7 @@ private struct BasketItemContent: View {
                 // Subtle gray highlight when selected (like Finder)
                 .background {
                     if isSelected {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                             .fill(Color.white.opacity(0.15))
                             .padding(-4)
                     }
@@ -1353,7 +1353,7 @@ private struct BasketItemContent: View {
                     if isRemovingBackground || state.processingItemIds.contains(item.id) {
                         MagicProcessingOverlay()
                             .frame(width: 48, height: 48)
-                            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xs, style: .continuous))
                             .transition(.opacity.animation(DroppyAnimation.viewChange))
                     }
                 }
@@ -1404,7 +1404,7 @@ private struct BasketItemContent: View {
                 .padding(.vertical, 2)
                 .background {
                     if isSelected {
-                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.xs, style: .continuous)
                             .fill(Color.accentColor)
                     }
                 }
@@ -1455,12 +1455,12 @@ private struct RenameTextField: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                 .fill(Color.black.opacity(0.3))
         )
         // Static dotted blue outline (no animation to save CPU)
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                 .stroke(
                     Color.accentColor.opacity(0.8),
                     style: StrokeStyle(

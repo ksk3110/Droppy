@@ -45,12 +45,12 @@ struct QuickShareSuccessView: View {
                 Color.black
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xxl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.xxl, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
         )
-        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isUploading)
+        .animation(DroppyAnimation.basketTransition, value: isUploading)
     }
     
     private var isUploading: Bool {
@@ -130,7 +130,7 @@ struct QuickShareSuccessView: View {
                 .buttonStyle(DroppyPillButtonStyle(size: .small))
             }
             .fixedSize(horizontal: false, vertical: true)
-            .padding(16)
+            .padding(DroppySpacing.lg)
         }
     }
     
@@ -244,7 +244,7 @@ struct QuickShareSuccessView: View {
                 .buttonStyle(DroppyAccentButtonStyle(color: .green, size: .small))
             }
             .fixedSize(horizontal: false, vertical: true)
-            .padding(16)
+            .padding(DroppySpacing.lg)
         }
     }
     
@@ -290,7 +290,7 @@ struct QuickShareSuccessView: View {
                 .buttonStyle(DroppyPillButtonStyle(size: .small))
             }
             .fixedSize(horizontal: false, vertical: true)
-            .padding(16)
+            .padding(DroppySpacing.lg)
         }
     }
     
@@ -405,7 +405,7 @@ final class QuickShareSuccessWindowController: NSObject, NSWindowDelegate {
         }
         
         DispatchQueue.main.async {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            withAnimation(DroppyAnimation.basketTransition) {
                 controller.windowState.uploadState = .success(shareURL: shareURL)
             }
         }
@@ -416,7 +416,7 @@ final class QuickShareSuccessWindowController: NSObject, NSWindowDelegate {
         guard let controller = shared else { return }
         
         DispatchQueue.main.async {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            withAnimation(DroppyAnimation.basketTransition) {
                 controller.windowState.uploadState = .failed(error: error)
             }
         }

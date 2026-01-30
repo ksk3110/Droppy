@@ -23,26 +23,26 @@ struct ShelfQuickActionsBar: View {
         HStack(spacing: spacing) {
             ShelfQuickActionButton(actionType: .airdrop, useTransparent: useTransparent, shareAction: shareViaAirDrop)
                 .transition(.asymmetric(
-                    insertion: .scale(scale: 0.5).combined(with: .opacity).animation(.spring(response: 0.35, dampingFraction: 0.7).delay(0.0)),
+                    insertion: .scale(scale: 0.5).combined(with: .opacity).animation(DroppyAnimation.itemInsertion),
                     removal: .scale(scale: 0.5).combined(with: .opacity).animation(.easeOut(duration: 0.15))
                 ))
             ShelfQuickActionButton(actionType: .messages, useTransparent: useTransparent, shareAction: shareViaMessages)
                 .transition(.asymmetric(
-                    insertion: .scale(scale: 0.5).combined(with: .opacity).animation(.spring(response: 0.35, dampingFraction: 0.7).delay(0.03)),
+                    insertion: .scale(scale: 0.5).combined(with: .opacity).animation(DroppyAnimation.itemInsertion.delay(0.03)),
                     removal: .scale(scale: 0.5).combined(with: .opacity).animation(.easeOut(duration: 0.15))
                 ))
             ShelfQuickActionButton(actionType: .mail, useTransparent: useTransparent, shareAction: shareViaMail)
                 .transition(.asymmetric(
-                    insertion: .scale(scale: 0.5).combined(with: .opacity).animation(.spring(response: 0.35, dampingFraction: 0.7).delay(0.06)),
+                    insertion: .scale(scale: 0.5).combined(with: .opacity).animation(DroppyAnimation.itemInsertion.delay(0.06)),
                     removal: .scale(scale: 0.5).combined(with: .opacity).animation(.easeOut(duration: 0.15))
                 ))
             ShelfQuickActionButton(actionType: .quickshare, useTransparent: useTransparent, shareAction: quickShareTo0x0)
                 .transition(.asymmetric(
-                    insertion: .scale(scale: 0.5).combined(with: .opacity).animation(.spring(response: 0.35, dampingFraction: 0.7).delay(0.09)),
+                    insertion: .scale(scale: 0.5).combined(with: .opacity).animation(DroppyAnimation.itemInsertion.delay(0.09)),
                     removal: .scale(scale: 0.5).combined(with: .opacity).animation(.easeOut(duration: 0.15))
                 ))
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.75), value: items.count)
+        .animation(DroppyAnimation.state, value: items.count)
     }
     
     // MARK: - Share Actions
@@ -104,8 +104,8 @@ struct ShelfQuickActionButton: View {
                     .foregroundStyle(.white.opacity(0.85))
             )
             .scaleEffect(isTargeted ? 1.18 : (isHovering ? 1.05 : 1.0))
-            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isTargeted)
-            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isHovering)
+            .animation(DroppyAnimation.hoverBouncy, value: isTargeted)
+            .animation(DroppyAnimation.hoverBouncy, value: isHovering)
             .onHover { hovering in
                 isHovering = hovering
                 // Update shared state for shelf explanation overlay

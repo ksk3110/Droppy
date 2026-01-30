@@ -83,7 +83,7 @@ enum ExtensionType: String, CaseIterable, Identifiable {
                     .foregroundStyle(def.iconPlaceholderColor)
             }
             .frame(width: 64, height: 64)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
         } else {
             Image(systemName: "puzzlepiece.extension")
                 .font(.system(size: 32))

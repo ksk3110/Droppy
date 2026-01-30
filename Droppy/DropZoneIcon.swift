@@ -100,6 +100,6 @@ struct DropZoneIcon: View {
                 .font(.caption)
         }
     }
-    .padding(40)
+    .padding(DroppySpacing.huge)
     .background(Color.black)
 }

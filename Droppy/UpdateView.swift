@@ -58,9 +58,9 @@ struct UpdateView: View {
                 .background(Color.white.opacity(0.02))
             }
             .background(Color.white.opacity(0.03))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                     .stroke(Color.white.opacity(0.05), lineWidth: 1)
             )
             .padding(.horizontal, 24)
@@ -101,7 +101,7 @@ struct UpdateView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(20)
+                    .padding(DroppySpacing.xl)
                 }
                 .frame(maxHeight: 200)
             }
@@ -144,11 +144,11 @@ struct UpdateView: View {
                     .buttonStyle(DroppyAccentButtonStyle(color: .blue, size: .small))
                 }
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
         }
         .frame(width: 380)
         .fixedSize(horizontal: true, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
     }
 }

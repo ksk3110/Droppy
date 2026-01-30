@@ -100,7 +100,7 @@ struct CaffeineNotchView: View {
     
     private func toggleCaffeine() {
         HapticFeedback.drop()
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+        withAnimation(DroppyAnimation.hover) {
             if manager.isActive {
                 manager.deactivate()
             } else {
@@ -112,7 +112,7 @@ struct CaffeineNotchView: View {
     
     private func selectDuration(_ duration: CaffeineDuration) {
         HapticFeedback.tap()
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+        withAnimation(DroppyAnimation.hover) {
             let isActive = manager.isActive && manager.currentDuration == duration
             if isActive {
                 manager.deactivate()
@@ -150,7 +150,7 @@ struct CaffeineTimerButton: View {
                 )
                 .scaleEffect(isHovering ? 1.02 : 1.0)
                 .animation(DroppyAnimation.hoverQuick, value: isHovering)
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isActive)
+                .animation(DroppyAnimation.hover, value: isActive)
         }
         .buttonStyle(.plain)
         .onHover { hovering in

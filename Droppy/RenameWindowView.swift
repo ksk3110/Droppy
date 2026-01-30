@@ -23,11 +23,11 @@ struct RenameWindowView: View {
                     }
                 )
                 .font(.system(size: 14, weight: .medium))
-                .padding(12)
+                .padding(DroppySpacing.md)
                 .background(Color.black.opacity(0.3))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                         .stroke(
                             Color.accentColor,
                             style: StrokeStyle(
@@ -63,14 +63,14 @@ struct RenameWindowView: View {
                 }
                 .padding(.top, 16)
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
         }
         .frame(width: 300)
         .fixedSize(horizontal: false, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous)
                 .stroke(AdaptiveColors.subtleBorderAuto, lineWidth: 1)
         )
     }

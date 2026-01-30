@@ -161,7 +161,7 @@ struct ExtensionsShopView: View {
                 }
             }
         }
-        .padding(4) // Allow room for hover scale animation
+        .padding(DroppySpacing.xs) // Allow room for hover scale animation
     }
     
     // MARK: - Category Swiper
@@ -238,9 +238,9 @@ struct ExtensionsShopView: View {
                 }
             }
             .background(Color.white.opacity(0.03))
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                     .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
         }
@@ -610,11 +610,11 @@ struct FeaturedExtensionCard<DetailView: View>: View {
                                 .padding(.horizontal, 20)
                                 .padding(.vertical, 8)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                                         .fill(accentColor.opacity(0.4))
                                 )
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                                         .stroke(Color.white.opacity(0.1), lineWidth: 1)
                                 )
                             
@@ -638,26 +638,26 @@ struct FeaturedExtensionCard<DetailView: View>: View {
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                     } placeholder: {
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: DroppyRadius.large)
                             .fill(Color.white.opacity(0.1))
                     }
                     .frame(width: 80, height: 80)
-                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .shadow(color: .black.opacity(0.4), radius: 8, x: 0, y: 4)
+                    .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.lx, style: .continuous))
+                    .droppyCardShadow(opacity: 0.4)
                 }
-                .padding(20)
+                .padding(DroppySpacing.xl)
             }
             .frame(height: 160)
             .background(Color.black)
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous)
                     .stroke(Color.white.opacity(0.1), lineWidth: 1)
             )
             .scaleEffect(isHovering ? 1.01 : 1.0)
             .animation(DroppyAnimation.hoverBouncy, value: isHovering)
         }
-        .buttonStyle(DroppyCardButtonStyle(cornerRadius: 20))
+        .buttonStyle(DroppyCardButtonStyle(cornerRadius: DroppyRadius.xl))
         .onHover { hovering in
             isHovering = hovering
         }
@@ -774,26 +774,26 @@ struct FeaturedExtensionCardWide<DetailView: View>: View {
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                     } placeholder: {
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: DroppyRadius.large)
                             .fill(Color.white.opacity(0.1))
                     }
                     .frame(width: 64, height: 64)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .shadow(color: .black.opacity(0.4), radius: 8, x: 0, y: 4)
+                    .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
+                    .droppyCardShadow(opacity: 0.4)
                 }
-                .padding(20)
+                .padding(DroppySpacing.xl)
             }
             .frame(height: 120)
             .background(Color.black)
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.lx, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.lx, style: .continuous)
                     .stroke(Color.white.opacity(0.1), lineWidth: 1)
             )
             .scaleEffect(isHovering ? 1.01 : 1.0)
             .animation(DroppyAnimation.hoverBouncy, value: isHovering)
         }
-        .buttonStyle(DroppyCardButtonStyle(cornerRadius: 18))
+        .buttonStyle(DroppyCardButtonStyle(cornerRadius: DroppyRadius.lx))
         .onHover { hovering in
             isHovering = hovering
         }
@@ -873,8 +873,8 @@ struct FeaturedExtensionCardCompact<DetailView: View>: View {
                             Circle().fill(Color.white.opacity(0.1))
                         }
                         .frame(width: 36, height: 36)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+                        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous))
+                        .droppyCardShadow(opacity: 0.3)
                     }
                     
                     Spacer()
@@ -915,7 +915,7 @@ struct FeaturedExtensionCardCompact<DetailView: View>: View {
                         .foregroundStyle(.white.opacity(0.6))
                         .lineLimit(1)
                 }
-                .padding(14)
+                .padding(DroppySpacing.mdl)
                 
                 // Category ribbon badge in top-left corner (only for non-community categories)
                 if !category.isEmpty && category != "COMMUNITY" {
@@ -930,25 +930,25 @@ struct FeaturedExtensionCardCompact<DetailView: View>: View {
                                     Capsule()
                                         .fill(accentColor)
                                 )
-                                .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+                                .droppyCardShadow(opacity: 0.3)
                             Spacer()
                         }
                         Spacer()
                     }
-                    .padding(10)
+                    .padding(DroppySpacing.smd)
                 }
             }
             .frame(maxWidth: .infinity, minHeight: 110)
             .background(Color.black)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                     .stroke(Color.white.opacity(0.1), lineWidth: 1)
             )
             .scaleEffect(isHovering ? 1.02 : 1.0)
             .animation(DroppyAnimation.hoverBouncy, value: isHovering)
         }
-        .buttonStyle(DroppyCardButtonStyle(cornerRadius: 16))
+        .buttonStyle(DroppyCardButtonStyle(cornerRadius: DroppyRadius.large))
         .onHover { hovering in
             isHovering = hovering
         }
@@ -983,11 +983,11 @@ struct CompactExtensionRow<DetailView: View>: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                 } placeholder: {
-                    RoundedRectangle(cornerRadius: 10)
+                    RoundedRectangle(cornerRadius: DroppyRadius.ms)
                         .fill(Color.white.opacity(0.1))
                 }
                 .frame(width: 44, height: 44)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous))
                 
                 // Title + Subtitle
                 VStack(alignment: .leading, spacing: 2) {
@@ -1110,11 +1110,11 @@ struct ExtensionCardStyle: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            .padding(16)
+            .padding(DroppySpacing.lg)
             .background(Color.white.opacity(0.05))
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                     .stroke(borderColor, lineWidth: 1)
             )
             .scaleEffect(isHovering ? 1.02 : 1.0)
@@ -1136,11 +1136,11 @@ struct AIExtensionCardStyle: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            .padding(16)
+            .padding(DroppySpacing.lg)
             .background(Color.white.opacity(0.05))
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                     .stroke(
                         isHovering
                             ? AnyShapeStyle(LinearGradient(
@@ -1235,7 +1235,7 @@ struct AIBackgroundRemovalSettingsRow: View {
                     Image(systemName: "brain.head.profile").font(.system(size: 24)).foregroundStyle(.blue)
                 }
                 .frame(width: 44, height: 44)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous))
                 
                 Spacer()
                 

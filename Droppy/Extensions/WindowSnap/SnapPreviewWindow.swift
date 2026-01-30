@@ -83,12 +83,12 @@ final class SnapPreviewWindow: NSWindow {
 /// SwiftUI view for the preview rectangle
 struct SnapPreviewView: View {
     var body: some View {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
+        RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
             .fill(Color.blue.opacity(0.15))
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                     .strokeBorder(Color.blue.opacity(0.5), lineWidth: 2)
             )
-            .padding(4) // Small inset from window edge
+            .padding(DroppySpacing.xs) // Small inset from window edge
     }
 }

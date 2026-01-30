@@ -26,7 +26,8 @@ enum DroppyQuickshare {
         if urls.count > 1 {
             displayFilename = "Droppy Share (\(urls.count) items).zip"
         } else {
-            displayFilename = urls.first!.lastPathComponent
+            guard let firstURL = urls.first else { return }
+            displayFilename = firstURL.lastPathComponent
         }
         
         // Show progress window IMMEDIATELY so user knows upload is in progress
@@ -35,7 +36,7 @@ enum DroppyQuickshare {
         }
         
         DispatchQueue.global(qos: .userInitiated).async {
-            var uploadURL = urls.first!
+            guard var uploadURL = urls.first else { return }
             var isTemporaryZip = false
             var finalDisplayFilename = displayFilename
             
@@ -61,7 +62,7 @@ enum DroppyQuickshare {
             let result = uploadTo0x0(fileURL: uploadURL)
             
             // Generate thumbnail from original file(s) before cleanup
-            let thumbnailData = QuickshareItem.generateThumbnail(from: urls.first!)
+            let thumbnailData: Data? = urls.first.flatMap { QuickshareItem.generateThumbnail(from: $0) }
             let itemCount = urls.count
             
             // Clean up temporary zip if we created one

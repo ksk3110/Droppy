@@ -149,12 +149,12 @@ struct LiquidTextField: View {
                 .font(.system(size: 16))
                 .focused($isFocused)
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
         // Note: isConcave is set to true
         .liquidGlass(radius: 20, depth: 0.8, isConcave: true)
         .overlay(
             // The "Focus Ring" is now a soft glow, not a sharp line
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous)
                 .stroke(Color.accentColor.opacity(isFocused ? 0.5 : 0), lineWidth: 1.5)
                 .shadow(color: Color.accentColor.opacity(isFocused ? 0.4 : 0), radius: 8)
         )

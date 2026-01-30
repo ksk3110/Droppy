@@ -214,15 +214,18 @@ class DraggableAreaView<Content: View>: NSView, NSDraggingSource {
             // CRITICAL: Retain the image for the drag session duration
             self.dragSessionImages.append(validImage)
             
-            // Calculate frame centered on the view, with offset for multiple items
-            let center = CGPoint(x: self.hostingView.bounds.midX, y: self.hostingView.bounds.midY)
-            // Offset for stack effect (up and to the left/right)
-            // Using slight randomness or fixed step
-            let offset = CGFloat(index) * 3.0
+            // Calculate frame positioned bottom-right of cursor using SSOT constants
+            // The drag frame origin should position the image so it appears bottom-right of cursor
+            // We use the mouse down location to calculate where to place the frame
+            let mouseInView = self.convert(mouseDown.locationInWindow, from: nil)
+            let baseOffset = DroppySpacing.dragCursorOffset
+            let stackOffset = CGFloat(index) * DroppySpacing.dragStackOffset
             
+            // Position frame so image appears to the RIGHT and BELOW the cursor
+            // Origin = mouse position + offset (right/down in view coords)
             let origin = CGPoint(
-                x: center.x - (frameSize.width / 2) + offset,
-                y: center.y - (frameSize.height / 2) + offset
+                x: mouseInView.x + baseOffset + stackOffset,
+                y: mouseInView.y - frameSize.height - baseOffset - stackOffset
             )
             
             let dragFrame = NSRect(origin: origin, size: frameSize)

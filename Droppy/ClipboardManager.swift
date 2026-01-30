@@ -263,7 +263,11 @@ class ClipboardManager: ObservableObject {
     
     private lazy var persistenceURL: URL = {
         let paths = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
-        let appSupport = paths[0].appendingPathComponent("Droppy", isDirectory: true)
+        guard let basePath = paths.first else {
+            // Fallback - should never happen on macOS
+            return FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/Droppy/clipboard_history.json")
+        }
+        let appSupport = basePath.appendingPathComponent("Droppy", isDirectory: true)
         try? FileManager.default.createDirectory(at: appSupport, withIntermediateDirectories: true)
         return appSupport.appendingPathComponent("clipboard_history.json")
     }()
@@ -271,7 +275,8 @@ class ClipboardManager: ObservableObject {
     /// Directory for storing clipboard images on disk (lazy loading)
     lazy var imagesDirectory: URL = {
         let paths = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
-        let imagesDir = paths[0].appendingPathComponent("Droppy/images", isDirectory: true)
+        let basePath = paths.first ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support")
+        let imagesDir = basePath.appendingPathComponent("Droppy/images", isDirectory: true)
         try? FileManager.default.createDirectory(at: imagesDir, withIntermediateDirectories: true)
         return imagesDir
     }()
@@ -279,7 +284,8 @@ class ClipboardManager: ObservableObject {
     /// URL for storing clipboard tags
     private lazy var tagsURL: URL = {
         let paths = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
-        let appSupport = paths[0].appendingPathComponent("Droppy", isDirectory: true)
+        let basePath = paths.first ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support")
+        let appSupport = basePath.appendingPathComponent("Droppy", isDirectory: true)
         return appSupport.appendingPathComponent("clipboard_tags.json")
     }()
     

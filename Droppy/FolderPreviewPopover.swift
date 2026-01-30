@@ -105,7 +105,7 @@ struct FolderPreviewPopover: View {
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
                             .background(
-                                RoundedRectangle(cornerRadius: 6)
+                                RoundedRectangle(cornerRadius: DroppyRadius.sm)
                                     .fill(hoveredItem == item.name ? Color.accentColor.opacity(0.2) : Color.clear)
                             )
                             .contentShape(Rectangle())
@@ -160,10 +160,10 @@ struct FolderPreviewPopover: View {
             // Use standard material background
             Material.regular
         )
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
+        .droppyFloatingShadow()
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
         .onHover { hovering in

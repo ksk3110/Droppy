@@ -47,7 +47,7 @@ struct BasketStackPreviewView: View {
         }
         .frame(width: 130, height: 110)
         .clipped() // Prevent hover animation from affecting surrounding layout
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHovering)
+        .animation(DroppyAnimation.hover, value: isHovering)
         .onHover { hovering in
             if hovering != isHovering {
                 isHovering = hovering
@@ -59,7 +59,7 @@ struct BasketStackPreviewView: View {
         .onAppear {
             loadThumbnails()
             // Stagger the appearance animation
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.1)) {
+            withAnimation(DroppyAnimation.transition.delay(0.1)) {
                 hasAppeared = true
             }
         }
@@ -188,10 +188,10 @@ private struct DropoverCard: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(width: 80, height: 80)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
             } else if item.isDirectory {
                 // Folder icon fallback
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                     .fill(Color.white.opacity(0.1))
                     .frame(width: 80, height: 80)
                     .overlay(
@@ -201,7 +201,7 @@ private struct DropoverCard: View {
                     )
             } else {
                 // Generic file icon fallback
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                     .fill(Color.white.opacity(0.1))
                     .frame(width: 80, height: 80)
                     .overlay(
@@ -216,7 +216,7 @@ private struct DropoverCard: View {
         .rotationEffect(.degrees(rotation))
         .offset(offset)
         .scaleEffect(scale)
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: hasAppeared)
+        .animation(DroppyAnimation.transition, value: hasAppeared)
     }
 }
 
@@ -374,7 +374,7 @@ struct BasketDragHandle: View {
             Spacer()
             
             // Stacked preview placeholder
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: DroppyRadius.medium)
                 .fill(Color.white.opacity(0.1))
                 .frame(width: 100, height: 100)
             
@@ -383,13 +383,13 @@ struct BasketDragHandle: View {
             // File count label
             BasketFileCountLabel(items: [], isHovering: false) { }
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
         .frame(width: 220, height: 260)
         .background(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.jumbo, style: .continuous)
                 .fill(Color(red: 0.15, green: 0.18, blue: 0.45))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.jumbo, style: .continuous)
                         .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
                 )
         )

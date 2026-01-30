@@ -375,7 +375,7 @@ struct SettingsView: View {
                                 title: "Dynamic Island",
                                 isSelected: externalDisplayUseDynamicIsland,
                                 icon: {
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous)
                                         .fill(externalDisplayUseDynamicIsland ? Color.droppyAccent : Color.white.opacity(0.5))
                                         .frame(width: 50, height: 16)
                                 }
@@ -863,7 +863,7 @@ struct SettingsView: View {
                                 title: "Dynamic Island",
                                 isSelected: externalDisplayUseDynamicIsland,
                                 icon: {
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous)
                                         .fill(externalDisplayUseDynamicIsland ? Color.blue : Color.white.opacity(0.5))
                                         .frame(width: 50, height: 16)
                                 }
@@ -1864,7 +1864,7 @@ struct SettingsView: View {
                                 title: "Dynamic Island",
                                 isSelected: externalDisplayUseDynamicIsland,
                                 icon: {
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous)
                                         .fill(externalDisplayUseDynamicIsland ? Color.blue : Color.white.opacity(0.5))
                                         .frame(width: 50, height: 16)
                                 }
@@ -2049,7 +2049,7 @@ struct SettingsView: View {
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 64, height: 64)
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
                             .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
                     }
                     
@@ -2229,7 +2229,8 @@ struct SettingsView: View {
             
             // Backup clipboard persistence file if it exists
             let paths = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
-            let clipboardFile = paths[0].appendingPathComponent("Droppy/clipboard.json")
+            let basePath = paths.first ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support")
+            let clipboardFile = basePath.appendingPathComponent("Droppy/clipboard.json")
             if FileManager.default.fileExists(atPath: clipboardFile.path) {
                 let tempBackup = FileManager.default.temporaryDirectory.appendingPathComponent("clipboard_backup.json")
                 try? FileManager.default.copyItem(at: clipboardFile, to: tempBackup)
@@ -2259,7 +2260,8 @@ struct SettingsView: View {
         
         // STEP 4: Clear Application Support folder
         let paths = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
-        let appSupportDir = paths[0].appendingPathComponent("Droppy", isDirectory: true)
+        let baseAppSupport = paths.first ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support")
+        let appSupportDir = baseAppSupport.appendingPathComponent("Droppy", isDirectory: true)
         
         if hardResetIncludeClipboard {
             // Delete entire Droppy folder
@@ -2560,7 +2562,7 @@ struct SettingsView: View {
                         Image(nsImage: NSWorkspace.shared.icon(forFile: appPath.path))
                             .resizable()
                             .frame(width: 24, height: 24)
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
                     } else {
                         Image(systemName: "app.fill")
                             .font(.system(size: 20))
@@ -2639,7 +2641,7 @@ struct SettingsView: View {
                                     Image(nsImage: icon)
                                         .resizable()
                                         .frame(width: 28, height: 28)
-                                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
                                 }
                                 
                                 VStack(alignment: .leading) {
@@ -3246,9 +3248,9 @@ struct ProtectOriginalsWarningSheet: View {
                     .background(Color.white.opacity(0.02))
                 }
                 .background(Color.white.opacity(0.03))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                         .stroke(Color.white.opacity(0.05), lineWidth: 1)
                 )
             }
@@ -3279,12 +3281,12 @@ struct ProtectOriginalsWarningSheet: View {
                 }
                 .buttonStyle(DroppyAccentButtonStyle(color: .blue, size: .small))
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
         }
         .frame(width: 380)
         .fixedSize(horizontal: true, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
     }
 }
 
@@ -3373,9 +3375,9 @@ struct StabilizeMediaInfoSheet: View {
                     .background(Color.white.opacity(0.02))
                 }
                 .background(Color.white.opacity(0.03))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                         .stroke(Color.white.opacity(0.05), lineWidth: 1)
                 )
             }
@@ -3406,12 +3408,12 @@ struct StabilizeMediaInfoSheet: View {
                 }
                 .buttonStyle(DroppyAccentButtonStyle(color: .blue, size: .small))
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
         }
         .frame(width: 380)
         .fixedSize(horizontal: true, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
     }
 }
 
@@ -3500,9 +3502,9 @@ struct AutoFocusSearchInfoSheet: View {
                     .background(Color.white.opacity(0.02))
                 }
                 .background(Color.white.opacity(0.03))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                         .stroke(Color.white.opacity(0.05), lineWidth: 1)
                 )
             }
@@ -3533,12 +3535,12 @@ struct AutoFocusSearchInfoSheet: View {
                 }
                 .buttonStyle(DroppyAccentButtonStyle(color: .blue, size: .small))
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
         }
         .frame(width: 380)
         .fixedSize(horizontal: true, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
     }
 }
 
@@ -3580,9 +3582,9 @@ struct FullDiskAccessSheet: View {
                     stepRow(number: "3", text: "Click \"I've Granted Access\"", isLast: true)
                 }
                 .background(Color.white.opacity(0.03))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                         .stroke(Color.white.opacity(0.05), lineWidth: 1)
                 )
             }
@@ -3624,12 +3626,12 @@ struct FullDiskAccessSheet: View {
                 }
                 .buttonStyle(DroppyAccentButtonStyle(color: .blue, size: .small))
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
         }
         .frame(width: 380)
         .fixedSize(horizontal: true, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
     }
     
     private func stepRow(number: String, text: String, isFirst: Bool = false, isLast: Bool = false) -> some View {
@@ -3639,7 +3641,7 @@ struct FullDiskAccessSheet: View {
                 .foregroundStyle(.blue)
                 .frame(width: 22, height: 22)
                 .background(Color.blue.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.sm, style: .continuous))
             
             Text(text)
                 .font(.system(size: 12))
@@ -3701,9 +3703,9 @@ struct MenuBarHiddenSheet: View {
                     .background(Color.white.opacity(0.02))
                 }
                 .background(Color.white.opacity(0.03))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                         .stroke(Color.white.opacity(0.05), lineWidth: 1)
                 )
             }
@@ -3737,12 +3739,12 @@ struct MenuBarHiddenSheet: View {
                 }
                 .buttonStyle(DroppyAccentButtonStyle(color: .blue, size: .small))
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
         }
         .frame(width: 380)
         .fixedSize(horizontal: true, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
     }
 }
 
@@ -3859,10 +3861,10 @@ struct KeyCapView: View {
             .padding(.horizontal, isWide ? 12 : 8)
             .padding(.vertical, 6)
             .background(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.sm, style: .continuous)
                     .fill(LinearGradient(colors: [color.opacity(0.2), color.opacity(0.1)], startPoint: .top, endPoint: .bottom))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.sm, style: .continuous)
                             .stroke(color.opacity(0.3), lineWidth: 1)
                     )
             )
@@ -4041,13 +4043,13 @@ struct QuickActionsInfoSheet: View {
                     .padding(.vertical, 12)
                     .background(Color.white.opacity(0.02))
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                         .stroke(Color.white.opacity(0.08), lineWidth: 1)
                 )
             }
-            .padding(24)
+            .padding(DroppySpacing.xxl)
             
             Divider()
                 .padding(.horizontal, 24)
@@ -4073,12 +4075,12 @@ struct QuickActionsInfoSheet: View {
                 }
                 .buttonStyle(DroppyAccentButtonStyle(color: .blue, size: .small))
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
         }
         .frame(width: 380)
         .fixedSize(horizontal: true, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
     }
 }
 
@@ -4267,7 +4269,7 @@ struct WatchedFolderRow: View {
         .padding(.vertical, 6)
         .padding(.horizontal, 10)
         .background(Color.white.opacity(0.03))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous))
     }
 }
 
@@ -4437,6 +4439,6 @@ private struct MediaSourceAppRow: View {
         .padding(.vertical, 6)
         .padding(.horizontal, 10)
         .background(Color.white.opacity(0.03))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous))
     }
 }

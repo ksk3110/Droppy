@@ -24,7 +24,8 @@ final class QuickshareManager {
     
     private init() {
         // Store in Application Support/Droppy/quickshare_history.json
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support")
         let droppyDir = appSupport.appendingPathComponent("Droppy")
         try? FileManager.default.createDirectory(at: droppyDir, withIntermediateDirectories: true)
         self.storageURL = droppyDir.appendingPathComponent("quickshare_history.json")

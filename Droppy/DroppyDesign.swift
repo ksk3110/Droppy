@@ -65,10 +65,16 @@ enum DroppyAnimationLegacy {
 enum DroppySpacing {
     /// 4pt spacing
     static let xs: CGFloat = 4
+    /// 6pt spacing - compact elements
+    static let xsm: CGFloat = 6
     /// 8pt spacing
     static let sm: CGFloat = 8
+    /// 10pt spacing - button padding
+    static let smd: CGFloat = 10
     /// 12pt spacing
     static let md: CGFloat = 12
+    /// 14pt spacing - card content
+    static let mdl: CGFloat = 14
     /// 16pt spacing
     static let lg: CGFloat = 16
     /// 20pt spacing
@@ -77,20 +83,46 @@ enum DroppySpacing {
     static let xxl: CGFloat = 24
     /// 32pt spacing
     static let xxxl: CGFloat = 32
+    /// 40pt spacing - large drop zones
+    static let huge: CGFloat = 40
+    
+    // MARK: - Drag & Drop
+    /// Base offset for drag images to position bottom-right of cursor (8pt)
+    static let dragCursorOffset: CGFloat = 8
+    /// Stacking offset for multiple dragged items (3pt per item)
+    static let dragStackOffset: CGFloat = 3
 }
 
 // MARK: - Corner Radius Constants
 
-/// Standardized corner radius values
+/// Standardized corner radius values - Tiered Radii Standard v25.1
 enum DroppyRadius {
+    /// Micro radius (2pt) - tiny UI elements, indicators
+    static let micro: CGFloat = 2
+    /// Extra small radius (4pt) - small badges, mini pills
+    static let xs: CGFloat = 4
+    /// Small radius (6pt) - compact buttons, tags
+    static let sm: CGFloat = 6
     /// Small radius (8pt) - buttons, pills
     static let small: CGFloat = 8
+    /// Medium-small radius (10pt) - compact cards
+    static let ms: CGFloat = 10
     /// Medium radius (12pt) - cards, small panels
     static let medium: CGFloat = 12
+    /// Medium-large radius (14pt) - buttons, input fields
+    static let ml: CGFloat = 14
     /// Large radius (16pt) - panels, sheets
     static let large: CGFloat = 16
+    /// Large-extra radius (18pt) - prominent cards
+    static let lx: CGFloat = 18
     /// Extra large radius (20pt) - major containers
     static let xl: CGFloat = 20
+    /// Extra-extra large radius (22pt) - featured panels
+    static let xxl: CGFloat = 22
+    /// Jumbo radius (28pt) - hero elements
+    static let jumbo: CGFloat = 28
+    /// Giant radius (40pt) - circular overlays
+    static let giant: CGFloat = 40
     /// Circular/capsule
     static let full: CGFloat = 9999
 }
@@ -239,5 +271,33 @@ private struct PremiumBlurModifier: ViewModifier {
             .scaleEffect(scale, anchor: .top)
             .blur(radius: blur)
             .opacity(opacity)
+    }
+}
+
+// MARK: - Shadow View Modifiers
+
+extension View {
+    /// Text emboss shadow - subtle depth for text labels
+    /// Usage: `.droppyTextShadow()`
+    func droppyTextShadow(opacity: Double = DroppyOpacity.strong) -> some View {
+        shadow(color: .black.opacity(opacity), radius: 0.5, x: 0, y: 0.5)
+    }
+    
+    /// Card shadow - standard elevation for cards and panels
+    /// Usage: `.droppyCardShadow()` or `.droppyCardShadow(opacity: 0.3)`
+    func droppyCardShadow(opacity: Double = 0.25) -> some View {
+        shadow(color: .black.opacity(opacity), radius: DroppyShadow.mediumRadius, x: 0, y: DroppyShadow.mediumY)
+    }
+    
+    /// Floating element shadow - prominent elevation for floating UI
+    /// Usage: `.droppyFloatingShadow()`
+    func droppyFloatingShadow(opacity: Double = 0.3) -> some View {
+        shadow(color: .black.opacity(opacity), radius: 12, x: 0, y: 6)
+    }
+    
+    /// Strong shadow - high prominence for major elements
+    /// Usage: `.droppyStrongShadow()`
+    func droppyStrongShadow(opacity: Double = DroppyShadow.strongOpacity) -> some View {
+        shadow(color: .black.opacity(opacity), radius: DroppyShadow.strongRadius, x: 0, y: DroppyShadow.strongY)
     }
 }

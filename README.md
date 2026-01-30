@@ -59,6 +59,7 @@ Jiggle your mouse to summon a floating basket for temporary file staging.
 Gorgeous replacements for macOS system indicators — all displayed elegantly in your notch.
 - Volume and brightness controls with smooth animations
 - Now playing with album art and playback controls
+- Lock screen media widget with premium unlocking animations
 - Battery status with charging indicators
 - Caps Lock, Focus mode, and AirPods status
 - Real-time audio visualizer synced to your music

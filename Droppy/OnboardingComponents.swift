@@ -20,7 +20,7 @@ struct OnboardingToggle: View {
     var body: some View {
         Button {
             // Trigger icon bounce
-            withAnimation(.spring(response: 0.2, dampingFraction: 0.4)) {
+            withAnimation(DroppyAnimation.onboardingPop) {
                 iconBounce = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
@@ -33,7 +33,7 @@ struct OnboardingToggle: View {
             HStack(spacing: 12) {
                 // Premium gradient squircle icon
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [color, gradientSecondaryColor],
@@ -44,7 +44,7 @@ struct OnboardingToggle: View {
                         .frame(width: 40, height: 40)
                     
                     // Inner highlight for 3D effect
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [Color.white.opacity(0.25), Color.clear],
@@ -57,7 +57,7 @@ struct OnboardingToggle: View {
                     Image(systemName: icon)
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+                        .droppyTextShadow()
                         .scaleEffect(iconBounce ? 1.3 : 1.0)
                         .rotationEffect(.degrees(iconBounce ? -8 : 0))
                 }
@@ -75,9 +75,9 @@ struct OnboardingToggle: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .background(AdaptiveColors.buttonBackgroundAuto)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                     .stroke(isOn ? color.opacity(0.3) : Color.white.opacity(0.08), lineWidth: 1)
             )
             .scaleEffect(isHovering ? 1.02 : 1.0)
@@ -114,7 +114,7 @@ struct OnboardingDisplayModeButton<Icon: View>: View {
     var body: some View {
         Button {
             // Trigger icon bounce
-            withAnimation(.spring(response: 0.2, dampingFraction: 0.4)) {
+            withAnimation(DroppyAnimation.onboardingPop) {
                 iconBounce = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
@@ -126,7 +126,7 @@ struct OnboardingDisplayModeButton<Icon: View>: View {
         } label: {
             HStack(spacing: 12) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                         .fill(isSelected ? Color.blue.opacity(0.2) : AdaptiveColors.buttonBackgroundAuto)
                     
                     icon
@@ -148,9 +148,9 @@ struct OnboardingDisplayModeButton<Icon: View>: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .background((isSelected ? AdaptiveColors.buttonBackgroundAuto : AdaptiveColors.buttonBackgroundAuto))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                     .stroke(isSelected ? Color.blue.opacity(0.3) : Color.white.opacity(0.08), lineWidth: 1)
             )
             .scaleEffect(isHovering ? 1.02 : 1.0)

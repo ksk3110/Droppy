@@ -26,7 +26,7 @@ struct NotificationHUDView: View {
 
     /// Centralized layout calculator
     private var layout: HUDLayoutCalculator {
-        HUDLayoutCalculator(screen: targetScreen ?? NSScreen.main ?? NSScreen.screens.first!)
+        HUDLayoutCalculator(screen: targetScreen ?? NSScreen.main ?? NSScreen.screens.first ?? NSScreen())
     }
 
     /// Whether we're in compact mode (Dynamic Island style)
@@ -54,7 +54,7 @@ struct NotificationHUDView: View {
         }
         .contentShape(Rectangle())
         .onHover { hovering in
-            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+            withAnimation(DroppyAnimation.hover) {
                 isHovering = hovering
             }
             if hovering {
@@ -86,7 +86,7 @@ struct NotificationHUDView: View {
         .opacity(appearOpacity * (1.0 - Double(abs(dragOffset)) / 80.0))
         .scaleEffect(appearScale * (isPressed ? 0.97 : (isHovering ? 1.02 : 1.0)))
         .onAppear {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            withAnimation(DroppyAnimation.transition) {
                 appearScale = 1.0
                 appearOpacity = 1.0
             }
@@ -94,7 +94,7 @@ struct NotificationHUDView: View {
         .onChange(of: manager.currentNotification?.id) { _, _ in
             appearScale = 0.9
             appearOpacity = 0.5
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+            withAnimation(DroppyAnimation.transition) {
                 appearScale = 1.0
                 appearOpacity = 1.0
             }
@@ -112,7 +112,7 @@ struct NotificationHUDView: View {
             }
             .onEnded { value in
                 if value.translation.height < -30 || value.predictedEndTranslation.height < -50 {
-                    withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
+                    withAnimation(DroppyAnimation.hoverScale) {
                         dragOffset = -100
                         appearOpacity = 0
                     }
@@ -122,7 +122,7 @@ struct NotificationHUDView: View {
                         appearOpacity = 1
                     }
                 } else {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    withAnimation(DroppyAnimation.hover) {
                         dragOffset = 0
                     }
                 }
@@ -300,7 +300,7 @@ struct NotificationHUDView: View {
                 .aspectRatio(contentMode: .fit)
                 .frame(width: size, height: size)
                 .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
-                .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+                .droppyCardShadow(opacity: 0.3)
                 .overlay(
                     RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
                         .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
@@ -327,7 +327,7 @@ struct NotificationHUDView: View {
                         .foregroundStyle(.white)
                 }
             }
-            .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+            .droppyCardShadow(opacity: 0.3)
         }
     }
 

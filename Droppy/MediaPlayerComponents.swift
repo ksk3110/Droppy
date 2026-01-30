@@ -191,7 +191,7 @@ struct InlineHUDView: View {
                 .lineLimit(1)
                 .frame(width: 32, alignment: .leading)
                 .contentTransition(.numericText(value: Double(Int(value * 100))))
-                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: Int(value * 100))
+                .animation(DroppyAnimation.state, value: Int(value * 100))
         }
         // Match width of center controls
         .frame(width: type.showsSlider ? 160 : 80)
@@ -371,31 +371,31 @@ struct MediaControlButton: View {
         switch nudgeDirection {
         case .left:
             // Nudge left briefly
-            withAnimation(.spring(response: 0.16, dampingFraction: 0.72)) {
+            withAnimation(DroppyAnimation.mediaPress) {
                 pressOffset = -6
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                withAnimation(.spring(response: 0.26, dampingFraction: 0.8)) {
+                withAnimation(DroppyAnimation.mediaRelease) {
                     pressOffset = 0
                 }
             }
         case .right:
             // Nudge right briefly
-            withAnimation(.spring(response: 0.16, dampingFraction: 0.72)) {
+            withAnimation(DroppyAnimation.mediaPress) {
                 pressOffset = 6
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                withAnimation(.spring(response: 0.26, dampingFraction: 0.8)) {
+                withAnimation(DroppyAnimation.mediaRelease) {
                     pressOffset = 0
                 }
             }
         case .none:
             // Wiggle for play/pause
-            withAnimation(.spring(response: 0.18, dampingFraction: 0.52)) {
+            withAnimation(DroppyAnimation.mediaEmphasis) {
                 rotationAngle = 8
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.76)) {
+                withAnimation(DroppyAnimation.mediaSettle) {
                     rotationAngle = 0
                 }
             }
@@ -514,7 +514,7 @@ struct CompactMediaPlayerView: View {
                 .resizable()
                 .aspectRatio(1, contentMode: .fill)
                 .frame(width: 24, height: 24)
-                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xs))
             
             // Playing indicator bars
             if musicManager.isPlaying {
@@ -574,7 +574,7 @@ struct MusicVisualizerBars: View {
         MediaPlayerView(musicManager: MusicManager.shared)
             .frame(width: 350, height: 200)
             .background(Color.black)
-            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl))
     }
     .padding()
     .background(Color.gray.opacity(0.3))

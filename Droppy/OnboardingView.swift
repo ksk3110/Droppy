@@ -92,9 +92,9 @@ struct OnboardingView: View {
                 AnyView(Color.black)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xxl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.xxl, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
         )
         .overlay {
@@ -150,12 +150,12 @@ struct OnboardingView: View {
     }
     
     private func animateNotchFace() {
-        withAnimation(.spring(response: 0.2, dampingFraction: 0.45)) {
+        withAnimation(DroppyAnimation.onboardingBounce) {
             faceScale = 1.2
             faceRotation = direction > 0 ? 12 : -12
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.55)) {
+            withAnimation(DroppyAnimation.onboardingSettle) {
                 faceScale = 1.0
                 faceRotation = 0
             }
@@ -371,9 +371,9 @@ private struct WelcomeContent: View {
                     WelcomeFeatureRow(icon: "wand.and.stars", color: .pink, text: "Auto-compress images and convert files", isLast: true)
                 }
                 .background(Color.white.opacity(0.03))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                         .stroke(Color.white.opacity(0.05), lineWidth: 1)
                 )
             }
@@ -639,7 +639,7 @@ private struct HUDToggle: View {
             HStack(spacing: 10) {
                 // Premium gradient squircle icon
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [color, gradientSecondaryColor],
@@ -650,7 +650,7 @@ private struct HUDToggle: View {
                         .frame(width: 28, height: 28)
                     
                     // Inner highlight for 3D effect
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [Color.white.opacity(0.25), Color.clear],
@@ -663,7 +663,7 @@ private struct HUDToggle: View {
                     Image(systemName: icon)
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.2), radius: 0.5, x: 0, y: 0.5)
+                        .droppyTextShadow()
                 }
                 .opacity(available ? 1.0 : 0.5)
                 
@@ -684,16 +684,16 @@ private struct HUDToggle: View {
                         .padding(.horizontal, 5)
                         .padding(.vertical, 2)
                         .background(Color.orange.opacity(0.15))
-                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xs))
                 }
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity)
             .background(isHovering && available ? Color.white.opacity(0.06) : Color.white.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                     .stroke(isOn && available ? color.opacity(0.3) : Color.white.opacity(0.06), lineWidth: 1)
             )
         }
@@ -725,7 +725,7 @@ private struct OnboardingMediaPreview: View {
                 HStack(spacing: 0) {
                     HStack {
                         Spacer(minLength: 0)
-                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.xs, style: .continuous)
                             .fill(LinearGradient(colors: [.purple, .pink], startPoint: .topLeading, endPoint: .bottomTrailing))
                             .frame(width: 20, height: 20)
                             .overlay(
@@ -761,9 +761,9 @@ private struct OnboardingMediaPreview: View {
                 
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 2)
+                        RoundedRectangle(cornerRadius: DroppyRadius.micro)
                             .fill(Color.white.opacity(0.12))
-                        RoundedRectangle(cornerRadius: 2)
+                        RoundedRectangle(cornerRadius: DroppyRadius.micro)
                             .fill(Color.green)
                             .frame(width: geo.size.width * progress)
                     }
@@ -840,7 +840,7 @@ private struct LockScreenToggle<Icon: View>: View {
     var body: some View {
         Button {
             // Trigger bounce animation
-            withAnimation(.spring(response: 0.2, dampingFraction: 0.4)) {
+            withAnimation(DroppyAnimation.onboardingPop) {
                 iconBounce = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
@@ -881,9 +881,9 @@ private struct LockScreenToggle<Icon: View>: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
             .background(Color.white.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                     .stroke(isOn ? accentColor.opacity(0.3) : Color.white.opacity(0.06), lineWidth: 1)
             )
             .scaleEffect(isHovering ? 1.02 : 1.0)
@@ -936,9 +936,9 @@ private struct ExtensionsContent: View {
             .padding(.horizontal, 20)
             .frame(width: 420)
             .background(Color.white.opacity(0.025))
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                     .stroke(Color.white.opacity(0.05), lineWidth: 1)
             )
             
@@ -956,7 +956,7 @@ private struct ExtensionsContent: View {
             .padding(.horizontal, 20)
             .frame(width: 420)
             .background(Color.blue.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
@@ -972,7 +972,7 @@ private struct OnboardingExtensionIcon<T: ExtensionDefinition>: View {
             CachedAsyncImage(url: definition.iconURL) { image in
                 image.resizable().aspectRatio(contentMode: .fill)
             } placeholder: {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                     .fill(definition.iconPlaceholderColor.opacity(0.15))
                     .overlay(
                         Image(systemName: definition.iconPlaceholder)
@@ -981,7 +981,7 @@ private struct OnboardingExtensionIcon<T: ExtensionDefinition>: View {
                     )
             }
             .frame(width: 52, height: 52)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
             
             Text(name)
                 .font(.system(size: 10))
@@ -1050,9 +1050,9 @@ private struct ReadyContent: View {
                         .animation(DroppyAnimation.notchState.delay(0.7), value: showRows[3])
                 }
                 .background(Color.white.opacity(0.03))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                         .stroke(Color.white.opacity(0.05), lineWidth: 1)
                 )
             }
@@ -1151,7 +1151,7 @@ private struct StyleButton: View {
         Button(action: action) {
             VStack(spacing: 6) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                         .fill(Color.white.opacity(0.03))
                         .frame(width: 90, height: 55)
                     
@@ -1160,13 +1160,13 @@ private struct StyleButton: View {
                             .fill(Color.white)
                             .frame(width: 48, height: 14)
                     } else {
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.sm, style: .continuous)
                             .fill(Color.white)
                             .frame(width: 40, height: 12)
                     }
                 }
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                         .stroke(isSelected ? Color.blue : Color.white.opacity(0.1), lineWidth: isSelected ? 2 : 1)
                 )
                 .scaleEffect(hovering ? 1.03 : 1.0)

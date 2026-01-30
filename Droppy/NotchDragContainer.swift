@@ -82,7 +82,9 @@ class NotchDragContainer: NSView {
             let options: NSTrackingArea.Options = [.mouseEnteredAndExited, .activeAlways]
             let minimalRect = NSRect(x: bounds.midX - 130, y: bounds.height - 50, width: 260, height: 50)
             trackingArea = NSTrackingArea(rect: minimalRect, options: options, owner: self, userInfo: nil)
-            addTrackingArea(trackingArea!)
+            if let area = trackingArea {
+                addTrackingArea(area)
+            }
             return
         }
         
@@ -104,7 +106,9 @@ class NotchDragContainer: NSView {
                 trackingRect = NSRect(x: bounds.midX - 130, y: bounds.height - 50, width: 260, height: 50)
                 let options: NSTrackingArea.Options = [.mouseEnteredAndExited, .activeAlways]
                 trackingArea = NSTrackingArea(rect: trackingRect, options: options, owner: self, userInfo: nil)
-                addTrackingArea(trackingArea!)
+                if let area = trackingArea {
+                    addTrackingArea(area)
+                }
                 return
             }
             let expandedHeight = DroppyState.expandedShelfHeight(for: screen)
@@ -123,7 +127,9 @@ class NotchDragContainer: NSView {
                 trackingRect = NSRect(x: bounds.midX - 130, y: bounds.height - 50, width: 260, height: 50)
                 let options: NSTrackingArea.Options = [.mouseEnteredAndExited, .activeAlways]
                 trackingArea = NSTrackingArea(rect: trackingRect, options: options, owner: self, userInfo: nil)
-                addTrackingArea(trackingArea!)
+                if let area = trackingArea {
+                    addTrackingArea(area)
+                }
                 return
             }
             
@@ -146,7 +152,9 @@ class NotchDragContainer: NSView {
                 trackingRect = NSRect(x: bounds.midX - 105, y: bounds.height - 40, width: 210, height: 40)
                 let options: NSTrackingArea.Options = [.mouseEnteredAndExited, .activeAlways]
                 trackingArea = NSTrackingArea(rect: trackingRect, options: options, owner: self, userInfo: nil)
-                addTrackingArea(trackingArea!)
+                if let area = trackingArea {
+                    addTrackingArea(area)
+                }
                 return
             }
             
@@ -167,7 +175,9 @@ class NotchDragContainer: NSView {
         // state updates and interfered with context menus.
         let options: NSTrackingArea.Options = [.mouseEnteredAndExited, .activeAlways]
         trackingArea = NSTrackingArea(rect: trackingRect, options: options, owner: self, userInfo: nil)
-        addTrackingArea(trackingArea!)
+        if let area = trackingArea {
+            addTrackingArea(area)
+        }
     }
     
     /// Sets up observation for state changes that require tracking area updates
@@ -672,7 +682,9 @@ class NotchDragContainer: NSView {
             for receiver in promiseReceivers {
                 receiver.receivePromisedFiles(atDestination: dropLocation, options: [:], operationQueue: filePromiseQueue) { [targetDisplayID] fileURL, error in
                     guard error == nil else {
-                        print("📦 Error receiving promised file: \(error!)")
+                        if let error = error {
+                            print("📦 Error receiving promised file: \(error)")
+                        }
                         return
                     }
                     print("📦 Successfully received: \(fileURL)")

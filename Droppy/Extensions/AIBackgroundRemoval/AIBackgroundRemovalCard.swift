@@ -28,7 +28,7 @@ struct AIBackgroundRemovalCard: View {
                         .foregroundStyle(.blue)
                 }
                 .frame(width: 44, height: 44)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous))
                 
                 Spacer()
                 

@@ -54,7 +54,7 @@ struct ExtensionReviewsSheet: View {
                 }
                 .buttonStyle(DroppyCircleButtonStyle(size: 32))
             }
-            .padding(20)
+            .padding(DroppySpacing.xl)
             
             Divider()
             
@@ -90,7 +90,7 @@ struct ExtensionReviewsSheet: View {
                             ReviewCard(review: review)
                         }
                     }
-                    .padding(20)
+                    .padding(DroppySpacing.xl)
                 }
             }
         }
@@ -170,11 +170,11 @@ struct ExtensionReviewsSheet: View {
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
                             .background(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                                     .fill(Color.black.opacity(0.3))
                             )
                             .overlay(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                                     .stroke(
                                         extensionType.categoryColor.opacity(0.6),
                                         style: StrokeStyle(
@@ -265,11 +265,11 @@ struct ReviewCard: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
         .background(AdaptiveColors.buttonBackgroundAuto)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium))
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
     }

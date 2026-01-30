@@ -367,7 +367,9 @@ final class ElementCaptureManager: ObservableObject {
         }
         
         var position = CGPoint.zero
-        guard AXValueGetValue(positionValue as! AXValue, .cgPoint, &position) else {
+        // CF type cast always succeeds when AXUIElementCopyAttributeValue returns .success
+        let axPositionValue = positionValue as! AXValue
+        guard AXValueGetValue(axPositionValue, .cgPoint, &position) else {
             return nil
         }
         
@@ -379,7 +381,9 @@ final class ElementCaptureManager: ObservableObject {
         }
         
         var size = CGSize.zero
-        guard AXValueGetValue(sizeValue as! AXValue, .cgSize, &size) else {
+        // CF type cast always succeeds when AXUIElementCopyAttributeValue returns .success
+        let axSizeValue = sizeValue as! AXValue
+        guard AXValueGetValue(axSizeValue, .cgSize, &size) else {
             return nil
         }
         

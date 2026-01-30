@@ -84,7 +84,7 @@ struct FFmpegInstallView: View {
         .frame(width: 450)
         .fixedSize(horizontal: true, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
         .sheet(isPresented: $showReviewsSheet) {
             ExtensionReviewsSheet(extensionType: .ffmpegVideoCompression)
         }
@@ -146,7 +146,7 @@ struct FFmpegInstallView: View {
                     Image(systemName: "film").font(.system(size: 32)).foregroundStyle(.green)
                 }
                 .frame(width: 64, height: 64)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
                 .shadow(color: manager.isInstalled ? .green.opacity(0.4) : .green.opacity(0.3), radius: 8, y: 4)
                 .scaleEffect(manager.isInstalled ? 1.05 : 1.0)
                 .animation(DroppyAnimation.stateEmphasis, value: manager.isInstalled)
@@ -305,13 +305,13 @@ struct FFmpegInstallView: View {
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
-                .padding(16)
+                .padding(DroppySpacing.lg)
             }
-            .buttonStyle(DroppyCardButtonStyle(cornerRadius: 14))
+            .buttonStyle(DroppyCardButtonStyle(cornerRadius: DroppyRadius.ml))
             .background(AdaptiveColors.buttonBackgroundAuto.opacity(0.5))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                     .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
         }
@@ -340,15 +340,15 @@ struct FFmpegInstallView: View {
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                             .strokeBorder(AdaptiveColors.subtleBorderAuto, lineWidth: 1)
                     )
                     .padding(.top, 12)
             } placeholder: {
                 // Show loading placeholder while image loads
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                     .fill(Color.gray.opacity(0.1))
                     .frame(height: 200)
                     .overlay(
@@ -401,11 +401,11 @@ struct FFmpegInstallView: View {
                 }
                 .buttonStyle(DroppyAccentButtonStyle(color: .green, size: .small))
             }
-            .padding(12)
+            .padding(DroppySpacing.md)
             .background(Color.black.opacity(0.3))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.small))
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: DroppyRadius.small)
                     .stroke(Color.green.opacity(0.3), lineWidth: 1)
             )
             
@@ -432,11 +432,11 @@ struct FFmpegInstallView: View {
             
             Spacer()
         }
-        .padding(12)
+        .padding(DroppySpacing.md)
         .background(Color.green.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
     }
@@ -521,7 +521,7 @@ struct FFmpegInstallView: View {
             // Disable/Enable Extension button
             DisableExtensionButton(extensionType: .ffmpegVideoCompression)
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
         .animation(DroppyAnimation.transition, value: manager.isInstalled)
     }
 }

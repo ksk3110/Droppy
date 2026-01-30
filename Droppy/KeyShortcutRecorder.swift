@@ -59,9 +59,9 @@ struct KeyShortcutRecorder: View {
                 .padding(.horizontal, 12)
                 .background(AdaptiveColors.buttonBackgroundAuto)
                 .foregroundStyle(.primary)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                         .stroke(isRecording ? Color.blue : AdaptiveColors.subtleBorderAuto, lineWidth: isRecording ? 2 : 1)
                 )
             

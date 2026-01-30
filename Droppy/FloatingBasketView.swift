@@ -149,7 +149,7 @@ struct FloatingBasketView: View {
                 // Users can drag files directly onto action buttons for quick share
                 BasketQuickActionsBar(items: state.basketItems)
             }
-            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: state.basketDisplaySlotCount)
+            .animation(DroppyAnimation.basketTransition, value: state.basketDisplaySlotCount)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea()
@@ -176,7 +176,7 @@ struct FloatingBasketView: View {
         ZStack {
             // Background (extracted to reduce type-checker complexity)
             basketBackground
-                .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 6)
+                .droppyFloatingShadow()
             
             // Content - different views based on state
             // Quick action hover explanation takes priority over regular content
@@ -367,7 +367,7 @@ struct FloatingBasketView: View {
                                 ),
                                 lineWidth: 2
                             )
-                            .padding(8)
+                            .padding(DroppySpacing.sm)
                     }
                 }
                 .animation(.easeOut(duration: 0.15), value: state.isBasketTargeted)
@@ -443,7 +443,7 @@ struct FloatingBasketView: View {
                 },
                 onTap: { _ in
                     // Tap to expand
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    withAnimation(DroppyAnimation.basketTransition) {
                         isExpanded = true
                     }
                 },
@@ -469,7 +469,7 @@ struct FloatingBasketView: View {
             
             // File count label - also tappable to expand
             BasketFileCountLabel(items: state.basketItems, isHovering: isFileLabelHovering) {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                withAnimation(DroppyAnimation.basketTransition) {
                     isExpanded = true
                 }
             }
@@ -511,7 +511,7 @@ struct FloatingBasketView: View {
         HStack(spacing: 12) {
             // Back button to collapse
             BasketBackButton {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                withAnimation(DroppyAnimation.basketTransition) {
                     isExpanded = false
                 }
             }
@@ -534,7 +534,7 @@ struct FloatingBasketView: View {
                 
                 // Grid view button
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    withAnimation(DroppyAnimation.state) {
                         isListView = false
                     }
                 } label: {
@@ -545,7 +545,7 @@ struct FloatingBasketView: View {
                 
                 // List view button
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    withAnimation(DroppyAnimation.state) {
                         isListView = true
                     }
                 } label: {
@@ -1002,12 +1002,12 @@ private struct RenameTextField: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                 .fill(Color.black.opacity(0.3))
         )
         // Animated dotted blue outline
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                 .stroke(
                     Color.accentColor.opacity(0.8),
                     style: StrokeStyle(

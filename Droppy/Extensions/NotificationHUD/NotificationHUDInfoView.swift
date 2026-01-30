@@ -45,7 +45,7 @@ struct NotificationHUDInfoView: View {
         .frame(width: 450)
         .fixedSize(horizontal: true, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
         .sheet(isPresented: $showReviewsSheet) {
             ExtensionReviewsSheet(extensionType: .notificationHUD)
         }
@@ -62,7 +62,7 @@ struct NotificationHUDInfoView: View {
                 Image(systemName: "bell.badge.fill").font(.system(size: 32, weight: .medium)).foregroundStyle(.orange)
             }
             .frame(width: 64, height: 64)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
             .shadow(color: .orange.opacity(0.4), radius: 8, y: 4)
 
             Text("Notify me!")
@@ -148,13 +148,13 @@ struct NotificationHUDInfoView: View {
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                             .strokeBorder(AdaptiveColors.subtleBorderAuto, lineWidth: 1)
                     )
             } placeholder: {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                     .fill(Color.black.opacity(0.8))
                     .frame(height: 120)
                     .overlay(
@@ -174,11 +174,11 @@ struct NotificationHUDInfoView: View {
 
                             Spacer()
                         }
-                        .padding(16)
+                        .padding(DroppySpacing.lg)
                         , alignment: .leading
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                             .strokeBorder(AdaptiveColors.subtleBorderAuto, lineWidth: 1)
                     )
             }
@@ -228,7 +228,7 @@ struct NotificationHUDInfoView: View {
                         .foregroundStyle(.orange)
                         .frame(width: 32, height: 32)
                         .background(Color.orange.opacity(0.15))
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous))
                     
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Full Disk Access")
@@ -250,11 +250,11 @@ struct NotificationHUDInfoView: View {
                     }
                 }
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
             .background(AdaptiveColors.buttonBackgroundAuto.opacity(0.5))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                     .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
             .onAppear {
@@ -277,7 +277,7 @@ struct NotificationHUDInfoView: View {
                         .foregroundStyle(manager.isEnabled ? .blue : .secondary)
                         .frame(width: 32, height: 32)
                         .background((manager.isEnabled ? Color.blue : Color.secondary).opacity(0.15))
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous))
                     
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Show Notification Preview")
@@ -297,12 +297,12 @@ struct NotificationHUDInfoView: View {
                     }
                 }
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
             .background(AdaptiveColors.buttonBackgroundAuto.opacity(0.5))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
             .overlay(
 
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                     .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
             
@@ -334,7 +334,7 @@ struct NotificationHUDInfoView: View {
                         .foregroundStyle(.purple)
                         .frame(width: 32, height: 32)
                         .background(Color.purple.opacity(0.15))
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous))
                     
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Hide Native Banners")
@@ -353,11 +353,11 @@ struct NotificationHUDInfoView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
             .background(AdaptiveColors.buttonBackgroundAuto.opacity(0.5))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                     .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
             
@@ -388,10 +388,10 @@ struct NotificationHUDInfoView: View {
                                     Image(nsImage: icon)
                                         .resizable()
                                         .frame(width: 32, height: 32)
-                                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous))
                                         .help(app.name)
                                 } else {
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous)
                                         .fill(Color.gray.opacity(0.3))
                                         .frame(width: 32, height: 32)
                                         .help(app.name)
@@ -400,11 +400,11 @@ struct NotificationHUDInfoView: View {
                         }
                     }
                 }
-                .padding(16)
+                .padding(DroppySpacing.lg)
                 .background(AdaptiveColors.buttonBackgroundAuto.opacity(0.5))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                         .stroke(Color.white.opacity(0.08), lineWidth: 1)
                 )
             }
@@ -441,7 +441,7 @@ struct NotificationHUDInfoView: View {
                 .buttonStyle(DroppyAccentButtonStyle(color: .orange, size: .small))
             }
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
     }
 
     // MARK: - Actions

@@ -31,9 +31,9 @@ struct CapturePreviewView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(Color.green.opacity(0.8))
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                         .stroke(AdaptiveColors.hoverBackgroundAuto, lineWidth: 1)
                 )
             }
@@ -43,9 +43,9 @@ struct CapturePreviewView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(maxWidth: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                         .stroke(AdaptiveColors.hoverBackgroundAuto, lineWidth: 1)
                 )
         }

@@ -565,7 +565,8 @@ final class WindowSnapManager: ObservableObject {
         var windowValue: CFTypeRef?
         let result = AXUIElementCopyAttributeValue(appElement, kAXFocusedWindowAttribute as CFString, &windowValue)
         
-        guard result == .success else { return nil }
+        guard result == .success, windowValue != nil else { return nil }
+        // CF type cast always succeeds - the AX API guarantees the type when result is .success
         return (windowValue as! AXUIElement)
     }
     
@@ -610,7 +611,9 @@ final class WindowSnapManager: ObservableObject {
               let positionValue = positionValue else { return nil }
         
         var position = CGPoint.zero
-        guard AXValueGetValue(positionValue as! AXValue, .cgPoint, &position) else { return nil }
+        // CF type cast always succeeds when AXUIElementCopyAttributeValue returns .success
+        let axPositionValue = positionValue as! AXValue
+        guard AXValueGetValue(axPositionValue, .cgPoint, &position) else { return nil }
         
         // Get size
         var sizeValue: CFTypeRef?
@@ -618,7 +621,9 @@ final class WindowSnapManager: ObservableObject {
               let sizeValue = sizeValue else { return nil }
         
         var size = CGSize.zero
-        guard AXValueGetValue(sizeValue as! AXValue, .cgSize, &size) else { return nil }
+        // CF type cast always succeeds when AXUIElementCopyAttributeValue returns .success
+        let axSizeValue = sizeValue as! AXValue
+        guard AXValueGetValue(axSizeValue, .cgSize, &size) else { return nil }
         
         return CGRect(origin: position, size: size)
     }

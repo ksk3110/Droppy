@@ -115,7 +115,9 @@ final class SmartExportManager {
         }
         
         if folderPath.isEmpty {
-            return FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
+            return FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first 
+                ?? FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+                ?? URL(fileURLWithPath: NSHomeDirectory())
         }
         return URL(fileURLWithPath: folderPath)
     }

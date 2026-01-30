@@ -27,11 +27,11 @@ struct DroppedItemView: View {
             // Thumbnail/Icon with glass container
             ZStack(alignment: .topTrailing) {
                 // Glass card background
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.lx, style: .continuous)
                     .fill(.ultraThinMaterial)
                     .frame(width: 64, height: 64)
                     .overlay {
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.lx, style: .continuous)
                             .strokeBorder(Color(NSColor.labelColor).opacity(0.2), lineWidth: 0.5)
                     }
                     .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
@@ -49,7 +49,7 @@ struct DroppedItemView: View {
                     }
                 }
                 .frame(width: 48, height: 48)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
                 .frame(width: 64, height: 64)
                 
                 // Remove button with animation
@@ -74,13 +74,13 @@ struct DroppedItemView: View {
                 alignment: .center
             )
         }
-        .padding(8)
+        .padding(DroppySpacing.sm)
         .background {
             // Selection/hover background - exactly matches shelf outer edge (bottomRadius: 40)
-            RoundedRectangle(cornerRadius: 40, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.giant, style: .continuous)
                 .fill(backgroundColor)
                 .overlay {
-                    RoundedRectangle(cornerRadius: 40, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.giant, style: .continuous)
                         .strokeBorder(borderColor, lineWidth: isSelected ? 2 : 1)
                 }
         }

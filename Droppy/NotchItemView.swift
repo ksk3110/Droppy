@@ -275,7 +275,7 @@ struct NotchItemView: View {
                 if isShakeAnimating {
                     ZStack {
                         // NOTE: Part of shelf UI - always solid black
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                             .fill(Color.black)
                             .frame(width: 44, height: 44)
                             .shadow(radius: 4)
@@ -315,7 +315,7 @@ struct NotchItemView: View {
             .overlay {
                 // Visual feedback when dropping files onto ANY folder (Dark overlay)
                 if isDropTargeted {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                         .fill(Color.black.opacity(0.3))
                         .frame(width: 56, height: 56)
                         .offset(y: -14)
@@ -1133,7 +1133,7 @@ private struct NotchItemContent: View {
                         Image(nsImage: thumbnail)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xs, style: .continuous))
                     } else {
                         // Native icon (folders, dmg, zip, etc): keep original shape
                         Image(nsImage: NSWorkspace.shared.icon(forFile: item.url.path))
@@ -1148,7 +1148,7 @@ private struct NotchItemContent: View {
                 // Subtle gray highlight when selected (like Finder)
                 .background {
                     if isSelected {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                             .fill(Color.white.opacity(0.15))
                             .padding(-4)
                     }
@@ -1167,7 +1167,7 @@ private struct NotchItemContent: View {
                     if isRemovingBackground || state.processingItemIds.contains(item.id) {
                         MagicProcessingOverlay()
                             .frame(width: 48, height: 48)
-                            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xs, style: .continuous))
                             .transition(.opacity.animation(DroppyAnimation.viewChange))
                     }
                 }
@@ -1216,7 +1216,7 @@ private struct NotchItemContent: View {
                     .padding(.vertical, 2)
                     .background {
                         if isSelected {
-                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            RoundedRectangle(cornerRadius: DroppyRadius.xs, style: .continuous)
                                 .fill(Color.accentColor)
                         }
                     }
@@ -1252,12 +1252,12 @@ private struct RenameTextField: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                 .fill(Color.black.opacity(0.3))
         )
         // Static dotted blue outline (no animation to save CPU)
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                 .stroke(
                     Color.accentColor.opacity(0.8),
                     style: StrokeStyle(

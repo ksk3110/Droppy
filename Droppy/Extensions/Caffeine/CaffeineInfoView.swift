@@ -57,7 +57,7 @@ struct CaffeineInfoView: View {
         .frame(width: 450)
         .fixedSize(horizontal: true, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
         .sheet(isPresented: $showReviewsSheet) {
             ExtensionReviewsSheet(extensionType: .caffeine)
         }
@@ -74,7 +74,7 @@ struct CaffeineInfoView: View {
                 Image(systemName: "eyes").font(.system(size: 32)).foregroundStyle(.orange)
             }
             .frame(width: 64, height: 64)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
             .shadow(color: .orange.opacity(0.4), radius: 8, y: 4)
             
             Text("High Alert")
@@ -158,9 +158,9 @@ struct CaffeineInfoView: View {
             // Screenshot (animated GIF)
             AnimatedGIFView(url: "https://getdroppy.app/assets/images/high-alert-screenshot.gif")
                 .aspectRatio(contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                         .strokeBorder(AdaptiveColors.subtleBorderAuto, lineWidth: 1)
                 )
                 .padding(.top, 8)
@@ -220,11 +220,11 @@ struct CaffeineInfoView: View {
                 }
                 .buttonStyle(DroppyCircleButtonStyle(size: 36, solidFill: caffeineManager.isActive ? .green : nil))
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
             .background(AdaptiveColors.buttonBackgroundAuto.opacity(0.5))
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                     .stroke(caffeineManager.isActive ? Color.green.opacity(0.3) : Color.white.opacity(0.08), lineWidth: 1)
             )
             
@@ -293,7 +293,7 @@ struct CaffeineInfoView: View {
                                     .font(.caption.weight(.bold))
                             }
                         }
-                        .padding(12)
+                        .padding(DroppySpacing.md)
                         .background(isSelected ? AdaptiveColors.buttonBackgroundAuto : Color.clear)
                     }
                     .buttonStyle(.plain)
@@ -304,9 +304,9 @@ struct CaffeineInfoView: View {
                 }
             }
             .background(Color.white.opacity(0.03))
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                     .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
         }
@@ -332,7 +332,7 @@ struct CaffeineInfoView: View {
                 .buttonStyle(DroppyAccentButtonStyle(color: .orange, size: .small))
             }
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
     }
     
     // MARK: - Actions

@@ -27,7 +27,7 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
                 placeholder()
             } else {
                 // Loading state - show subtle placeholder, not the fallback icon
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                     .fill(Color(white: 0.15))
                     .overlay(
                         ProgressView()

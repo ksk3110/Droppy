@@ -111,7 +111,8 @@ final class VoiceTranscribeManager: ObservableObject {
     
     // Model storage directory
     private var modelsDirectory: URL {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support")
         let modelsDir = appSupport.appendingPathComponent("Droppy/WhisperModels")
         try? FileManager.default.createDirectory(at: modelsDir, withIntermediateDirectories: true)
         return modelsDir
@@ -920,7 +921,8 @@ extension VoiceTranscribeManager {
         whisperKit = nil
         
         // Delete model files
-        let modelsDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let modelsDir = (FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support"))
             .appendingPathComponent("Droppy/WhisperModels")
         
         do {

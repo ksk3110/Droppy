@@ -62,7 +62,7 @@ struct QuickshareInfoView: View {
         .frame(width: 540)
         .fixedSize(horizontal: true, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
         .sheet(isPresented: $showReviewsSheet) {
             ExtensionReviewsSheet(extensionType: .quickshare)
         }
@@ -104,7 +104,7 @@ struct QuickshareInfoView: View {
                 }
             }
             .frame(width: 64, height: 64)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
             .shadow(color: Color.cyan.opacity(0.2), radius: 8, y: 4)
             
             HStack(alignment: .center, spacing: 10) {
@@ -205,11 +205,11 @@ struct QuickshareInfoView: View {
                     .toggleStyle(SwitchToggleStyle(tint: .cyan))
                     .labelsHidden()
             }
-            .padding(12)
+            .padding(DroppySpacing.md)
             .background(AdaptiveColors.buttonBackgroundAuto.opacity(0.5))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                     .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
             
@@ -236,11 +236,11 @@ struct QuickshareInfoView: View {
                     .toggleStyle(SwitchToggleStyle(tint: .cyan))
                     .labelsHidden()
             }
-            .padding(12)
+            .padding(DroppySpacing.md)
             .background(AdaptiveColors.buttonBackgroundAuto.opacity(0.5))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                     .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
         }
@@ -281,7 +281,7 @@ struct QuickshareInfoView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 20)
                 .background(Color.white.opacity(0.03))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
             } else {
                 // File List - spacing 8 to match clipboard
                 VStack(spacing: 8) {
@@ -336,9 +336,9 @@ struct QuickshareInfoView: View {
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                             .strokeBorder(AdaptiveColors.subtleBorderAuto, lineWidth: 1)
                     )
             } placeholder: {
@@ -378,7 +378,7 @@ struct QuickshareInfoView: View {
             // Core extension
             DisableExtensionButton(extensionType: .quickshare)
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
     }
     
     // MARK: - Actions

@@ -54,7 +54,7 @@ struct WindowSnapInfoView: View {
         .frame(width: 540)
         .fixedSize(horizontal: true, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
         .onAppear {
             loadShortcuts()
         }
@@ -79,7 +79,7 @@ struct WindowSnapInfoView: View {
                     .foregroundStyle(.cyan)
             }
             .frame(width: 64, height: 64)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
             .shadow(color: Color.cyan.opacity(0.3), radius: 8, y: 4)
             
             Text("Window Snap")
@@ -160,9 +160,9 @@ struct WindowSnapInfoView: View {
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                             .strokeBorder(AdaptiveColors.subtleBorderAuto, lineWidth: 1)
                     )
             } placeholder: {
@@ -216,11 +216,11 @@ struct WindowSnapInfoView: View {
                 }
             }
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
         .background(AdaptiveColors.buttonBackgroundAuto.opacity(0.5))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
     }
@@ -281,9 +281,9 @@ struct WindowSnapInfoView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(AdaptiveColors.buttonBackgroundAuto)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous)
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
     }
@@ -312,7 +312,7 @@ struct WindowSnapInfoView: View {
             
             DisableExtensionButton(extensionType: .windowSnap)
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
     }
     
     // MARK: - Recording

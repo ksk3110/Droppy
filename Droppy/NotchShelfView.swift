@@ -722,7 +722,7 @@ struct NotchShelfView: View {
                                 state.isShelfQuickActionsTargeted = false
                             }
                             .transition(.asymmetric(
-                                insertion: .scale(scale: 0.5).combined(with: .opacity).animation(.spring(response: 0.35, dampingFraction: 0.7)),
+                                insertion: .scale(scale: 0.5).combined(with: .opacity).animation(DroppyAnimation.itemInsertion),
                                 removal: .scale(scale: 0.5).combined(with: .opacity).animation(.easeOut(duration: 0.15))
                             ))
                     }
@@ -819,7 +819,7 @@ struct NotchShelfView: View {
                 .opacity(notchController.isTemporarilyHidden ? 0 : 1)
                 .scaleEffect(notchController.isTemporarilyHidden ? 0.5 : 1)
                 .animation(DroppyAnimation.notchState, value: notchController.isTemporarilyHidden)
-                .animation(.spring(response: 0.3, dampingFraction: 0.75), value: dragMonitor.isDragging)
+                .animation(DroppyAnimation.state, value: dragMonitor.isDragging)
                 .zIndex(100)
             }
 
@@ -2068,7 +2068,7 @@ struct NotchShelfView: View {
     private var dropIndicatorContent: some View {
         // PREMIUM: Shelf icon in compact indicator
         DropZoneIcon(type: .shelf, size: 28, isActive: state.isDropTargeted)
-            .padding(8) // Compact padding
+            .padding(DroppySpacing.sm) // Compact padding
             .background(indicatorBackground)
     }
     
@@ -2092,13 +2092,13 @@ struct NotchShelfView: View {
     // NOTE: In regular notch mode, indicators are solid black.
     // In transparent DI mode OR external notch transparent mode, indicators use glass material.
     private var indicatorBackground: some View {
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
+        RoundedRectangle(cornerRadius: DroppyRadius.lx, style: .continuous)
             .fill(shouldUseFloatingButtonTransparent ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
             .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.lx, style: .continuous)
                     .stroke(Color.white.opacity(0.2), lineWidth: 1)
             )
-            .shadow(color: .black.opacity(0.25), radius: 6, y: 3)
+            .droppyCardShadow()
     }
 
     // MARK: - Expanded Content
@@ -2366,7 +2366,7 @@ struct NotchShelfView: View {
         // Removed .onTapGesture from here to prevent swallowing touches on children
         .overlay(alignment: .topLeading) {
             if let rect = selectionRect {
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.xs, style: .continuous)
                     .fill(Color.blue.opacity(0.2))
                     .stroke(Color.blue.opacity(0.6), lineWidth: 1)
                     .frame(width: rect.width, height: rect.height)
@@ -2547,7 +2547,7 @@ extension NotchShelfView {
                     if state.isDropTargeted {
                         ZStack {
                             // Layer 1: Soft inner border glow - premium edge highlight
-                            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                            RoundedRectangle(cornerRadius: DroppyRadius.jumbo + 2, style: .continuous)
                                 .strokeBorder(
                                     LinearGradient(
                                         colors: [
@@ -2560,7 +2560,7 @@ extension NotchShelfView {
                                     lineWidth: 2
                                 )
                             // Layer 2: Subtle vignette for depth
-                            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                            RoundedRectangle(cornerRadius: DroppyRadius.jumbo + 2, style: .continuous)
                                 .fill(
                                     RadialGradient(
                                         colors: [
@@ -2576,7 +2576,7 @@ extension NotchShelfView {
                         .allowsHitTesting(false)
                     } else {
                         // Subtle dashed outline when not targeted
-                        RoundedRectangle(cornerRadius: 30, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.jumbo + 2, style: .continuous)
                             .strokeBorder(
                                 Color.white.opacity(0.2),
                                 style: StrokeStyle(

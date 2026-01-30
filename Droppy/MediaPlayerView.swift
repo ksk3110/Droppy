@@ -389,12 +389,12 @@ struct MediaPlayerView: View {
             }
             
             // Quick flip out with snappy spring
-            withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
+            withAnimation(DroppyAnimation.hoverBouncy) {
                 albumArtFlipAngle = flipAngle
             }
             // Settle back smoothly after a brief pause
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                withAnimation(DroppyAnimation.transition) {
                     albumArtFlipAngle = 0
                 }
             }
@@ -402,7 +402,7 @@ struct MediaPlayerView: View {
         // MARK: - Album Art Scale on Pause/Play
         .onChange(of: musicManager.isPlaying) { _, isPlaying in
             // PREMIUM: Smooth scale with damping - shrink slightly when paused
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+            withAnimation(DroppyAnimation.itemInsertion) {
                 albumArtPauseScale = isPlaying ? 1.0 : 0.95
             }
         }
@@ -502,7 +502,7 @@ struct MediaPlayerView: View {
                 }
                 .frame(width: 64, height: 64)
                 .modifier(AlbumArtMatchedGeometry(namespace: albumArtNamespace, id: "albumArt"))  // BEFORE clipShape!
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
                 
                 // Spotify badge (bottom-right corner)
                 if musicManager.isSpotifySource {
@@ -512,14 +512,14 @@ struct MediaPlayerView: View {
             }
             // Subtle border highlight
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                     .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
             )
             // Composite the entire view before applying shadow to prevent ghosting during animations
             .compositingGroup()
-            .shadow(color: .black.opacity(0.25), radius: 6, y: 3)
+            .droppyCardShadow()
         }
-        .buttonStyle(DroppyCardButtonStyle(cornerRadius: 16))
+        .buttonStyle(DroppyCardButtonStyle(cornerRadius: DroppyRadius.large))
         .scaleEffect((isAlbumArtPressed ? 0.95 : (isAlbumArtHovering ? 1.02 : 1.0)) * albumArtPauseScale)
         // Premium 3D flip on track change (Y-axis rotation)
         .rotation3DEffect(
@@ -626,7 +626,7 @@ struct MediaPlayerView: View {
                     .frame(width: 100, height: 100)
                     // PREMIUM: matchedGeometryEffect BEFORE clipShape - critical for morphing!
                     .modifier(AlbumArtMatchedGeometry(namespace: albumArtNamespace, id: "albumArt"))
-                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.lx, style: .continuous))
                     
                     // Source badge (bottom-right corner) - fades in without sliding
                     ZStack {
@@ -641,13 +641,13 @@ struct MediaPlayerView: View {
                 }
                 // Subtle border highlight
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.lx, style: .continuous)
                         .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
                 )
                 .compositingGroup()
-                .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
+                .droppyCardShadow(opacity: 0.3)
             }
-            .buttonStyle(DroppyCardButtonStyle(cornerRadius: 18))
+            .buttonStyle(DroppyCardButtonStyle(cornerRadius: DroppyRadius.lx))
             .scaleEffect((isAlbumArtPressed ? 0.96 : (isAlbumArtHovering ? 1.02 : 1.0)) * albumArtPauseScale)
             // Premium 3D flip on track change (Y-axis rotation)
             .rotation3DEffect(
@@ -731,12 +731,12 @@ struct MediaPlayerView: View {
             .frame(height: trackHeight)
             .frame(maxHeight: .infinity, alignment: .center)
             .scaleEffect(y: isDragging ? 1.08 : 1.0, anchor: .center)
-            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isDragging)
+            .animation(DroppyAnimation.hover, value: isDragging)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
-                        withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                        withAnimation(DroppyAnimation.hoverBouncy) {
                             isDragging = true
                         }
                         let fraction = max(0, min(1, value.location.x / width))
@@ -746,7 +746,7 @@ struct MediaPlayerView: View {
                         let fraction = max(0, min(1, value.location.x / width))
                         let seekTime = Double(fraction) * musicManager.songDuration
                         musicManager.seek(to: seekTime)
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        withAnimation(DroppyAnimation.hover) {
                             isDragging = false
                         }
                         lastDragTime = Date()
@@ -948,7 +948,7 @@ struct MediaPlayerView: View {
         MediaPlayerView(musicManager: MusicManager.shared)
             .frame(width: 480, height: 130)
             .background(Color.black)
-            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl))
     }
     .padding()
     .background(Color.gray.opacity(0.3))

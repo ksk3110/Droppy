@@ -57,7 +57,7 @@ struct SmartExportSettingsView: View {
         .frame(width: 480)
         .fixedSize(horizontal: true, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
     }
     
     // MARK: - Header
@@ -99,12 +99,12 @@ struct SmartExportSettingsView: View {
                     .toggleStyle(.switch)
                     .labelsHidden()
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
         }
         .background(AdaptiveColors.buttonBackgroundAuto.opacity(0.5))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
     }
@@ -123,7 +123,7 @@ struct SmartExportSettingsView: View {
                     .background(
                         (operation == .compression ? Color.green : Color.orange).opacity(0.15)
                     )
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.small))
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(operation.displayName)
@@ -139,7 +139,7 @@ struct SmartExportSettingsView: View {
                     .toggleStyle(.switch)
                     .labelsHidden()
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
             
             // Expanded options when enabled
             if enabled.wrappedValue {
@@ -168,7 +168,7 @@ struct SmartExportSettingsView: View {
                     }
                     .buttonStyle(DroppyPillButtonStyle(size: .small))
                 }
-                .padding(16)
+                .padding(DroppySpacing.lg)
                 
                 Divider().padding(.horizontal, 16)
                 
@@ -188,13 +188,13 @@ struct SmartExportSettingsView: View {
                         .toggleStyle(.switch)
                         .labelsHidden()
                 }
-                .padding(16)
+                .padding(DroppySpacing.lg)
             }
         }
         .background(AdaptiveColors.buttonBackgroundAuto.opacity(0.5))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
         .animation(DroppyAnimation.state, value: enabled.wrappedValue)
@@ -213,7 +213,7 @@ struct SmartExportSettingsView: View {
             }
             .buttonStyle(DroppyAccentButtonStyle(color: .blue, size: .small))
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
     }
     
     // MARK: - Actions
@@ -398,7 +398,7 @@ struct SmartExportSettingsRow: View {
                 }
             }
         }
-        .padding(20)
+        .padding(DroppySpacing.xl)
         .frame(width: 200)
     }
 }
@@ -537,9 +537,9 @@ struct SmartExportInfoSheet: View {
                     .background(Color.white.opacity(0.02))
                 }
                 .background(Color.white.opacity(0.03))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                         .stroke(Color.white.opacity(0.05), lineWidth: 1)
                 )
             }
@@ -574,12 +574,12 @@ struct SmartExportInfoSheet: View {
                 }
                 .buttonStyle(DroppyAccentButtonStyle(color: .blue, size: .small))
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
         }
         .frame(width: 380)
         .fixedSize(horizontal: true, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
     }
 }
 

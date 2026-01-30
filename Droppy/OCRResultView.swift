@@ -34,7 +34,7 @@ struct OCRResultView: View {
                 
                 Spacer()
             }
-            .padding(20)
+            .padding(DroppySpacing.xl)
             
             Divider()
                 .padding(.horizontal, 20)
@@ -45,7 +45,7 @@ struct OCRResultView: View {
                     .font(.body)
                     .foregroundColor(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(20)
+                    .padding(DroppySpacing.xl)
                     .textSelection(.enabled)
             }
             .frame(maxHeight: 300)
@@ -84,7 +84,7 @@ struct OCRResultView: View {
                 }
                 .buttonStyle(DroppyAccentButtonStyle(color: showCopiedFeedback ? .green : .blue, size: .small))
             }
-            .padding(16)
+            .padding(DroppySpacing.lg)
         }
         .frame(width: 420)
         .fixedSize(horizontal: false, vertical: true)

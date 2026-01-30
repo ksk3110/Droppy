@@ -55,7 +55,7 @@ struct ExtensionInfoView: View {
         .frame(width: 450)
         .fixedSize(horizontal: true, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
         .sheet(isPresented: $showReviewsSheet) {
             ExtensionReviewsSheet(extensionType: extensionType)
         }
@@ -142,9 +142,9 @@ struct ExtensionInfoView: View {
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                                 .strokeBorder(AdaptiveColors.subtleBorderAuto, lineWidth: 1)
                         )
                 } placeholder: {
@@ -210,7 +210,7 @@ struct ExtensionInfoView: View {
             // Disable button
             DisableExtensionButton(extensionType: extensionType)
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
     }
     
     private var shortActionText: String {

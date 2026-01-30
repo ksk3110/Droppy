@@ -58,22 +58,22 @@ struct BasketQuickActionsBar: View {
                     // Expanded: Floating buttons only
                     QuickDropActionButton(actionType: .airdrop, useTransparent: useTransparentBackground, shareAction: shareViaAirDrop)
                         .transition(.asymmetric(
-                            insertion: .scale(scale: 0.5).combined(with: .opacity).animation(.spring(response: 0.35, dampingFraction: 0.7).delay(0.0)),
+                            insertion: .scale(scale: 0.5).combined(with: .opacity).animation(DroppyAnimation.itemInsertion),
                             removal: .scale(scale: 0.5).combined(with: .opacity).animation(.easeOut(duration: 0.15))
                         ))
                     QuickDropActionButton(actionType: .messages, useTransparent: useTransparentBackground, shareAction: shareViaMessages)
                         .transition(.asymmetric(
-                            insertion: .scale(scale: 0.5).combined(with: .opacity).animation(.spring(response: 0.35, dampingFraction: 0.7).delay(0.03)),
+                            insertion: .scale(scale: 0.5).combined(with: .opacity).animation(DroppyAnimation.itemInsertion.delay(0.03)),
                             removal: .scale(scale: 0.5).combined(with: .opacity).animation(.easeOut(duration: 0.15))
                         ))
                     QuickDropActionButton(actionType: .mail, useTransparent: useTransparentBackground, shareAction: shareViaMail)
                         .transition(.asymmetric(
-                            insertion: .scale(scale: 0.5).combined(with: .opacity).animation(.spring(response: 0.35, dampingFraction: 0.7).delay(0.06)),
+                            insertion: .scale(scale: 0.5).combined(with: .opacity).animation(DroppyAnimation.itemInsertion.delay(0.06)),
                             removal: .scale(scale: 0.5).combined(with: .opacity).animation(.easeOut(duration: 0.15))
                         ))
                     QuickDropActionButton(actionType: .quickshare, useTransparent: useTransparentBackground, shareAction: quickShareTo0x0)
                         .transition(.asymmetric(
-                            insertion: .scale(scale: 0.5).combined(with: .opacity).animation(.spring(response: 0.35, dampingFraction: 0.7).delay(0.09)),
+                            insertion: .scale(scale: 0.5).combined(with: .opacity).animation(DroppyAnimation.itemInsertion.delay(0.09)),
                             removal: .scale(scale: 0.5).combined(with: .opacity).animation(.easeOut(duration: 0.15))
                         ))
                 } else {
@@ -98,11 +98,11 @@ struct BasketQuickActionsBar: View {
                             return false
                         }
                         .transition(.scale(scale: 0.5).combined(with: .opacity))
-                        .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isBoltTargeted)
+                        .animation(DroppyAnimation.hoverBouncy, value: isBoltTargeted)
                 }
             }
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.75), value: isExpanded)
+        .animation(DroppyAnimation.state, value: isExpanded)
         .onHover { hovering in
             isHovering = hovering
         }
@@ -112,7 +112,7 @@ struct BasketQuickActionsBar: View {
             if !hovering && (DroppyState.shared.isQuickActionsTargeted || isBoltTargeted) {
                 return  // Keep expanded while dragging over bar
             }
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+            withAnimation(DroppyAnimation.state) {
                 isExpanded = hovering
             }
             // Clear hovered action when collapsing
@@ -126,7 +126,7 @@ struct BasketQuickActionsBar: View {
         // DRAG-TO-EXPAND: Auto-expand when files are dragged over the collapsed bolt
         .onChange(of: isBoltTargeted) { _, targeted in
             if targeted && !isExpanded {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                withAnimation(DroppyAnimation.state) {
                     isExpanded = true
                 }
                 HapticFeedback.expand()
@@ -136,7 +136,7 @@ struct BasketQuickActionsBar: View {
         .onChange(of: DroppyState.shared.isQuickActionsTargeted) { _, targeted in
             if !targeted && !isHovering && isExpanded {
                 DroppyState.shared.hoveredQuickAction = nil
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                withAnimation(DroppyAnimation.state) {
                     isExpanded = false
                 }
             }
@@ -147,7 +147,7 @@ struct BasketQuickActionsBar: View {
                 // Drag moved to basket - collapse back to bolt and clear quick actions state
                 DroppyState.shared.isQuickActionsTargeted = false
                 DroppyState.shared.hoveredQuickAction = nil
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                withAnimation(DroppyAnimation.state) {
                     isExpanded = false
                 }
             }
@@ -218,8 +218,8 @@ struct QuickDropActionButton: View {
             )
             // Grow when file dragged over
             .scaleEffect(isTargeted ? 1.18 : (isHovering ? 1.05 : 1.0))
-            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isTargeted)
-            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: isHovering)
+            .animation(DroppyAnimation.hoverBouncy, value: isTargeted)
+            .animation(DroppyAnimation.hoverBouncy, value: isHovering)
             .onHover { hovering in
                 isHovering = hovering
                 // Update shared state for basket explanation overlay

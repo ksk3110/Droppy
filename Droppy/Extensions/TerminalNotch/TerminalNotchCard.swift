@@ -58,16 +58,16 @@ struct TerminalNotchCard: View {
                 // Icon
                 extensionType.iconView
             }
-            .padding(20)
+            .padding(DroppySpacing.xl)
             .frame(height: 160)
             .background(cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
         }
-        .buttonStyle(DroppyCardButtonStyle(cornerRadius: 16))
+        .buttonStyle(DroppyCardButtonStyle(cornerRadius: DroppyRadius.large))
     }
     
     private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: 16, style: .continuous)
+        RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
             .fill(
                 LinearGradient(
                     colors: [
@@ -79,7 +79,7 @@ struct TerminalNotchCard: View {
                 )
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
                     .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
             )
     }

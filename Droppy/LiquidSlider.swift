@@ -180,7 +180,7 @@ enum HUDContentType: String, CaseIterable {
         }
         .padding()
         .background(.black)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl))
         
         // Brightness slider
         HStack(spacing: 12) {
@@ -191,7 +191,7 @@ enum HUDContentType: String, CaseIterable {
         }
         .padding()
         .background(.black)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl))
     }
     .padding()
     .background(Color.gray.opacity(0.3))

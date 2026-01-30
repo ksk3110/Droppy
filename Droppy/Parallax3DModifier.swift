@@ -63,7 +63,7 @@ struct Parallax3DModifier: ViewModifier {
                         
                     case .ended:
                         // Smooth settle back with slightly longer spring
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                        withAnimation(DroppyAnimation.transition) {
                             offset = .zero
                             isHovering = false
                         }

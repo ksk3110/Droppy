@@ -56,7 +56,7 @@ struct VoiceTranscribeInfoView: View {
         .frame(width: 450)
         .fixedSize(horizontal: true, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.xl, style: .continuous))
         .sheet(isPresented: $showReviewsSheet) {
             ExtensionReviewsSheet(extensionType: .voiceTranscribe)
         }
@@ -76,7 +76,7 @@ struct VoiceTranscribeInfoView: View {
                 Image(systemName: "waveform.and.mic").font(.system(size: 32)).foregroundStyle(.blue)
             }
             .frame(width: 64, height: 64)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
             .shadow(color: .blue.opacity(0.4), radius: 8, y: 4)
             
             Text("Voice Transcribe")
@@ -145,9 +145,9 @@ struct VoiceTranscribeInfoView: View {
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                             .strokeBorder(AdaptiveColors.subtleBorderAuto, lineWidth: 1)
                     )
             } placeholder: {
@@ -192,7 +192,7 @@ struct VoiceTranscribeInfoView: View {
                         .labelsHidden()
                         .disabled(!manager.isModelDownloaded)
                 }
-                .padding(16)
+                .padding(DroppySpacing.lg)
                 
                 Divider().padding(.horizontal, 16)
                 
@@ -232,11 +232,11 @@ struct VoiceTranscribeInfoView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(AdaptiveColors.subtleBorderAuto)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.small))
                     }
                     .menuStyle(.borderlessButton)
                 }
-                .padding(16)
+                .padding(DroppySpacing.lg)
                 
                 Divider().padding(.horizontal, 16)
                 
@@ -276,16 +276,16 @@ struct VoiceTranscribeInfoView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(AdaptiveColors.subtleBorderAuto)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.small))
                     }
                     .menuStyle(.borderlessButton)
                 }
-                .padding(16)
+                .padding(DroppySpacing.lg)
             }
             .background(AdaptiveColors.buttonBackgroundAuto.opacity(0.5))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                     .stroke(Color.white.opacity(0.08), lineWidth: 1)
             )
             
@@ -296,13 +296,13 @@ struct VoiceTranscribeInfoView: View {
                 HStack(spacing: 12) {
                     ZStack(alignment: .leading) {
                         // Background track
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                             .fill(Color.blue.opacity(0.3))
                             .frame(maxWidth: .infinity)
                             .frame(height: 44)
                         
                         // Progress fill - use percentage width with clipping
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                             .fill(Color.blue)
                             .frame(height: 44)
                             .mask(alignment: .leading) {
@@ -368,11 +368,11 @@ struct VoiceTranscribeInfoView: View {
                         shortcutRow(for: .invisi)
                     }
                 }
-                .padding(16)
+                .padding(DroppySpacing.lg)
                 .background(AdaptiveColors.buttonBackgroundAuto.opacity(0.5))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                         .stroke(Color.white.opacity(0.08), lineWidth: 1)
                 )
             }
@@ -418,11 +418,11 @@ struct VoiceTranscribeInfoView: View {
                         .buttonStyle(DroppyAccentButtonStyle(color: .red, size: .small))
                     }
                 }
-                .padding(16)
+                .padding(DroppySpacing.lg)
                 .background(AdaptiveColors.buttonBackgroundAuto.opacity(0.5))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
                         .stroke(Color.white.opacity(0.08), lineWidth: 1)
                 )
             }
@@ -456,7 +456,7 @@ struct VoiceTranscribeInfoView: View {
             
             DisableExtensionButton(extensionType: .voiceTranscribe)
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
     }
     
     // MARK: - Shortcut Recording
@@ -511,11 +511,11 @@ struct VoiceTranscribeInfoView: View {
                 .buttonStyle(DroppyAccentButtonStyle(color: recordingMode == mode ? .red : .blue, size: .small))
             }
         }
-        .padding(14)
+        .padding(DroppySpacing.mdl)
         .background(AdaptiveColors.buttonBackgroundAuto)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
     }

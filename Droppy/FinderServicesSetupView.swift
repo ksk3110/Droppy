@@ -36,8 +36,8 @@ struct FinderServicesSetupView: View {
         .frame(width: 340)  // Same width as AIInstallView
         .fixedSize(horizontal: false, vertical: true)
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .shadow(color: .black.opacity(0.3), radius: 12, y: 6)
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous))
+        .droppyFloatingShadow()
     }
     
     // MARK: - Header
@@ -51,7 +51,7 @@ struct FinderServicesSetupView: View {
                 Image(systemName: "folder").font(.system(size: 32)).foregroundStyle(.blue)
             }
             .frame(width: 64, height: 64)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
             .shadow(color: .blue.opacity(0.3), radius: 8, y: 4)
             
             Text("Enable Finder Services")
@@ -85,7 +85,7 @@ struct FinderServicesSetupView: View {
                 .foregroundStyle(.primary)
                 .frame(width: 22, height: 22)
                 .background(Color.blue.opacity(0.6))
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.sm, style: .continuous))
             
             Text(text)
                 .font(.callout)
@@ -121,7 +121,7 @@ struct FinderServicesSetupView: View {
             }
             .buttonStyle(DroppyAccentButtonStyle(color: hasOpenedSettings ? .green : .blue, size: .small))
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
         .animation(DroppyAnimation.transition, value: hasOpenedSettings)
     }
     
@@ -174,7 +174,7 @@ struct FinderServicesSetupSheetView: View {
                 Image(systemName: "folder").font(.system(size: 32)).foregroundStyle(.blue)
             }
             .frame(width: 64, height: 64)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
             .shadow(color: .blue.opacity(0.3), radius: 8, y: 4)
             
             Text("Enable Finder Services")
@@ -208,7 +208,7 @@ struct FinderServicesSetupSheetView: View {
                 .foregroundStyle(.primary)
                 .frame(width: 22, height: 22)
                 .background(Color.blue.opacity(0.6))
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.sm, style: .continuous))
             
             Text(text)
                 .font(.callout)
@@ -244,7 +244,7 @@ struct FinderServicesSetupSheetView: View {
             }
             .buttonStyle(DroppyAccentButtonStyle(color: hasOpenedSettings ? .green : .blue, size: .small))
         }
-        .padding(16)
+        .padding(DroppySpacing.lg)
         .animation(DroppyAnimation.transition, value: hasOpenedSettings)
     }
     
