@@ -314,6 +314,10 @@ final class WindowSnapManager: ObservableObject {
         
         if action.isDisplayMovement {
             // Direct display movement actions
+            print("[WindowSnap] Display movement: \(action.title)")
+            print("[WindowSnap]   Current screen: \(currentScreen.localizedName)")
+            print("[WindowSnap]   Available screens: \(NSScreen.screens.map { $0.localizedName })")
+            
             if let screen = getTargetScreen(for: action, from: currentScreen) {
                 targetScreen = screen
                 // Preserve window size and center on new screen
@@ -774,25 +778,35 @@ final class WindowSnapManager: ObservableObject {
         }
         let primaryHeight = primaryScreen.frame.height
         
-        // Get source and target visible frames in screen coordinates
+        // Convert source screen visible frame to screen coordinates
+        // NSScreen uses AppKit coords (Y=0 at bottom), AXUIElement uses screen coords (Y=0 at top)
         let sourceVisible = currentScreen.visibleFrame
+        let sourceVisibleScreenY = primaryHeight - sourceVisible.origin.y - sourceVisible.height
+        
+        // Convert target screen visible frame to screen coordinates
         let targetVisible = targetScreen.visibleFrame
+        let targetVisibleScreenY = primaryHeight - targetVisible.origin.y - targetVisible.height
         
-        // Convert to screen coordinates
-        let sourceY = primaryHeight - sourceVisible.origin.y - sourceVisible.height
-        let targetY = primaryHeight - targetVisible.origin.y - targetVisible.height
-        
-        // Calculate relative position in source screen (0.0 to 1.0)
+        // Calculate relative position (0.0 to 1.0) within source visible area
+        // X coordinate is the same in both coordinate systems
         let relativeX = (currentFrame.origin.x - sourceVisible.origin.x) / sourceVisible.width
-        let relativeY = (currentFrame.origin.y - sourceY) / sourceVisible.height
-        let relativeW = currentFrame.width / sourceVisible.width
-        let relativeH = currentFrame.height / sourceVisible.height
+        let relativeY = (currentFrame.origin.y - sourceVisibleScreenY) / sourceVisible.height
+        
+        // Preserve window size (clamped to target screen)
+        let newWidth = min(currentFrame.width, targetVisible.width)
+        let newHeight = min(currentFrame.height, targetVisible.height)
         
         // Apply relative position to target screen
-        let newWidth = min(relativeW * targetVisible.width, targetVisible.width)
-        let newHeight = min(relativeH * targetVisible.height, targetVisible.height)
-        let newX = targetVisible.origin.x + (relativeX * targetVisible.width)
-        let newY = targetY + (relativeY * targetVisible.height)
+        var newX = targetVisible.origin.x + (relativeX * targetVisible.width)
+        var newY = targetVisibleScreenY + (relativeY * targetVisible.height)
+        
+        // Clamp to visible bounds to ensure window stays on screen
+        newX = max(targetVisible.origin.x, min(newX, targetVisible.origin.x + targetVisible.width - newWidth))
+        newY = max(targetVisibleScreenY, min(newY, targetVisibleScreenY + targetVisible.height - newHeight))
+        
+        print("[WindowSnap] Moving to display: \(targetScreen.localizedName)")
+        print("[WindowSnap]   Source: \(currentScreen.localizedName) frame=\(currentFrame)")
+        print("[WindowSnap]   Target frame: (\(Int(newX)), \(Int(newY)), \(Int(newWidth)), \(Int(newHeight)))")
         
         return CGRect(x: newX, y: newY, width: newWidth, height: newHeight)
     }
