@@ -660,6 +660,22 @@ final class MenuBarManager: ObservableObject {
                 .store(in: &c)
         }
         
+        // Listen for open settings notification
+        NotificationCenter.default.publisher(for: .menuBarManagerOpenSettings)
+            .receive(on: DispatchQueue.main)
+            .sink { _ in
+                SettingsWindowController.shared.showSettings(openingExtension: .menuBarManager)
+            }
+            .store(in: &c)
+        
+        // Listen for disable notification
+        NotificationCenter.default.publisher(for: .menuBarManagerDisable)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.isEnabled = false
+            }
+            .store(in: &c)
+        
         cancellables = c
     }
     
