@@ -71,7 +71,7 @@ struct NotchHUDView: View {
             if isDynamicIslandMode {
                 // DYNAMIC ISLAND: Compact horizontal layout - icon + slider only (no text label)
                 // This creates a minimal, clean appearance matching the DI aesthetic
-                let iconSize: CGFloat = 18
+                let iconSize = HUDLayoutCalculator.dynamicIslandIconSize
                 // +wingCornerCompensation when external display uses notch style (curved topCornerRadius)
                 let basePadding = (notchHeight - iconSize) / 2
                 let symmetricPadding = isExternalWithNotchStyle ? basePadding + NotchLayoutConstants.wingCornerCompensation : basePadding
@@ -104,8 +104,9 @@ struct NotchHUDView: View {
                 .frame(height: notchHeight)
             } else {
                 // NOTCH MODE: Wide layout - icon + label on left wing, slider on right wing
-                // Using Droppy pattern: 20px icons with symmetricPadding for outer-wing alignment
-                let iconSize: CGFloat = 20
+                // Using HUDLayoutCalculator for consistent sizing across all HUDs
+                let iconSize = HUDLayoutCalculator.notchIconSize
+                let labelSize = HUDLayoutCalculator(screen: targetScreen ?? NSScreen.main).labelFontSize
                 // +wingCornerCompensation for curved wing corners (topCornerRadius)
                 let symmetricPadding = max((notchHeight - iconSize) / 2, 6) + NotchLayoutConstants.wingCornerCompensation
                 
@@ -118,15 +119,15 @@ struct NotchHUDView: View {
                         
                         // Volume: White icon | Brightness: Yellow icon
                         Image(systemName: hudType.icon(for: value))
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(.system(size: iconSize, weight: .semibold))
                             .foregroundStyle(hudType == .brightness ? Color(red: 1.0, green: 0.85, blue: 0.0) : .white)
                             .contentTransition(.symbolEffect(.replace.byLayer))
                             .scaleEffect(iconScale)
                             .animation(.interpolatingSpring(stiffness: 300, damping: 20), value: value)
-                            .frame(width: 30, alignment: .center)  // Fixed width - fits max scale
+                            .frame(width: iconSize + 10, alignment: .center)  // Fixed width - fits max scale
                         
                         Text(hudType == .brightness ? "Brightness" : "Volume")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.system(size: labelSize, weight: .semibold))
                             .foregroundStyle(.white)
                             .lineLimit(1)
                             .fixedSize()
@@ -178,11 +179,11 @@ struct HUDOverlayView: View {
         HStack(spacing: 14) {
             // Icon with dynamic symbol
             Image(systemName: hudType.icon(for: value))
-                .font(.system(size: 18, weight: .semibold))
+                .font(.system(size: HUDLayoutCalculator.dynamicIslandIconSize, weight: .semibold))
                 .foregroundStyle(.white)
                 .contentTransition(.interpolate)
                 .symbolVariant(.fill)
-                .frame(width: 24, height: 20)
+                .frame(width: 22, height: HUDLayoutCalculator.dynamicIslandIconSize)
             
             // Slider
             LiquidSlider(

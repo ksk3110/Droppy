@@ -107,10 +107,10 @@ struct HUDLayoutCalculator {
     // MARK: - Standard Sizes
     
     /// Standard icon size for Dynamic Island mode
-    static let dynamicIslandIconSize: CGFloat = 18
+    static let dynamicIslandIconSize: CGFloat = 16
     
     /// Standard icon size for Notch mode
-    static let notchIconSize: CGFloat = 20
+    static let notchIconSize: CGFloat = 18
     
     /// Current icon size based on mode
     var iconSize: CGFloat {
@@ -119,7 +119,7 @@ struct HUDLayoutCalculator {
     
     /// Current font size for percentage/label text
     var labelFontSize: CGFloat {
-        isDynamicIslandMode ? 13 : 15
+        isDynamicIslandMode ? 12 : 14
     }
     
     // MARK: - Color Helpers
