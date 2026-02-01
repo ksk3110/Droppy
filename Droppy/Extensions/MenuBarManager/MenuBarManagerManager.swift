@@ -3,7 +3,7 @@
 //  Droppy
 //
 //  Menu Bar Manager - Hide/show menu bar icons using divider expansion pattern
-//  Based on proven open-source patterns for status bar management
+//  Implementation based on proven open-source patterns
 //
 
 import SwiftUI
@@ -59,7 +59,7 @@ enum MBMIconSet: String, CaseIterable, Identifiable {
 
 /// Proxy getters and setters for status item's user defaults values
 private enum StatusItemDefaults {
-    /// Keys used to look up user defaults values for status items
+    /// Keys for values stored in user defaults
     enum Key<Value> {
         static var preferredPosition: Key<CGFloat> { Key<CGFloat>() }
         static var visible: Key<Bool> { Key<Bool>() }
@@ -95,47 +95,109 @@ private enum StatusItemDefaults {
     }
 }
 
-// MARK: - Hiding State
+// MARK: - Menu Bar Section
 
-/// Possible hiding states for control items
-enum HidingState {
-    case hideItems  // Divider expanded to 10,000pt, icons pushed off
-    case showItems  // Divider at normal width, icons visible
-}
-
-// MARK: - Control Item (Status Item Wrapper)
-
-/// A status item that controls a section in the menu bar
-/// Follows proven patterns for reliable status bar control
+/// A representation of a section in the menu bar
 @MainActor
-private final class ControlItem {
-    /// Possible identifiers for control items
-    enum Identifier: String {
-        case mainIcon = "DroppyMBM_Icon"       // The toggle button (always visible)
-        case hiddenDivider = "DroppyMBM_Hidden" // The divider that expands
+final class MenuBarSection {
+    /// Section names
+    enum Name: CaseIterable {
+        case visible      // The always-visible section (contains the toggle icon)
+        case hidden       // The hideable section (expands to hide other items)
+        
+        var displayString: String {
+            switch self {
+            case .visible: return "Visible"
+            case .hidden: return "Hidden"
+            }
+        }
     }
     
-    /// Lengths for control items
+    /// Possible hiding states
+    enum HidingState {
+        case hideItems  // Divider expanded to 10,000pt, icons pushed off
+        case showItems  // Divider at normal width, icons visible
+    }
+    
+    /// The name of this section
+    let name: Name
+    
+    /// The control item that manages this section
+    let controlItem: ControlItem
+    
+    /// A Boolean value that indicates whether the section is hidden
+    var isHidden: Bool {
+        controlItem.state == .hideItems
+    }
+    
+    /// Creates a section with the given name
+    init(name: Name) {
+        self.controlItem = ControlItem(sectionName: name)
+        self.name = name
+    }
+    
+    /// Shows the section
+    func show() {
+        guard isHidden else { return }
+        controlItem.state = .showItems
+    }
+    
+    /// Hides the section
+    func hide() {
+        guard !isHidden else { return }
+        controlItem.state = .hideItems
+    }
+    
+    /// Toggles the visibility of the section
+    func toggle() {
+        if isHidden {
+            show()
+        } else {
+            hide()
+        }
+    }
+}
+
+// MARK: - Control Item
+
+/// A status item that controls a section in the menu bar
+@MainActor
+final class ControlItem {
+    /// Possible lengths for control items
     enum Lengths {
         static let standard: CGFloat = NSStatusItem.variableLength
         static let expanded: CGFloat = 10_000
     }
     
     /// The control item's hiding state
-    @Published var state = HidingState.hideItems
+    @Published var state = MenuBarSection.HidingState.hideItems
     
     /// A Boolean value that indicates whether the control item is visible
     @Published var isVisible = true
     
-    /// The control item's identifier
-    let identifier: Identifier
+    /// The section name this control item belongs to
+    let sectionName: MenuBarSection.Name
     
     /// The underlying status item
     private let statusItem: NSStatusItem
     
+    /// A horizontal constraint for the control item's content view (the constraint hack)
+    private let constraint: NSLayoutConstraint?
+    
+    /// Storage for Combine observers
+    private var cancellables = Set<AnyCancellable>()
+    
+    /// The autosave name for this control item
+    private var autosaveName: String {
+        switch sectionName {
+        case .visible: return "DroppyMBM_Icon"
+        case .hidden: return "DroppyMBM_Hidden"
+        }
+    }
+    
     /// Whether this is a section divider (expands to hide) vs main icon (never expands)
     var isSectionDivider: Bool {
-        identifier == .hiddenDivider
+        sectionName != .visible
     }
     
     /// Whether the item is added to menu bar
@@ -153,58 +215,82 @@ private final class ControlItem {
         statusItem.button?.window
     }
     
-    /// Storage for Combine observers
-    private var cancellables = Set<AnyCancellable>()
-    
-    /// Creates a control item with the given identifier
-    init(identifier: Identifier) {
-        let autosaveName = identifier.rawValue
+    /// Creates a control item for the given section
+    init(sectionName: MenuBarSection.Name) {
+        let autosaveName: String
+        switch sectionName {
+        case .visible: autosaveName = "DroppyMBM_Icon"
+        case .hidden: autosaveName = "DroppyMBM_Hidden"
+        }
         
         // CRITICAL: Seed position BEFORE creating item if not already set
         if StatusItemDefaults[.preferredPosition, autosaveName] == nil {
-            switch identifier {
-            case .mainIcon:
+            switch sectionName {
+            case .visible:
                 StatusItemDefaults[.preferredPosition, autosaveName] = 0
-            case .hiddenDivider:
+            case .hidden:
                 StatusItemDefaults[.preferredPosition, autosaveName] = 1
             }
         }
         
-        // Create with length 0 - will be set by Combine publishers
+        // Create with length 0 - Combine publishers will set actual length
         self.statusItem = NSStatusBar.system.statusItem(withLength: 0)
         self.statusItem.autosaveName = autosaveName
-        self.identifier = identifier
+        self.sectionName = sectionName
+        
+        // THE CONSTRAINT HACK:
+        // We need this constraint to be able to hide the control item to a true 0 width.
+        // A previous implementation used isVisible, but that removes the item entirely.
+        // We need to be able to accurately retrieve items for each section, so we need
+        // the control item to always be present to act as a delimiter. The solution is
+        // to remove the constraint that prevents status items from having a length of zero,
+        // then resize the content view.
+        if let button = statusItem.button,
+           let constraints = button.window?.contentView?.constraintsAffectingLayout(for: .horizontal),
+           let constraint = constraints.first(where: { $0.secondItem === button.superview })
+        {
+            self.constraint = constraint
+        } else {
+            self.constraint = nil
+        }
         
         configureStatusItem()
         
-        print("[ControlItem] Created \(identifier.rawValue), position=\(String(describing: StatusItemDefaults[.preferredPosition, autosaveName]))")
+        print("[ControlItem] Created \(autosaveName), position=\(String(describing: StatusItemDefaults[.preferredPosition, autosaveName]))")
     }
     
     deinit {
         // CRITICAL: Cache position before removing, then restore
         // Removing the status item deletes the preferredPosition
-        let autosaveName = statusItem.autosaveName as String
-        let cached: CGFloat? = StatusItemDefaults[.preferredPosition, autosaveName]
+        let name = statusItem.autosaveName as String
+        let cached: CGFloat? = StatusItemDefaults[.preferredPosition, name]
         NSStatusBar.system.removeStatusItem(statusItem)
-        StatusItemDefaults[.preferredPosition, autosaveName] = cached
-        print("[ControlItem] deinit \(autosaveName), preserved position=\(String(describing: cached))")
+        StatusItemDefaults[.preferredPosition, name] = cached
+        print("[ControlItem] deinit \(name), preserved position=\(String(describing: cached))")
     }
     
-    /// Sets up the status item and Combine observers
+    /// Sets up the status item
     private func configureStatusItem() {
+        defer {
+            configureCancellables()
+            updateStatusItem(with: state)
+        }
         guard let button = statusItem.button else { return }
-        
         button.target = self
-        button.action = #selector(itemClicked)
+        button.action = #selector(performAction)
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
-        
-        // Set up Combine publishers for reactive length updates
-        configureCancellables()
     }
     
     /// Configures Combine publishers for reactive state management
     private func configureCancellables() {
         var c = Set<AnyCancellable>()
+        
+        // React to state changes for appearance updates
+        $state
+            .sink { [weak self] state in
+                self?.updateStatusItem(with: state)
+            }
+            .store(in: &c)
         
         // CRITICAL PATTERN: React to both isVisible AND state changes together
         Publishers.CombineLatest($isVisible, $state)
@@ -212,29 +298,39 @@ private final class ControlItem {
                 guard let self else { return }
                 
                 if isVisible {
-                    // Main icon NEVER expands - always standard length
-                    // Divider expands to hide items, standard to show
-                    statusItem.length = switch identifier {
-                    case .mainIcon:
+                    // The KEY difference:
+                    // - .visible section → ALWAYS standard length
+                    // - .hidden section → expanded when hiding, standard when showing
+                    statusItem.length = switch sectionName {
+                    case .visible:
                         Lengths.standard
-                    case .hiddenDivider:
+                    case .hidden:
                         switch state {
                         case .hideItems: Lengths.expanded
                         case .showItems: Lengths.standard
                         }
                     }
+                    constraint?.isActive = true
                 } else {
+                    // When not visible, use constraint hack to set zero width
                     statusItem.length = 0
+                    constraint?.isActive = false
+                    if let window {
+                        var size = window.frame.size
+                        size.width = 1
+                        window.setContentSize(size)
+                    }
                 }
                 
-                print("[ControlItem] \(identifier.rawValue) length set to \(statusItem.length)")
+                print("[ControlItem] \(autosaveName) length=\(statusItem.length), state=\(state)")
             }
             .store(in: &c)
         
-        // React to state changes for appearance updates
-        $state
-            .sink { [weak self] state in
-                self?.updateAppearance(for: state)
+        // Sync constraint state with isVisible
+        constraint?.publisher(for: \.isActive)
+            .removeDuplicates()
+            .sink { [weak self] isActive in
+                self?.isVisible = isActive
             }
             .store(in: &c)
         
@@ -242,21 +338,23 @@ private final class ControlItem {
     }
     
     /// Updates the visual appearance based on state
-    private func updateAppearance(for state: HidingState) {
+    private func updateStatusItem(with state: MenuBarSection.HidingState) {
         guard let button = statusItem.button else { return }
         
-        switch identifier {
-        case .mainIcon:
-            // Main icon updates handled by MenuBarManager
-            break
+        switch sectionName {
+        case .visible:
+            // Main icon - always visible
+            isVisible = true
+            button.cell?.isEnabled = true
+            // Icon changes handled by MenuBarManager
             
-        case .hiddenDivider:
+        case .hidden:
             switch state {
             case .hideItems:
                 // Expanded - hide the divider visual
                 isVisible = true
                 button.cell?.isEnabled = false  // Prevent highlighting
-                button.isHighlighted = false
+                button.isHighlighted = false    // Cell still sometimes flashes
                 button.image = nil
                 
             case .showItems:
@@ -264,7 +362,6 @@ private final class ControlItem {
                 isVisible = true
                 button.cell?.isEnabled = true
                 button.alphaValue = 0.7
-                
                 let config = NSImage.SymbolConfiguration(pointSize: 11, weight: .semibold)
                 button.image = NSImage(systemSymbolName: "chevron.compact.left", accessibilityDescription: "Section divider")?
                     .withSymbolConfiguration(config)
@@ -273,26 +370,22 @@ private final class ControlItem {
         }
     }
     
-    @objc private func itemClicked() {
-        // Clicks handled by MenuBarManager
-        if let event = NSApp.currentEvent {
-            NotificationCenter.default.post(
-                name: .menuBarManagerItemClicked,
-                object: self,
-                userInfo: ["identifier": identifier, "event": event]
-            )
-        }
+    @objc private func performAction() {
+        guard let event = NSApp.currentEvent else { return }
+        NotificationCenter.default.post(
+            name: .menuBarManagerItemClicked,
+            object: self,
+            userInfo: ["sectionName": sectionName, "event": event]
+        )
     }
     
     /// Removes the control item from the menu bar
     func removeFromMenuBar() {
         guard isAddedToMenuBar else { return }
-        
-        // Cache position before hiding
-        let autosaveName = statusItem.autosaveName as String
-        let cached: CGFloat? = StatusItemDefaults[.preferredPosition, autosaveName]
+        let name = statusItem.autosaveName as String
+        let cached: CGFloat? = StatusItemDefaults[.preferredPosition, name]
         statusItem.isVisible = false
-        StatusItemDefaults[.preferredPosition, autosaveName] = cached
+        StatusItemDefaults[.preferredPosition, name] = cached
     }
     
     /// Adds the control item to the menu bar
@@ -313,8 +406,10 @@ final class MenuBarManager: ObservableObject {
     /// Whether the extension is enabled
     @Published private(set) var isEnabled = false
     
-    /// Current hiding state
-    @Published private(set) var state = HidingState.showItems
+    /// Current hiding state (mirrors hidden section's state)
+    var state: MenuBarSection.HidingState {
+        hiddenSection?.controlItem.state ?? .showItems
+    }
     
     /// Whether hover-to-show is enabled
     @Published var showOnHover = false {
@@ -342,13 +437,25 @@ final class MenuBarManager: ObservableObject {
     /// Convenience: whether icons are currently visible
     var isExpanded: Bool { state == .showItems }
     
-    // MARK: - Control Items
+    // MARK: - Sections
     
-    /// The main toggle button (rightmost, user clicks to toggle visibility)
-    private var mainItem: ControlItem?
+    /// The managed sections in the menu bar
+    private(set) var sections = [MenuBarSection]()
     
-    /// The hidden section divider (to the LEFT of main, expands to push icons off screen)
-    private var dividerItem: ControlItem?
+    /// Returns the section with the given name
+    func section(withName name: MenuBarSection.Name) -> MenuBarSection? {
+        sections.first { $0.name == name }
+    }
+    
+    /// The visible section (contains the main toggle icon)
+    var visibleSection: MenuBarSection? {
+        section(withName: .visible)
+    }
+    
+    /// The hidden section (expands to hide other items)
+    var hiddenSection: MenuBarSection? {
+        section(withName: .hidden)
+    }
     
     // MARK: - Mouse Monitoring
     
@@ -407,6 +514,26 @@ final class MenuBarManager: ObservableObject {
         }
     }
     
+    // MARK: - Section Initialization
+    
+    /// Initializes the sections. Must only be called once.
+    private func initializeSections() {
+        guard sections.isEmpty else {
+            print("[MenuBarManager] Sections already initialized")
+            return
+        }
+        
+        // Create sections in order:
+        // 1. Visible (main toggle icon) - created first, will be rightmost
+        // 2. Hidden (divider that expands) - created second, will be to the left
+        sections = [
+            MenuBarSection(name: .visible),
+            MenuBarSection(name: .hidden),
+        ]
+        
+        print("[MenuBarManager] Sections initialized: \(sections.map { $0.name.displayString })")
+    }
+    
     // MARK: - Public API
     
     /// Enable the menu bar manager
@@ -416,20 +543,24 @@ final class MenuBarManager: ObservableObject {
         isEnabled = true
         UserDefaults.standard.set(true, forKey: Keys.enabled)
         
-        // Create control items in correct order:
-        // 1. Divider FIRST (will be LEFT of main)
-        // 2. Main SECOND (will be RIGHT of divider)
-        dividerItem = ControlItem(identifier: .hiddenDivider)
-        mainItem = ControlItem(identifier: .mainIcon)
+        // Initialize sections
+        initializeSections()
+        
+        // Configure Combine observers
+        configureCancellables()
         
         // ALWAYS start with showItems to ensure visibility
-        state = .showItems
-        applyState()
+        for section in sections {
+            section.controlItem.state = .showItems
+        }
+        
+        // Update appearances
+        updateMainItemAppearance()
         
         // Start mouse monitoring if hover is enabled
         updateMouseMonitor()
         
-        print("[MenuBarManager] Enabled, state: \(state)")
+        print("[MenuBarManager] Enabled")
     }
     
     /// Disable the menu bar manager
@@ -437,9 +568,8 @@ final class MenuBarManager: ObservableObject {
         guard isEnabled else { return }
         
         // Show all items before disabling
-        if state == .hideItems {
-            state = .showItems
-            applyState()
+        for section in sections {
+            section.show()
         }
         
         isEnabled = false
@@ -447,19 +577,28 @@ final class MenuBarManager: ObservableObject {
         
         // Stop monitors
         stopMouseMonitors()
+        cancellables.removeAll()
         
-        // Remove control items (deinit will preserve positions)
-        mainItem = nil
-        dividerItem = nil
+        // Clear sections (ControlItem deinit will preserve positions)
+        sections.removeAll()
         
         print("[MenuBarManager] Disabled")
     }
     
     /// Toggle between showing and hiding items
     func toggle() {
-        state = (state == .showItems) ? .hideItems : .showItems
+        guard let hiddenSection else { return }
+        
+        // Toggle the hidden section - this controls the expansion
+        hiddenSection.toggle()
+        
+        // Sync the visible section's state
+        visibleSection?.controlItem.state = hiddenSection.controlItem.state
+        
         UserDefaults.standard.set(state == .hideItems ? "hideItems" : "showItems", forKey: Keys.state)
-        applyState()
+        
+        // Update main icon appearance
+        updateMainItemAppearance()
         
         // Notify for Droppy menu refresh
         NotificationCenter.default.post(name: .menuBarManagerStateChanged, object: nil)
@@ -512,25 +651,34 @@ final class MenuBarManager: ObservableObject {
         UserDefaults.standard.removeObject(forKey: Keys.iconSet)
         
         // Clear saved positions
-        StatusItemDefaults[.preferredPosition, ControlItem.Identifier.mainIcon.rawValue] = nil
-        StatusItemDefaults[.preferredPosition, ControlItem.Identifier.hiddenDivider.rawValue] = nil
+        StatusItemDefaults[.preferredPosition, "DroppyMBM_Icon"] = nil
+        StatusItemDefaults[.preferredPosition, "DroppyMBM_Hidden"] = nil
         
         print("[MenuBarManager] Cleanup complete")
     }
     
-    // MARK: - State Application
+    // MARK: - Combine Configuration
     
-    private func applyState() {
-        // Propagate state to control items - their Combine publishers will handle the rest
-        mainItem?.state = state
-        dividerItem?.state = state
+    private func configureCancellables() {
+        var c = Set<AnyCancellable>()
         
-        // Update main item appearance (icon changes based on state)
-        updateMainItemAppearance()
+        // Observe hidden section state changes
+        if let hiddenSection {
+            hiddenSection.controlItem.$state
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    self?.objectWillChange.send()
+                }
+                .store(in: &c)
+        }
+        
+        cancellables = c
     }
     
+    // MARK: - Appearance
+    
     private func updateMainItemAppearance() {
-        guard let button = mainItem?.button else { return }
+        guard let button = visibleSection?.controlItem.button else { return }
         
         let config = NSImage.SymbolConfiguration(pointSize: 12, weight: .medium)
         let symbolName = (state == .showItems) ? iconSet.visibleSymbol : iconSet.hiddenSymbol
@@ -547,16 +695,14 @@ final class MenuBarManager: ObservableObject {
     @objc private func handleItemClick(_ notification: Notification) {
         guard
             let userInfo = notification.userInfo,
-            let identifier = userInfo["identifier"] as? ControlItem.Identifier,
+            let sectionName = userInfo["sectionName"] as? MenuBarSection.Name,
             let event = userInfo["event"] as? NSEvent
         else { return }
         
         switch event.type {
         case .leftMouseUp:
-            switch identifier {
-            case .mainIcon, .hiddenDivider:
-                toggle()
-            }
+            // Both main icon and divider toggle visibility
+            toggle()
             
         case .rightMouseUp:
             showContextMenu()
@@ -567,7 +713,7 @@ final class MenuBarManager: ObservableObject {
     }
     
     private func showContextMenu() {
-        guard let button = mainItem?.button else { return }
+        guard let button = visibleSection?.controlItem.button else { return }
         
         let menu = NSMenu()
         
