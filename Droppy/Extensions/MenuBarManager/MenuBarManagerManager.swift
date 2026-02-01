@@ -346,6 +346,15 @@ final class MenuBarManager: ObservableObject {
         }
         
         print("[MenuBarManager] Created status items - mainItem=\(String(describing: mainItem)), dividerItem=\(String(describing: dividerItem))")
+        
+        // Debug: Check window positions
+        if let mainWindow = mainItem?.button?.window {
+            print("[MenuBarManager] MAIN window frame=\(mainWindow.frame), isVisible=\(mainWindow.isVisible)")
+        }
+        if let dividerWindow = dividerItem?.button?.window {
+            print("[MenuBarManager] DIVIDER window frame=\(dividerWindow.frame), isVisible=\(dividerWindow.isVisible)")
+        }
+        print("[MenuBarManager] mainItem.isVisible=\(String(describing: mainItem?.isVisible)), dividerItem.isVisible=\(String(describing: dividerItem?.isVisible))")
     }
     
     private func removeStatusItems() {
