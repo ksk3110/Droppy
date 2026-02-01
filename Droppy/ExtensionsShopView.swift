@@ -25,6 +25,7 @@ struct ExtensionsShopView: View {
     private var isTerminalNotchInstalled: Bool { TerminalNotchManager.shared.isInstalled }
     private var isNotificationHUDInstalled: Bool { UserDefaults.standard.bool(forKey: AppPreferenceKey.notificationHUDInstalled) }
     private var isCaffeineInstalled: Bool { UserDefaults.standard.bool(forKey: AppPreferenceKey.caffeineInstalled) }
+    private var isMenuBarManagerInstalled: Bool { MenuBarManager.shared.isEnabled }
 
     
     var body: some View {
@@ -471,6 +472,21 @@ struct ExtensionsShopView: View {
                 AnyView(CaffeineInfoView(
                     installCount: extensionCounts["caffeine"],
                     rating: extensionRatings["caffeine"]
+                ))
+            },
+            ExtensionListItem(
+                id: "menuBarManager",
+                iconURL: "https://getdroppy.app/assets/icons/menu-bar-manager.jpg",
+                title: "Menu Bar Manager",
+                subtitle: "Organize your menu bar",
+                category: .productivity,
+                isInstalled: isMenuBarManagerInstalled,
+                analyticsKey: "menuBarManager",
+                extensionType: .menuBarManager
+            ) {
+                AnyView(MenuBarManagerInfoView(
+                    installCount: extensionCounts["menuBarManager"],
+                    rating: extensionRatings["menuBarManager"]
                 ))
             },
 

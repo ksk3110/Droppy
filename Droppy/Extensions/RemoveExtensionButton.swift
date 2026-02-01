@@ -98,6 +98,8 @@ struct DisableExtensionButton: View {
             return "This will stop notification forwarding to your notch. You can enable it again later."
         case .caffeine:
             return "This will disable Caffeine and allow your Mac to sleep normally. You can enable it again later."
+        case .menuBarManager:
+            return "This will restore all hidden menu bar items and disable the manager. You can enable it again later."
         }
     }
     
@@ -152,6 +154,9 @@ struct DisableExtensionButton: View {
             case .notificationHUD:
                 // Re-enable notification monitoring
                 NotificationHUDManager.shared.startMonitoring()
+            case .menuBarManager:
+                // Re-enable Menu Bar Manager
+                MenuBarManager.shared.enable()
             default:
                 break
             }

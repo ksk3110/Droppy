@@ -24,6 +24,7 @@ enum ExtensionType: String, CaseIterable, Identifiable {
     case appleMusic
     case notificationHUD
     case caffeine
+    case menuBarManager
 
     
     /// URL-safe ID for deep links

@@ -132,6 +132,7 @@ final class ExtensionRegistry {
         register(AppleMusicExtension.self)
         register(NotificationHUDExtension.self)
         register(CaffeineExtension.self)
+        register(MenuBarManagerExtension.self)
 
     }
     

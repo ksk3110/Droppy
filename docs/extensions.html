@@ -1443,6 +1443,29 @@
             <div class="extension-tags"><span class="extension-tag">Windows</span><span
                     class="extension-tag">Productivity</span></div>
         </div>
+
+        <div class="extension-card" data-extension="menu-bar-manager" data-category="productivity">
+            <div class="extension-header">
+                <img src="assets/icons/menubarmanager.png" alt="Menu Bar Manager" class="extension-icon">
+                <div class="extension-meta">
+                    <h3>Menu Bar Manager</h3><span>Productivity</span>
+                </div>
+            </div>
+            <div class="extension-stats">
+                <div class="stat-item"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                    </svg><span class="stat-value" data-install-count="menu-bar-manager">0</span> installs</div>
+                <div class="stat-item"><svg fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg><span class="stat-value" data-rating="menu-bar-manager">—</span><span
+                        data-rating-count="menu-bar-manager">(0)</span></div>
+            </div>
+            <p class="extension-description">Clean up your menu bar with an eye icon toggle. Click to hide icons — a
+                chevron shows where to drag icons.</p>
+            <div class="extension-tags"><span class="extension-tag">Menu Bar</span><span
+                    class="extension-tag">Organization</span></div>
+        </div>
     </div>
 
     <div class="modal-overlay" id="modal">
@@ -1505,7 +1528,8 @@
             'termi-notch': 'terminalNotch',
 
             'quickshare': 'quickshare',
-            'notify-me': 'notificationHUD'
+            'notify-me': 'notificationHUD',
+            'menu-bar-manager': 'menuBarManager'
         };
 
         // Extension data with screenshots
@@ -1523,7 +1547,8 @@
 
             'quickshare': { icon: 'assets/icons/quickshare.jpg', title: 'Droppy Quickshare', category: 'Utilities', deepUrl: 'droppy://extension/quickshare', screenshot: 'assets/images/quickshare-screenshot.png', description: 'Upload files to the cloud and get instant shareable links via 0x0.st. Files auto-expire based on size (30-365 days). No account required.', features: ['Instant shareable links', 'Auto-expiring files', 'No account needed', 'Drag & drop upload', 'Built-in file manager'] },
             'notify-me': { icon: 'assets/icons/notification-hud.png', title: 'Notify me!', category: 'Productivity • Community', deepUrl: 'droppy://extension/notification-hud', screenshot: null, description: 'Capture macOS notifications and display them directly in the notch, like iPhone\'s Dynamic Island. Click to open the source app, swipe up to dismiss. A community extension by Valetivivek.', features: ['Display notifications in the notch', 'Show app icon and preview text', 'Click to open, swipe to dismiss', 'Per-app notification filtering', 'Requires Full Disk Access'] },
-            'high-alert': { icon: 'assets/icons/high-alert.jpg', title: 'High Alert', category: 'Productivity • Community', deepUrl: 'droppy://extension/caffeine', screenshot: 'assets/images/high-alert-screenshot.gif', description: 'Prevent your Mac from going to sleep. Choose indefinite mode or set a timer for hours or minutes. Perfect for downloads, presentations, or long-running tasks. A community extension by Valetivivek.', features: ['Keep Mac awake indefinitely', 'Set sleep prevention timer', 'Hover notch to see remaining time', 'Lightweight, no battery drain', 'Quick toggle from notch'] }
+            'high-alert': { icon: 'assets/icons/high-alert.jpg', title: 'High Alert', category: 'Productivity • Community', deepUrl: 'droppy://extension/caffeine', screenshot: 'assets/images/high-alert-screenshot.gif', description: 'Prevent your Mac from going to sleep. Choose indefinite mode or set a timer for hours or minutes. Perfect for downloads, presentations, or long-running tasks. A community extension by Valetivivek.', features: ['Keep Mac awake indefinitely', 'Set sleep prevention timer', 'Hover notch to see remaining time', 'Lightweight, no battery drain', 'Quick toggle from notch'] },
+            'menu-bar-manager': { icon: 'assets/icons/menubarmanager.png', title: 'Menu Bar Manager', category: 'Productivity • Community', deepUrl: 'droppy://extension/menu-bar-manager', screenshot: null, description: 'Clean up your menu bar with an eye icon toggle. Click to hide icons — a chevron appears showing where to drag icons for hiding. Simple and intuitive.', features: ['Eye icon toggles visibility', 'Chevron indicates hidden zone', 'Drag icons left of chevron to hide', 'Rearrange with ⌘+drag', 'Remembers your layout'] }
         };
 
         let installCounts = {}, ratings = {}, currentExtension = null;
