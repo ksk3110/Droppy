@@ -374,21 +374,24 @@ final class ControlItem {
             
             // Apply gradient if enabled
             if manager?.useGradientIcon == true, let baseImage = image {
-                let size = NSSize(width: 18, height: 18)
+                // Use the original image size to prevent distortion
+                let size = baseImage.size
                 let gradientImage = NSImage(size: size, flipped: false) { bounds in
                     // Draw gradient background masked by the symbol
                     guard let cgImage = baseImage.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return false }
                     guard let context = NSGraphicsContext.current?.cgContext else { return false }
                     
-                    // Create gradient
-                    let colors = [NSColor.systemBlue.cgColor, NSColor.systemPurple.cgColor] as CFArray
+                    // Create grayscale gradient (light to dark, top to bottom)
+                    let lightGray = NSColor(white: 0.7, alpha: 1.0).cgColor
+                    let darkGray = NSColor(white: 0.3, alpha: 1.0).cgColor
+                    let colors = [lightGray, darkGray] as CFArray
                     guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) else { return false }
                     
                     // Clip to the symbol shape
                     context.clip(to: bounds, mask: cgImage)
                     
-                    // Draw gradient
-                    context.drawLinearGradient(gradient, start: CGPoint(x: 0, y: bounds.maxY), end: CGPoint(x: bounds.maxX, y: 0), options: [])
+                    // Draw gradient from top to bottom
+                    context.drawLinearGradient(gradient, start: CGPoint(x: bounds.midX, y: bounds.maxY), end: CGPoint(x: bounds.midX, y: 0), options: [])
                     
                     return true
                 }
