@@ -129,9 +129,7 @@ final class MenuBarSection {
             controlItem.state = .showItems
             visibleSection.controlItem.state = .showItems
         }
-        
-        // Schedule auto-hide if enabled
-        manager.scheduleAutoHide()
+        // Note: Auto-hide is now scheduled when cursor leaves menu bar, not when showing
     }
     
     /// Hides the section.
@@ -840,14 +838,21 @@ final class MenuBarManager: ObservableObject {
         
         if let hiddenSection = section(withName: .hidden) {
             if isInMenuBar && hiddenSection.isHidden {
-                // Cancel auto-hide when hovering back in, then show (which will reschedule auto-hide if needed)
+                // Cursor entered menu bar - cancel any auto-hide timer and show
                 cancelAutoHide()
                 hiddenSection.show()
+            } else if isInMenuBar && !hiddenSection.isHidden {
+                // Cursor still in menu bar while items are shown - cancel any pending hide
+                cancelAutoHide()
             } else if !isInMenuBar && !hiddenSection.isHidden {
-                // If auto-hide delay is set, let the timer handle hiding (don't hide on hover-out)
-                // Only hide on hover-out if auto-hide is disabled (0)
-                if autoHideDelay == 0 {
-                    // Add a delay before hiding using the configured hover delay
+                // Cursor left menu bar - schedule auto-hide if enabled, otherwise use hover delay
+                if autoHideDelay > 0 {
+                    // Start auto-hide timer when cursor leaves (not already running)
+                    if autoHideTimer == nil {
+                        scheduleAutoHide()
+                    }
+                } else {
+                    // Auto-hide disabled - use hover delay to hide
                     DispatchQueue.main.asyncAfter(deadline: .now() + showOnHoverDelay) { [weak self] in
                         guard self != nil else { return }
                         let currentLocation = NSEvent.mouseLocation
@@ -857,7 +862,6 @@ final class MenuBarManager: ObservableObject {
                         }
                     }
                 }
-                // If autoHideDelay > 0, the timer is already running from show() - let it handle hiding
             }
         }
     }
