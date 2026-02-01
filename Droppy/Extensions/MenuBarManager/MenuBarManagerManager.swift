@@ -76,7 +76,11 @@ final class MenuBarManager: ObservableObject {
         isEnabled = true
         UserDefaults.standard.set(true, forKey: enabledKey)
         
-        // Create both status items
+        // Clear any stale chevron position to force it next to toggle
+        // (The autosave mechanism may have cached a far-left position)
+        StatusItemDefaults.setPreferredPosition(nil, for: chevronAutosaveName)
+        
+        // Create all status items
         createStatusItems()
         
         // Restore previous expansion state, or default to expanded (showing all icons)
@@ -133,7 +137,7 @@ final class MenuBarManager: ObservableObject {
     // MARK: - Status Items Creation
     
     private func createStatusItems() {
-        // Create the toggle button (always visible, shows eye icon)
+        // Create the toggle button FIRST (so it appears rightmost, near system tray)
         toggleItem = NSStatusBar.system.statusItem(withLength: toggleLength)
         toggleItem?.autosaveName = toggleAutosaveName
         
@@ -143,20 +147,7 @@ final class MenuBarManager: ObservableObject {
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
         
-        // Create the chevron indicator (visible when icons are showing, indicates drag zone)
-        // Positioned immediately to the LEFT of the toggle - shows where to drag icons to hide them
-        // NOTE: No autosaveName so it always positions next to the toggle, not at a remembered far-left position
-        chevronItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        chevronItem?.isVisible = true // Start visible (default is expanded/showing all icons)
-        
-        if let button = chevronItem?.button {
-            let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
-            button.image = NSImage(systemSymbolName: "chevron.compact.left", accessibilityDescription: "Drag icons left of here to hide them")?
-                .withSymbolConfiguration(config)
-        }
-        
-        // Create the divider (expands to hide items)
-        // This should be positioned to the LEFT of the chevron
+        // Create the divider SECOND (expands to hide items, positioned to the left)
         dividerItem = NSStatusBar.system.statusItem(withLength: dividerStandardLength)
         dividerItem?.autosaveName = dividerAutosaveName
         
@@ -164,6 +155,19 @@ final class MenuBarManager: ObservableObject {
             // Make divider invisible
             button.title = ""
             button.image = nil
+        }
+        
+        // Create the chevron LAST so it appears directly to the LEFT of the toggle
+        // (NSStatusBar places items right-to-left based on creation order when no position is saved)
+        // Using autosaveName to persist position next to the toggle
+        chevronItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        chevronItem?.autosaveName = chevronAutosaveName
+        chevronItem?.isVisible = true // Start visible (default is expanded/showing all icons)
+        
+        if let button = chevronItem?.button {
+            let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
+            button.image = NSImage(systemSymbolName: "chevron.compact.left", accessibilityDescription: "Drag icons left of here to hide them")?
+                .withSymbolConfiguration(config)
         }
         
         updateToggleIcon()
