@@ -161,8 +161,15 @@ final class MenuBarManager: ObservableObject {
     // MARK: - Initialization
     
     private init() {
+        print("[MenuBarManager] INIT CALLED")
+        
         // Only start if extension is not removed
-        guard !ExtensionType.menuBarManager.isRemoved else { return }
+        guard !ExtensionType.menuBarManager.isRemoved else {
+            print("[MenuBarManager] BLOCKED - extension is removed!")
+            return
+        }
+        
+        print("[MenuBarManager] Extension not removed, loading settings...")
         
         // Load settings
         showOnHover = UserDefaults.standard.bool(forKey: Keys.showOnHover)
