@@ -201,12 +201,11 @@ final class MenuBarManager: ObservableObject {
         // Create status items
         createStatusItems()
         
-        // Restore previous state
-        if let savedState = UserDefaults.standard.string(forKey: Keys.state) {
-            state = savedState == "hideItems" ? .hideItems : .showItems
-        } else {
-            state = .showItems
-        }
+        // Restore previous state - but ALWAYS start with showItems to ensure visibility
+        // User can then toggle to hide if needed
+        state = .showItems
+        
+        // Apply state after items are created
         applyState()
         
         // Start mouse monitoring if hover is enabled
