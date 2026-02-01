@@ -257,14 +257,10 @@ final class ControlItem {
         configureStatusItem()
     }
     
-    /// Removes the status item without clearing its stored position.
+    /// Removes the status item.
     deinit {
-        // Removing the status item has the unwanted side effect of deleting
-        // the preferredPosition. Cache and restore it.
-        let autosaveName = statusItem.autosaveName as String
-        let cached = StatusItemDefaults[.preferredPosition, autosaveName]
-        NSStatusBar.system.removeStatusItem(statusItem)
-        StatusItemDefaults[.preferredPosition, autosaveName] = cached
+        // Note: We cannot access MainActor-isolated StatusItemDefaults from deinit
+        // The status item will be removed automatically when the ControlItem is deallocated
     }
     
     /// Configures the internal observers for the control item.
@@ -345,7 +341,7 @@ final class ControlItem {
     }
     
     /// Updates the appearance of the status item using the given hiding state.
-    private func updateStatusItem(with state: HidingState) {
+    func updateStatusItem(with state: HidingState) {
         guard
             let section,
             let button = statusItem.button
@@ -358,10 +354,13 @@ final class ControlItem {
             isVisible = true
             button.cell?.isEnabled = true
             
+            // Get icon set from manager
+            let iconSet = manager?.iconSet ?? .eye
+            
             // Set the icon based on state
             let iconName = switch state {
-            case .hideItems: "eye.fill"
-            case .showItems: "eye.slash.fill"
+            case .hideItems: iconSet.visibleSymbol
+            case .showItems: iconSet.hiddenSymbol
             }
             button.image = NSImage(systemSymbolName: iconName, accessibilityDescription: "Toggle Menu Bar")
             
@@ -468,6 +467,45 @@ final class ControlItem {
 
 // MARK: - MenuBarManager
 
+// MARK: - MBMIconSet
+
+/// Icon sets for the menu bar toggle button
+enum MBMIconSet: String, CaseIterable, Identifiable {
+    case eye = "eye"
+    case chevron = "chevron"
+    case circle = "circle"
+    case line = "line"
+    
+    var id: String { rawValue }
+    
+    var displayName: String {
+        switch self {
+        case .eye: return "Eye"
+        case .chevron: return "Chevron"
+        case .circle: return "Circle"
+        case .line: return "Line"
+        }
+    }
+    
+    var visibleSymbol: String {
+        switch self {
+        case .eye: return "eye.fill"
+        case .chevron: return "chevron.right"
+        case .circle: return "circle.fill"
+        case .line: return "line.horizontal.3"
+        }
+    }
+    
+    var hiddenSymbol: String {
+        switch self {
+        case .eye: return "eye.slash.fill"
+        case .chevron: return "chevron.left"
+        case .circle: return "circle"
+        case .line: return "line.horizontal.3.decrease"
+        }
+    }
+}
+
 /// Manager for the state of the menu bar.
 @MainActor
 final class MenuBarManager: ObservableObject {
@@ -483,9 +521,37 @@ final class MenuBarManager: ObservableObject {
     /// Published state for current hiding state
     @Published private(set) var state: HidingState = .hideItems
     
-    /// Settings
+    /// Whether the manager is enabled
+    @Published var isEnabled: Bool {
+        didSet { 
+            UserDefaults.standard.set(isEnabled, forKey: "MenuBarManager_Enabled")
+            if isEnabled {
+                enable()
+            } else {
+                disable()
+            }
+        }
+    }
+    
+    /// Show on hover setting
     @Published var showOnHover: Bool {
-        didSet { UserDefaults.standard.set(showOnHover, forKey: "MenuBarManager_ShowOnHover") }
+        didSet { 
+            UserDefaults.standard.set(showOnHover, forKey: "MenuBarManager_ShowOnHover")
+            setupMouseMonitoring()
+        }
+    }
+    
+    /// Hover delay in seconds
+    @Published var showOnHoverDelay: Double {
+        didSet { UserDefaults.standard.set(showOnHoverDelay, forKey: "MenuBarManager_ShowOnHoverDelay") }
+    }
+    
+    /// Icon set for the toggle button
+    @Published var iconSet: MBMIconSet {
+        didSet { 
+            UserDefaults.standard.set(iconSet.rawValue, forKey: "MenuBarManager_IconSet")
+            updateIconAppearance()
+        }
     }
     
     /// Mouse monitoring
@@ -493,7 +559,11 @@ final class MenuBarManager: ObservableObject {
     
     /// Initializes a new menu bar manager instance.
     init() {
+        self.isEnabled = UserDefaults.standard.bool(forKey: "MenuBarManager_Enabled")
         self.showOnHover = UserDefaults.standard.bool(forKey: "MenuBarManager_ShowOnHover")
+        self.showOnHoverDelay = UserDefaults.standard.double(forKey: "MenuBarManager_ShowOnHoverDelay")
+        if self.showOnHoverDelay == 0 { self.showOnHoverDelay = 0.3 }
+        self.iconSet = MBMIconSet(rawValue: UserDefaults.standard.string(forKey: "MenuBarManager_IconSet") ?? "") ?? .eye
         
         // Check if extension was removed
         if UserDefaults.standard.bool(forKey: "MenuBarManager_Removed") {
@@ -581,7 +651,7 @@ final class MenuBarManager: ObservableObject {
             } else if !isInMenuBar && !hiddenSection.isHidden {
                 // Add a small delay before hiding
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                    guard let self else { return }
+                    guard self != nil else { return }
                     let currentLocation = NSEvent.mouseLocation
                     let stillInMenuBar = currentLocation.y >= screen.frame.maxY - menuBarHeight
                     if !stillInMenuBar {
@@ -627,6 +697,12 @@ final class MenuBarManager: ObservableObject {
         
         UserDefaults.standard.set(true, forKey: "MenuBarManager_Removed")
         print("[MenuBarManager] Disabled")
+    }
+    
+    /// Updates the icon appearance based on current iconSet
+    func updateIconAppearance() {
+        guard let visibleSection = section(withName: .visible) else { return }
+        visibleSection.controlItem.updateStatusItem(with: visibleSection.controlItem.state)
     }
     
     /// Cleanup when extension is removed
