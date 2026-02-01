@@ -256,7 +256,7 @@ struct MediaHUDView: View {
             if isDynamicIslandMode {
                 // DYNAMIC ISLAND: Album on left, Visualizer on right, Title centered
                 // Using Droppy pattern: padding = (notchHeight - iconHeight) / 2 for symmetry
-                let iconSize: CGFloat = 18  // Matches all other DI mode HUDs
+                let iconSize = HUDLayoutCalculator.dynamicIslandIconSize
                 let symmetricPadding = (notchHeight - iconSize) / 2
                 
                 ZStack {
@@ -321,8 +321,8 @@ struct MediaHUDView: View {
                 .frame(height: notchHeight)
             } else {
                 // NOTCH MODE: Two wings separated by the notch space
-                // Using Droppy pattern: 20px icons with symmetricPadding for outer-wing alignment
-                let iconSize: CGFloat = 20
+                // Using Droppy pattern: icons from HUDLayoutCalculator with symmetricPadding for outer-wing alignment
+                let iconSize = HUDLayoutCalculator.notchIconSize
                 // +wingCornerCompensation for curved wing corners (topCornerRadius)
                 let symmetricPadding = max((notchHeight - iconSize) / 2, 6) + NotchLayoutConstants.wingCornerCompensation
                 
