@@ -19,6 +19,39 @@ import Combine
 import ScreenCaptureKit
 import ApplicationServices
 
+// MARK: - Capture Mode
+enum ElementCaptureMode: String, CaseIterable, Identifiable {
+    case element = "element"
+    case fullscreen = "fullscreen"
+    case window = "window"
+    
+    var id: String { rawValue }
+    
+    var displayName: String {
+        switch self {
+        case .element: return "Element"
+        case .fullscreen: return "Fullscreen"
+        case .window: return "Window"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .element: return "viewfinder"
+        case .fullscreen: return "rectangle.dashed"
+        case .window: return "macwindow"
+        }
+    }
+    
+    var shortcutKey: String {
+        switch self {
+        case .element: return "elementCaptureShortcut"
+        case .fullscreen: return "elementCaptureFullscreenShortcut"
+        case .window: return "elementCaptureWindowShortcut"
+        }
+    }
+}
+
 // MARK: - Element Capture Manager
 
 @MainActor
@@ -31,7 +64,13 @@ final class ElementCaptureManager: ObservableObject {
     @Published private(set) var currentElementFrame: CGRect = .zero
     @Published private(set) var hasElement = false
     @Published var shortcut: SavedShortcut? {
-        didSet { saveShortcut() }
+        didSet { saveShortcut(for: .element) }
+    }
+    @Published var fullscreenShortcut: SavedShortcut? {
+        didSet { saveShortcut(for: .fullscreen) }
+    }
+    @Published var windowShortcut: SavedShortcut? {
+        didSet { saveShortcut(for: .window) }
     }
     @Published private(set) var isShortcutEnabled = false
     
@@ -42,8 +81,9 @@ final class ElementCaptureManager: ObservableObject {
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
     private var lastDetectedFrame: CGRect = .zero
-    private var globalHotKey: GlobalHotKey?  // Uses Carbon for reliable global shortcuts
+    private var globalHotKeys: [ElementCaptureMode: GlobalHotKey] = [:]  // Multiple hot keys
     private var escapeMonitor: Any?  // Local monitor for ESC key
+    private var activeMode: ElementCaptureMode = .element  // Current capture mode
     
     // MARK: - Configuration
     
@@ -52,7 +92,6 @@ final class ElementCaptureManager: ObservableObject {
     private let borderWidth: CGFloat = 2.0
     private let cornerRadius: CGFloat = 6.0
     private let mousePollingInterval: TimeInterval = 1.0 / 60.0  // 60 FPS
-    private let shortcutKey = "elementCaptureShortcut"
     
     // MARK: - Initialization
     
@@ -68,16 +107,32 @@ final class ElementCaptureManager: ObservableObject {
             return
         }
         
-        loadShortcut()
-        if shortcut != nil {
-            startMonitoringShortcut()
-        }
+        loadAllShortcuts()
+        startMonitoringAllShortcuts()
     }
     
     // MARK: - Public API
     
+    /// Get shortcut for a specific mode
+    func shortcut(for mode: ElementCaptureMode) -> SavedShortcut? {
+        switch mode {
+        case .element: return shortcut
+        case .fullscreen: return fullscreenShortcut
+        case .window: return windowShortcut
+        }
+    }
+    
+    /// Set shortcut for a specific mode
+    func setShortcut(_ newShortcut: SavedShortcut?, for mode: ElementCaptureMode) {
+        switch mode {
+        case .element: shortcut = newShortcut
+        case .fullscreen: fullscreenShortcut = newShortcut
+        case .window: windowShortcut = newShortcut
+        }
+    }
+    
     /// Start element capture mode
-    func startCaptureMode() {
+    func startCaptureMode(mode: ElementCaptureMode = .element) {
         // Don't start if extension is disabled
         guard !ExtensionType.elementCapture.isRemoved else {
             print("[ElementCapture] Extension is disabled, ignoring")
@@ -92,24 +147,34 @@ final class ElementCaptureManager: ObservableObject {
             return
         }
         
+        activeMode = mode
         isActive = true
         
-        // Create overlay window
-        setupHighlightWindow()
+        switch mode {
+        case .element:
+            // Element mode: show highlight & track mouse
+            setupHighlightWindow()
+            startMouseTracking()
+            installEventTap()
+            installEscapeMonitor()
+            NSCursor.crosshair.push()
+            
+        case .fullscreen:
+            // Fullscreen: immediately capture the entire screen
+            Task {
+                await captureFullscreen()
+            }
+            return
+            
+        case .window:
+            // Window mode: capture the window under cursor
+            Task {
+                await captureWindowUnderCursor()
+            }
+            return
+        }
         
-        // Start mouse tracking
-        startMouseTracking()
-        
-        // Install event tap to intercept clicks
-        installEventTap()
-        
-        // Install ESC key monitor to cancel
-        installEscapeMonitor()
-        
-        // Change cursor to crosshair
-        NSCursor.crosshair.push()
-        
-        print("[ElementCapture] Capture mode started")
+        print("[ElementCapture] Capture mode started: \\(mode.displayName)")
     }
     
     /// Stop element capture mode
@@ -144,24 +209,31 @@ final class ElementCaptureManager: ObservableObject {
     
     // MARK: - Shortcut Persistence
     
-    private func loadShortcut() {
-        if let data = UserDefaults.standard.data(forKey: shortcutKey),
-           let decoded = try? JSONDecoder().decode(SavedShortcut.self, from: data) {
-            shortcut = decoded
+    private func loadAllShortcuts() {
+        for mode in ElementCaptureMode.allCases {
+            if let data = UserDefaults.standard.data(forKey: mode.shortcutKey),
+               let decoded = try? JSONDecoder().decode(SavedShortcut.self, from: data) {
+                switch mode {
+                case .element: shortcut = decoded
+                case .fullscreen: fullscreenShortcut = decoded
+                case .window: windowShortcut = decoded
+                }
+            }
         }
     }
     
-    private func saveShortcut() {
-        if let s = shortcut, let encoded = try? JSONEncoder().encode(s) {
-            UserDefaults.standard.set(encoded, forKey: shortcutKey)
+    private func saveShortcut(for mode: ElementCaptureMode) {
+        let currentShortcut = self.shortcut(for: mode)
+        if let s = currentShortcut, let encoded = try? JSONEncoder().encode(s) {
+            UserDefaults.standard.set(encoded, forKey: mode.shortcutKey)
             // Stop old monitor and start new one with updated shortcut
-            stopMonitoringShortcut()
-            startMonitoringShortcut()
+            stopMonitoringShortcut(for: mode)
+            startMonitoringShortcut(for: mode)
             // Notify menu to refresh
             NotificationCenter.default.post(name: .elementCaptureShortcutChanged, object: nil)
         } else {
-            UserDefaults.standard.removeObject(forKey: shortcutKey)
-            stopMonitoringShortcut()
+            UserDefaults.standard.removeObject(forKey: mode.shortcutKey)
+            stopMonitoringShortcut(for: mode)
             // Notify menu to refresh
             NotificationCenter.default.post(name: .elementCaptureShortcutChanged, object: nil)
         }
@@ -169,38 +241,56 @@ final class ElementCaptureManager: ObservableObject {
     
     // MARK: - Global Hotkey Monitoring
     
-    func startMonitoringShortcut() {
+    /// Start monitoring all modes that have shortcuts
+    func startMonitoringAllShortcuts() {
+        for mode in ElementCaptureMode.allCases {
+            if shortcut(for: mode) != nil {
+                startMonitoringShortcut(for: mode)
+            }
+        }
+    }
+    
+    /// Start monitoring shortcut for a specific mode
+    func startMonitoringShortcut(for mode: ElementCaptureMode) {
         // Don't start if extension is disabled
         guard !ExtensionType.elementCapture.isRemoved else { return }
-        // Prevent duplicate monitoring
-        guard globalHotKey == nil else { return }
-        guard let savedShortcut = shortcut else { return }
+        // Prevent duplicate monitoring for this mode
+        guard globalHotKeys[mode] == nil else { return }
+        guard let savedShortcut = shortcut(for: mode) else { return }
         
         // Use GlobalHotKey (Carbon-based) for reliable global shortcut detection
-        globalHotKey = GlobalHotKey(
+        globalHotKeys[mode] = GlobalHotKey(
             keyCode: savedShortcut.keyCode,
             modifiers: savedShortcut.modifiers
         ) { [weak self] in
             guard let self = self else { return }
             guard !ExtensionType.elementCapture.isRemoved else { return }
             
-            print("🔑 [ElementCapture] ✅ Shortcut triggered via GlobalHotKey!")
+            print("🔑 [ElementCapture] ✅ Shortcut triggered for mode: \\(mode.displayName)")
             
             if self.isActive {
                 self.stopCaptureMode()
             } else {
-                self.startCaptureMode()
+                self.startCaptureMode(mode: mode)
             }
         }
         
-        isShortcutEnabled = true
-        print("[ElementCapture] Shortcut monitoring started: \(savedShortcut.description) (using GlobalHotKey/Carbon)")
+        isShortcutEnabled = !globalHotKeys.isEmpty
+        print("[ElementCapture] Shortcut monitoring started for \\(mode.displayName): \\(savedShortcut.description)")
     }
     
-    func stopMonitoringShortcut() {
-        globalHotKey = nil  // GlobalHotKey deinit handles unregistration
+    /// Stop monitoring shortcut for a specific mode
+    func stopMonitoringShortcut(for mode: ElementCaptureMode) {
+        globalHotKeys[mode] = nil  // GlobalHotKey deinit handles unregistration
+        isShortcutEnabled = !globalHotKeys.isEmpty
+        print("[ElementCapture] Shortcut monitoring stopped for \\(mode.displayName)")
+    }
+    
+    /// Stop monitoring all shortcuts
+    func stopMonitoringAllShortcuts() {
+        globalHotKeys.removeAll()
         isShortcutEnabled = false
-        print("[ElementCapture] Shortcut monitoring stopped")
+        print("[ElementCapture] All shortcut monitoring stopped")
     }
     
     // MARK: - Permission Checking
@@ -649,6 +739,97 @@ final class ElementCaptureManager: ObservableObject {
         stopCaptureMode()
     }
     
+    // MARK: - Fullscreen Capture
+    
+    private func captureFullscreen() async {
+        // Get the screen under the mouse cursor
+        let mouseLocation = NSEvent.mouseLocation
+        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(mouseLocation) }) ?? NSScreen.main else {
+            isActive = false
+            return
+        }
+        
+        // Convert screen frame (AppKit coords) to Quartz coordinates
+        let primaryScreenHeight = NSScreen.screens.first?.frame.height ?? 0
+        let quartzRect = CGRect(
+            x: screen.frame.origin.x,
+            y: primaryScreenHeight - screen.frame.origin.y - screen.frame.height,
+            width: screen.frame.width,
+            height: screen.frame.height
+        )
+        
+        // Track which display we're capturing
+        if let displayID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID {
+            currentScreenDisplayID = displayID
+        }
+        
+        do {
+            let image = try await captureRect(quartzRect)
+            let nsImage = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
+            
+            copyToClipboard(image)
+            playScreenshotSound()
+            print("[ElementCapture] Fullscreen captured successfully")
+            
+            await MainActor.run {
+                CapturePreviewWindowController.shared.show(with: nsImage)
+            }
+            
+        } catch {
+            print("[ElementCapture] Fullscreen capture failed: \(error)")
+        }
+        
+        isActive = false
+    }
+    
+    // MARK: - Window Capture
+    
+    private func captureWindowUnderCursor() async {
+        // Get window under cursor using existing method
+        let mouseLocation = NSEvent.mouseLocation
+        let primaryScreenHeight = NSScreen.screens.first?.frame.height ?? 0
+        let quartzMousePoint = CGPoint(x: mouseLocation.x, y: primaryScreenHeight - mouseLocation.y)
+        
+        guard let windowFrame = getWindowFrameAtPosition(quartzMousePoint) else {
+            print("[ElementCapture] No window found under cursor")
+            isActive = false
+            return
+        }
+        
+        // Find which screen this window is on
+        if let screen = NSScreen.screens.first(where: { screen in
+            let quartzScreenRect = CGRect(
+                x: screen.frame.origin.x,
+                y: primaryScreenHeight - screen.frame.origin.y - screen.frame.height,
+                width: screen.frame.width,
+                height: screen.frame.height
+            )
+            return quartzScreenRect.intersects(windowFrame)
+        }) {
+            if let displayID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID {
+                currentScreenDisplayID = displayID
+            }
+        }
+        
+        do {
+            let image = try await captureRect(windowFrame)
+            let nsImage = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
+            
+            copyToClipboard(image)
+            playScreenshotSound()
+            print("[ElementCapture] Window captured successfully")
+            
+            await MainActor.run {
+                CapturePreviewWindowController.shared.show(with: nsImage)
+            }
+            
+        } catch {
+            print("[ElementCapture] Window capture failed: \(error)")
+        }
+        
+        isActive = false
+    }
+    
     private func captureRect(_ rect: CGRect) async throws -> CGImage {
         // PERMISSION CHECK: Verify screen recording permission BEFORE calling ScreenCaptureKit
         // SCShareableContent triggers macOS prompts even when CGPreflight passes in some cases
@@ -792,12 +973,16 @@ final class ElementCaptureManager: ObservableObject {
             stopCaptureMode()
         }
         
-        // Stop monitoring shortcut
-        stopMonitoringShortcut()
+        // Stop monitoring all shortcuts
+        stopMonitoringAllShortcuts()
         
-        // Clear saved shortcut
+        // Clear all saved shortcuts
         shortcut = nil
-        UserDefaults.standard.removeObject(forKey: shortcutKey)
+        fullscreenShortcut = nil
+        windowShortcut = nil
+        for mode in ElementCaptureMode.allCases {
+            UserDefaults.standard.removeObject(forKey: mode.shortcutKey)
+        }
         
         // Notify other components
         NotificationCenter.default.post(name: .elementCaptureShortcutChanged, object: nil)
