@@ -7,6 +7,7 @@
 //
 
 import AppKit
+import SwiftUI
 import Foundation
 import ImageIO
 import PDFKit
@@ -300,6 +301,84 @@ final class ThumbnailCache {
             // Return nil - let caller use icon fallback
             return nil
         }
+    }
+    
+    /// Get cached thumbnail for a file URL (synchronous, returns nil if not cached)
+    /// Used for drag previews where async is not possible - shows actual thumbnail if already generated
+    func getCachedThumbnail(for url: URL, size: CGSize = CGSize(width: 120, height: 120)) -> NSImage? {
+        // First, try to find the item in DroppyState by URL (thumbnails are cached by item UUID)
+        let allItems = DroppyState.shared.items + DroppyState.shared.basketItems
+        if let item = allItems.first(where: { $0.url == url }) {
+            let cacheKey = item.id.uuidString as NSString
+            if let cached = fileCache.object(forKey: cacheKey) {
+                return cached
+            }
+        }
+        
+        // Check clipboard items - temp files include first 8 chars of UUID in filename
+        // e.g. "filename_A1B2C3D4.png" where A1B2C3D4 is the UUID prefix
+        let filename = url.lastPathComponent
+        if url.path.contains("DroppyClipboard") {
+            // This is a clipboard temp file - try to match UUID prefix
+            for clipboardItem in ClipboardManager.shared.history {
+                let uuidPrefix = String(clipboardItem.id.uuidString.prefix(8))
+                if filename.contains(uuidPrefix) {
+                    // Found matching clipboard item - get its thumbnail
+                    if let thumbnail = self.thumbnail(for: clipboardItem) {
+                        return thumbnail
+                    }
+                    break
+                }
+            }
+        }
+        
+        // Fallback: try the file path cache key (used by loadFileThumbnailAsync)
+        let pathCacheKey = "file:\(url.path):\(Int(size.width))" as NSString
+        return fileCache.object(forKey: pathCacheKey)
+    }
+    
+    /// Render a native macOS folder icon for drag previews
+    /// Uses NSWorkspace folder icon with hue rotation for pinned folders (matching basket/shelf display)
+    func renderFolderIcon(size: CGFloat = 64, isPinned: Bool = false) -> NSImage {
+        let cacheKey = "nativeFolder:\(isPinned ? "pinned" : "regular"):\(Int(size))" as NSString
+        
+        // Check cache first
+        if let cached = iconCache.object(forKey: cacheKey) {
+            return cached
+        }
+        
+        // Get native macOS folder icon
+        let folderIcon = NSWorkspace.shared.icon(for: .folder)
+        folderIcon.size = NSSize(width: size, height: size)
+        
+        // For pinned folders, apply hue rotation (180 degrees = orange/gold tint)
+        if isPinned {
+            // Create a view to apply hue rotation effect
+            let iconView = NSImageView(frame: NSRect(x: 0, y: 0, width: size, height: size))
+            iconView.image = folderIcon
+            iconView.imageScaling = .scaleProportionallyUpOrDown
+            
+            // Apply Core Image filter for hue rotation
+            if let cgImage = folderIcon.cgImage(forProposedRect: nil, context: nil, hints: nil),
+               let filter = CIFilter(name: "CIHueAdjust") {
+                let ciImage = CIImage(cgImage: cgImage)
+                filter.setValue(ciImage, forKey: kCIInputImageKey)
+                filter.setValue(CGFloat.pi, forKey: kCIInputAngleKey) // 180 degrees in radians
+                
+                if let outputImage = filter.outputImage {
+                    let context = CIContext()
+                    if let outputCG = context.createCGImage(outputImage, from: outputImage.extent) {
+                        let result = NSImage(cgImage: outputCG, size: NSSize(width: size, height: size))
+                        iconCache.setObject(result, forKey: cacheKey, cost: 4096)
+                        return result
+                    }
+                }
+            }
+        }
+        
+        // Cache and return regular folder icon
+        iconCache.setObject(folderIcon, forKey: cacheKey, cost: 4096)
+        return folderIcon
     }
     
     // MARK: - Multi-Page Document Support

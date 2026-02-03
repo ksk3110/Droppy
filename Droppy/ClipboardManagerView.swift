@@ -203,6 +203,23 @@ struct ClipboardManagerView: View {
             } detail: {
                 // Detail view with preview pane
                 previewPane
+                    .toolbar {
+                        // Edit button (opens image in Screenshot Editor) - Far right of title bar
+                        ToolbarItem(placement: .primaryAction) {
+                            if selectedItemsArray.count == 1,
+                               let item = selectedItemsArray.first,
+                               item.type == .image,
+                               let imageData = item.loadImageData(),
+                               let nsImage = NSImage(data: imageData) {
+                                Button {
+                                    ScreenshotEditorWindowController.shared.show(with: nsImage)
+                                } label: {
+                                    Image(systemName: "pencil")
+                                }
+                                .help("Edit in Screenshot Editor")
+                            }
+                        }
+                    }
             }
         }
         .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))

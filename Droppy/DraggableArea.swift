@@ -8,6 +8,8 @@
 import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
+import QuickLookThumbnailing
+import AVKit
 
 /// A wrapper view that intercepts mouse events to handle custom dragging and clicking, 
 /// and provides a snapshot of the content for the drag image.
@@ -271,9 +273,20 @@ class DraggableAreaView<Content: View>: NSView, NSDraggingSource {
             var usedImage: NSImage?
             let frameSize = CGSize(width: 64, height: 64)
             
-            if let url = writer as? NSURL, let path = url.path {
-                // Use cached icon for instant performance
-                usedImage = ThumbnailCache.shared.cachedIcon(forPath: path)
+            if let url = writer as? NSURL, let fileURL = url as URL? {
+                // Check if this is a folder (use custom FolderIcon for visual consistency)
+                var isDirectory: ObjCBool = false
+                if FileManager.default.fileExists(atPath: fileURL.path, isDirectory: &isDirectory), isDirectory.boolValue {
+                    // Folder: Check if it's pinned by looking it up in DroppyState
+                    let isPinned = DroppyState.shared.items.contains(where: { $0.url == fileURL && $0.isPinned }) ||
+                                   DroppyState.shared.basketItems.contains(where: { $0.url == fileURL && $0.isPinned })
+                    usedImage = ThumbnailCache.shared.renderFolderIcon(size: frameSize.width, isPinned: isPinned)
+                } else {
+                    // File: Try to get cached THUMBNAIL first (for PDFs, videos, images, etc.)
+                    // If no cached thumbnail exists, fall back to icon for instant performance
+                    usedImage = ThumbnailCache.shared.getCachedThumbnail(for: fileURL)
+                        ?? ThumbnailCache.shared.cachedIcon(forPath: fileURL.path)
+                }
                 usedImage?.size = frameSize
             } else {
                 // Fallback to view snapshot for non-file items

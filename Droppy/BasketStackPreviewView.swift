@@ -7,6 +7,8 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import AVKit
+import QuickLookThumbnailing
 
 // MARK: - Basket Stack Preview View
 
@@ -86,20 +88,62 @@ struct BasketStackPreviewView: View {
         }
     }
     
-    /// Generate thumbnail for a URL
+    /// Generate thumbnail for a URL - uses QuickLook for rich previews of all file types
     private func generateThumbnail(for url: URL, size: CGSize) async -> NSImage? {
-        // Try to get cached icon first
-        let icon = ThumbnailCache.shared.cachedIcon(forPath: url.path)
+        // Determine file type
+        let fileType = try? url.resourceValues(forKeys: [.contentTypeKey]).contentType
         
-        // For images, try to load actual thumbnail
-        if let fileType = try? url.resourceValues(forKeys: [.contentTypeKey]).contentType,
-           fileType.conforms(to: .image) {
-            if let image = NSImage(contentsOf: url) {
-                return image
+        // VIDEOS: Use AVAssetImageGenerator for actual frame thumbnails
+        // QuickLook often returns generic icons instead of video frames
+        if let fileType = fileType, (fileType.conforms(to: .movie) || fileType.conforms(to: .video)) {
+            if let videoThumbnail = await generateVideoThumbnail(for: url, size: size) {
+                return videoThumbnail
             }
         }
         
-        return icon
+        // ALL OTHER FILES: Use QuickLook for rich previews (PDFs, Excel, images, documents, etc.)
+        let request = QLThumbnailGenerator.Request(
+            fileAt: url,
+            size: size,
+            scale: NSScreen.main?.backingScaleFactor ?? 2.0,
+            representationTypes: .all  // Include thumbnails AND icon fallbacks
+        )
+        
+        do {
+            let thumbnail = try await QLThumbnailGenerator.shared.generateBestRepresentation(for: request)
+            return thumbnail.nsImage
+        } catch {
+            // Fallback: Direct image load for images
+            if let fileType = fileType, fileType.conforms(to: .image) {
+                if let image = NSImage(contentsOf: url) {
+                    return image
+                }
+            }
+            // Ultimate fallback: cached icon
+            return ThumbnailCache.shared.cachedIcon(forPath: url.path)
+        }
+    }
+    
+    /// Generate video thumbnail using AVAssetImageGenerator
+    private func generateVideoThumbnail(for url: URL, size: CGSize) async -> NSImage? {
+        return await withCheckedContinuation { continuation in
+            let asset = AVAsset(url: url)
+            let generator = AVAssetImageGenerator(asset: asset)
+            generator.appliesPreferredTrackTransform = true
+            generator.maximumSize = CGSize(width: size.width * 2, height: size.height * 2) // Retina
+            
+            // Extract frame at 1 second (or start if video is shorter)
+            let time = CMTime(seconds: 1.0, preferredTimescale: 600)
+            
+            generator.generateCGImagesAsynchronously(forTimes: [NSValue(time: time)]) { _, cgImage, _, result, error in
+                if result == .succeeded, let cgImage = cgImage {
+                    let nsImage = NSImage(cgImage: cgImage, size: size)
+                    continuation.resume(returning: nsImage)
+                } else {
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
     }
 }
 

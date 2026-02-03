@@ -35,16 +35,49 @@
         html,
         body {
             height: 100%;
-            overflow: hidden;
+            margin: 0;
+            padding: 0;
             font-family: var(--font-sans);
             background: var(--bg);
             color: var(--primary);
             -webkit-font-smoothing: antialiased;
+            overflow: hidden;
+        }
+
+        /* Snap Scroll Container */
+        .scroll-container {
+            height: 100vh;
+            width: 100%;
+            overflow-y: scroll;
+            overflow-x: hidden;
+            scroll-snap-type: y mandatory;
+            -webkit-overflow-scrolling: touch;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .scroll-container.fade-out {
+            opacity: 0;
+        }
+
+        .slide {
+            height: 100vh;
+            min-height: 100vh;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .slide-1 {
+            overflow: hidden;
+            height: 100vh;
         }
 
         .page {
-            position: fixed;
+            position: absolute;
             inset: 0;
+            height: 100vh;
             overflow: hidden;
             opacity: 1;
             transition: opacity 0.3s ease;
@@ -945,494 +978,981 @@
                 height: 14px;
             }
         }
+
+        /* ===== SLIDE 2: SUPPORTERS WALL ===== */
+        .supporters-slide {
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 40px 100px;
+            position: relative;
+            overflow: hidden;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .supporters-slide::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255, 180, 0, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .supporters-content {
+            max-width: 1100px;
+            width: 100%;
+            text-align: center;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-height: 100%;
+        }
+
+        .supporters-header {
+            margin-bottom: 32px;
+        }
+
+        .supporters-header h2 {
+            font-size: 48px;
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .supporters-header .subtitle {
+            font-size: 16px;
+            color: var(--muted);
+            font-weight: 400;
+        }
+
+        .supporters-stats {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 32px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-top: 4px;
+        }
+
+        .stat-divider {
+            width: 1px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Top 3 */
+        .top-donors {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            align-items: stretch;
+            margin-bottom: 32px;
+        }
+
+        .top-donor {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            border-radius: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .top-donor:hover {
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .top-donor.gold {
+            order: 2;
+        }
+
+        .top-donor.silver {
+            order: 1;
+        }
+
+        .top-donor.bronze {
+            order: 3;
+        }
+
+        .top-donor .rank {
+            font-size: 18px;
+        }
+
+        .top-donor .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #000;
+        }
+
+        .top-donor.gold .avatar {
+            background: #ffd700;
+        }
+
+        .top-donor.silver .avatar {
+            background: #c0c0c0;
+        }
+
+        .top-donor.bronze .avatar {
+            background: #cd7f32;
+        }
+
+        .top-donor .name {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--primary);
+            max-width: 100px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .top-donor .coffees-count {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        /* Morphing CTA Bar */
+        .cta-bar {
+            transition: background 0.5s ease, border-color 0.5s ease, gap 0.4s ease;
+            overflow: hidden;
+        }
+
+        .cta-bar .btn {
+            transition: opacity 0.4s ease, transform 0.4s ease, max-width 0.4s ease, padding 0.4s ease, gap 0.4s ease;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .cta-bar.supporters-mode {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.12) 0%, rgba(255, 152, 0, 0.12) 100%);
+            border-color: rgba(255, 193, 7, 0.25);
+        }
+
+        .cta-bar.supporters-mode .btn-main,
+        .cta-bar.supporters-mode .btn-donate {
+            opacity: 0;
+            max-width: 0;
+            padding: 0;
+            pointer-events: none;
+            /* Remove from flex gap calculation */
+            display: none;
+        }
+
+        .btn-join-wall {
+            display: none !important;
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%) !important;
+            color: #000 !important;
+            font-weight: 600;
+        }
+
+        .cta-bar.supporters-mode .btn-join-wall {
+            display: inline-flex !important;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Horizontal Scroll Testimonials */
+        .testimonials-scroll-container {
+            width: 100vw;
+            margin-left: calc(-50vw + 50%);
+            margin-right: calc(-50vw + 50%);
+            overflow: hidden;
+            position: relative;
+            padding: 24px 0;
+        }
+
+        .testimonials-scroll-container::before,
+        .testimonials-scroll-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 120px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .testimonials-scroll-container::before {
+            left: 0;
+            background: linear-gradient(90deg, var(--bg) 0%, transparent 100%);
+        }
+
+        .testimonials-scroll-container::after {
+            right: 0;
+            background: linear-gradient(270deg, var(--bg) 0%, transparent 100%);
+        }
+
+        .testimonials-scroll {
+            display: flex;
+            gap: 16px;
+            padding: 0 60px;
+            animation: scrollTestimonials 60s linear infinite;
+            width: max-content;
+        }
+
+        .testimonials-scroll:hover {
+            animation-play-state: paused;
+        }
+
+        @keyframes scrollTestimonials {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+
+        .testimonial-card {
+            flex-shrink: 0;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+        }
+
+        .testimonial-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .testimonial-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .testimonial-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .testimonial-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            min-width: 0;
+        }
+
+        .testimonial-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .testimonial-meta {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .testimonial-coffees {
+            color: var(--muted);
+        }
+
+        .testimonial-quote {
+            font-size: 13px;
+            line-height: 1.45;
+            color: var(--secondary);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .testimonial-card:not(.has-quote) {
+            width: 180px;
+        }
+
+        .testimonial-card:not(.has-quote) .testimonial-quote {
+            display: none;
+        }
+
+        .no-testimonials {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--muted);
+        }
+
+        .scroll-hint {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            color: var(--muted);
+            font-size: 11px;
+            letter-spacing: 0.05em;
+            animation: bounce 2s infinite;
+            z-index: 100;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .scroll-hint:hover {
+            opacity: 1;
+        }
+
+        .scroll-hint svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--muted);
+        }
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateX(-50%) translateY(0);
+            }
+
+            40% {
+                transform: translateX(-50%) translateY(6px);
+            }
+
+            60% {
+                transform: translateX(-50%) translateY(3px);
+            }
+        }
+
+        .supporters-loading {
+            text-align: center;
+            color: var(--muted);
+            padding: 40px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .supporters-slide {
+                padding: 60px 20px;
+            }
+
+            .supporters-header h2 {
+                font-size: 28px;
+            }
+
+            .supporters-stats {
+                gap: 40px;
+            }
+
+            .stat-value {
+                font-size: 40px;
+            }
+
+            .featured-notes {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <div class="page">
-        <!-- TOP EDGE -->
-        <div class="card main t1" data-rot="-8" style="--op:0.75">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">File Shelf</div>
-                <div class="card-sub">Drop files to notch</div>
-            </div>
-        </div>
-        <div class="card t2" data-rot="5" style="--op:0.65">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Drag-Out Files</div>
-                <div class="card-sub">From anywhere</div>
-            </div>
-        </div>
-        <div class="card main t3" data-rot="-4" style="--op:0.75">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Floating Basket</div>
-                <div class="card-sub">Jiggle mouse</div>
-            </div>
-        </div>
-        <div class="card t4" data-rot="7" style="--op:0.55">
-            <div class="checkbox"></div>
-            <div class="card-body">
-                <div class="card-title">Peek & Hide</div>
-                <div class="card-sub">Smooth animations</div>
-            </div>
-        </div>
-        <div class="card main t5" data-rot="-6" style="--op:0.75">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Clipboard Manager</div>
-                <div class="card-sub">⌘⇧Space • History</div>
-            </div>
-        </div>
-        <div class="card t6" data-rot="4" style="--op:0.65">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Instant Search</div>
-                <div class="card-sub">Find anything</div>
-            </div>
-        </div>
-        <div class="card t7" data-rot="-5" style="--op:0.55">
-            <div class="checkbox"></div>
-            <div class="card-body">
-                <div class="card-title">Favorites</div>
-                <div class="card-sub">Pin important</div>
-            </div>
-        </div>
-        <div class="card t8" data-rot="9" style="--op:0.65">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Flag Important</div>
-                <div class="card-sub">Mark priority</div>
-            </div>
-        </div>
-        <div class="card main t9" data-rot="-3" style="--op:0.75">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Beautiful Media HUD</div>
-                <div class="card-sub">Album art</div>
-            </div>
-        </div>
-        <div class="card t10" data-rot="6" style="--op:0.65">
-            <div class="checkbox"></div>
-            <div class="card-body">
-                <div class="card-title">Bulk Copy</div>
-                <div class="card-sub">Multiple items</div>
-            </div>
-        </div>
-
-        <!-- LEFT EDGE -->
-        <div class="card main l1" data-rot="-8" style="--op:0.75">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Volume HUD</div>
-                <div class="card-sub">Smooth animation</div>
-            </div>
-        </div>
-        <div class="card l2" data-rot="5" style="--op:0.65">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Brightness HUD</div>
-                <div class="card-sub">Beautiful design</div>
-            </div>
-        </div>
-        <div class="card l3" data-rot="-4" style="--op:0.55">
-            <div class="checkbox"></div>
-            <div class="card-body">
-                <div class="card-title">Battery HUD</div>
-                <div class="card-sub">% indicator</div>
-            </div>
-        </div>
-        <div class="card l4" data-rot="7" style="--op:0.65">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Caps Lock HUD</div>
-                <div class="card-sub">Visual alert</div>
-            </div>
-        </div>
-        <div class="card l5" data-rot="-6" style="--op:0.75">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Screen Unlock</div>
-                <div class="card-sub">Notification</div>
-            </div>
-        </div>
-        <div class="card l6" data-rot="4" style="--op:0.55">
-            <div class="checkbox"></div>
-            <div class="card-body">
-                <div class="card-title">AirPods HUD</div>
-                <div class="card-sub">Connection status</div>
-            </div>
-        </div>
-        <div class="card main l7" data-rot="-5" style="--op:0.75">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Power Folders</div>
-                <div class="card-sub">Drop to organize</div>
-            </div>
-        </div>
-        <div class="card l8" data-rot="9" style="--op:0.65">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Tracked Folders</div>
-                <div class="card-sub">Auto-watch</div>
-            </div>
-        </div>
-
-        <!-- RIGHT EDGE -->
-        <div class="card main r1" data-rot="9" style="--op:0.75">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Audio Visualizer</div>
-                <div class="card-sub">Live beats</div>
-            </div>
-        </div>
-        <div class="card r2" data-rot="-5" style="--op:0.65">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Tap-to-Seek</div>
-                <div class="card-sub">Precise control</div>
-            </div>
-        </div>
-        <div class="card r3" data-rot="4" style="--op:0.55">
-            <div class="checkbox"></div>
-            <div class="card-body">
-                <div class="card-title">Shuffle & Repeat</div>
-                <div class="card-sub">Playback modes</div>
-            </div>
-        </div>
-        <div class="card r4" data-rot="-6" style="--op:0.65">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Play/Pause/Skip</div>
-                <div class="card-sub">Media controls</div>
-            </div>
-        </div>
-        <div class="card main r5" data-rot="7" style="--op:0.75">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Dynamic Island</div>
-                <div class="card-sub">Works on any Mac</div>
-            </div>
-        </div>
-        <div class="card r6" data-rot="-4" style="--op:0.65">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Multi-Monitor</div>
-                <div class="card-sub">All displays</div>
-            </div>
-        </div>
-        <div class="card r7" data-rot="5" style="--op:0.55">
-            <div class="checkbox"></div>
-            <div class="card-body">
-                <div class="card-title">Fullscreen Mode</div>
-                <div class="card-sub">Smart detection</div>
-            </div>
-        </div>
-        <div class="card r8" data-rot="-8" style="--op:0.65">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Transparency</div>
-                <div class="card-sub">See-through notch</div>
-            </div>
-        </div>
-
-        <!-- BOTTOM EDGE -->
-        <div class="card b1" data-rot="6" style="--op:0.65">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Smart Export</div>
-                <div class="card-sub">Auto-save output</div>
-            </div>
-        </div>
-        <div class="card main b2" data-rot="-3" style="--op:0.75">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Spotify</div>
-                <div class="card-sub">Now Playing</div>
-            </div>
-        </div>
-        <div class="card b3" data-rot="9" style="--op:0.55">
-            <div class="checkbox"></div>
-            <div class="card-body">
-                <div class="card-title">Apple Music</div>
-                <div class="card-sub">Full controls</div>
-            </div>
-        </div>
-        <div class="card b4" data-rot="-5" style="--op:0.65">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">OCR Text</div>
-                <div class="card-sub">Extract from images</div>
-            </div>
-        </div>
-        <div class="card b5" data-rot="4" style="--op:0.75">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Compress Files</div>
-                <div class="card-sub">ZIP/UNZIP</div>
-            </div>
-        </div>
-        <div class="card main b6" data-rot="-6" style="--op:0.75">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Voice Transcribe</div>
-                <div class="card-sub">Whisper AI</div>
-            </div>
-        </div>
-        <div class="card b7" data-rot="7" style="--op:0.55">
-            <div class="checkbox"></div>
-            <div class="card-body">
-                <div class="card-title">BG Removal</div>
-                <div class="card-sub">AI powered</div>
-            </div>
-        </div>
-        <div class="card b8" data-rot="-4" style="--op:0.65">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Video Compress</div>
-                <div class="card-sub">Discord ready</div>
-            </div>
-        </div>
-        <div class="card main b9" data-rot="5" style="--op:0.75">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Window Snap</div>
-                <div class="card-sub">Keyboard shortcuts</div>
-            </div>
-        </div>
-        <div class="card b10" data-rot="-8" style="--op:0.65">
-            <div class="checkbox"></div>
-            <div class="card-body">
-                <div class="card-title">Element Capture</div>
-                <div class="card-sub">Screenshot UI</div>
-            </div>
-        </div>
-
-        <!-- EXTRA scattered -->
-        <div class="card" style="top:15%;left:8%;--op:0.55" data-rot="-4">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Convert Images</div>
-                <div class="card-sub">PNG/JPG/HEIC</div>
-            </div>
-        </div>
-        <div class="card" style="top:88%;left:42%;--op:0.65" data-rot="5">
-            <div class="checkbox"></div>
-            <div class="card-body">
-                <div class="card-title">AirDrop</div>
-                <div class="card-sub">Quick share</div>
-            </div>
-        </div>
-        <div class="card" style="top:88%;right:42%;--op:0.55" data-rot="-5">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Quick Actions</div>
-                <div class="card-sub">Right-click menu</div>
-            </div>
-        </div>
-        <div class="card" style="top:15%;right:8%;--op:0.65" data-rot="5">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Rename Entries</div>
-                <div class="card-sub">Clipboard items</div>
-            </div>
-        </div>
-        <div class="card" style="bottom:5%;left:5%;--op:0.55" data-rot="7">
-            <div class="checkbox"></div>
-            <div class="card-body">
-                <div class="card-title">Termi-Notch</div>
-                <div class="card-sub">Quick terminal</div>
-            </div>
-        </div>
-
-        <div class="card" style="top:92%;left:15%;--op:0.55" data-rot="9">
-            <div class="checkbox"></div>
-            <div class="card-body">
-                <div class="card-title">Alfred Workflow</div>
-                <div class="card-sub">Add from Alfred</div>
-            </div>
-        </div>
-        <div class="card" style="top:92%;right:15%;--op:0.65" data-rot="-8">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Finder Services</div>
-                <div class="card-sub">Right-click send</div>
-            </div>
-        </div>
-        <div class="card" style="top:5%;left:50%;--op:0.55" data-rot="-3">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Quickshare</div>
-                <div class="card-sub">Instant sharing</div>
-            </div>
-        </div>
-        <div class="card" style="bottom:12%;left:3%;--op:0.65" data-rot="5">
-            <div class="checkbox"></div>
-            <div class="card-body">
-                <div class="card-title">Lock Screen</div>
-                <div class="card-sub">Widgets</div>
-            </div>
-        </div>
-        <div class="card" style="bottom:12%;right:3%;--op:0.55" data-rot="-4">
-            <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 13l4 4 8-9" />
-                </svg></div>
-            <div class="card-body">
-                <div class="card-title">Notification HUD</div>
-                <div class="card-sub">System alerts</div>
-            </div>
-        </div>
-
-        <!-- Center -->
-        <div class="center">
-            <img src="assets/images/droppy-icon-dark.png" alt="Droppy" class="logo">
-            <p class="headline"><span class="dim">The <span class="free">free</span> native productivity layer</span>
-                macOS is missing.</p>
-            <div class="video-box">
-                <video width="100%" autoplay loop muted playsinline controls>
-                    <source src="https://github.com/user-attachments/assets/813c3eea-6588-4f23-880f-135833d26a16"
-                        type="video/mp4">
-                </video>
-            </div>
-            <button class="credits-btn" id="credits-btn">Credits & Acknowledgements</button>
-        </div>
-    </div>
-
-    <!-- Credits Modal -->
-    <div class="credits-modal-overlay" id="credits-modal">
-        <div class="credits-modal">
-            <h2>Credits & Acknowledgements</h2>
-
-            <div class="credits-section">
-                <h3>🧑‍💻 Contributors</h3>
-                <p>Droppy has had contributions from developers who helped create code, improve features, and build
-                    community-driven extensions. Thank you to everyone who has contributed!</p>
-            </div>
-
-            <div class="credits-section">
-                <h3>✨ Alcove</h3>
-                <p>Alcove has been a great inspiration for creating a beautiful notch app with smooth animations. One of
-                    the founding fathers of good-looking notch apps on macOS. The developer has been supportive and is
-                    behind this project.</p>
-                <a href="https://tryalcove.com/" target="_blank">tryalcove.com →</a>
-            </div>
-
-            <div class="credits-section">
-                <h3>🎯 Boringnotch</h3>
-                <p>Thank you for pioneering notch creativity on macOS and laying the groundwork for the community.</p>
-                <a href="https://github.com/TheBoredTeam/boring.notch"
-                    target="_blank">github.com/TheBoredTeam/boring.notch →</a>
-            </div>
-        </div>
-    </div>
-    <!-- Donation Modal -->
-    <div class="donate-modal-overlay" id="donate-modal">
-        <div class="donate-modal">
-            <span class="donate-modal-icon">☕</span>
-            <h2>A Quick Note</h2>
-            <p>Droppy is <span class="highlight">completely free</span> and <span class="highlight">open source</span>,
-                built with love by a single developer.</p>
-            <p>If you can afford it, a small donation would mean the world. It helps keep this project alive and makes
-                future improvements possible.</p>
-            <p>Droppy costs money to develop and maintain — and right now, I'm covering those costs myself to bring you
-                great software for free.</p>
-            <div class="donate-modal-buttons">
-                <a href="https://buymeacoffee.com/droppy" class="donate-modal-btn primary" target="_blank">
-                    ☕ Donate a Cup of Coffee
-                </a>
-                <div class="donate-perks-list">
-                    <span class="donate-perk">🎖️ Discord Role</span>
-                    <span class="donate-perk">💬 Exclusive Channel</span>
-                    <span class="donate-perk">⭐ Website Credit</span>
+    <div class="scroll-container" id="scroll-container">
+        <!-- SLIDE 1: Hero -->
+        <div class="slide slide-1">
+            <div class="page">
+                <!-- TOP EDGE -->
+                <div class="card main t1" data-rot="-8" style="--op:0.75">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">File Shelf</div>
+                        <div class="card-sub">Drop files to notch</div>
+                    </div>
                 </div>
-                <button class="donate-modal-btn secondary" id="free-download-btn">
-                    <span class="fill-bar"></span>
-                    <span>I understand, but I want it for free</span>
+                <div class="card t2" data-rot="5" style="--op:0.65">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Drag-Out Files</div>
+                        <div class="card-sub">From anywhere</div>
+                    </div>
+                </div>
+                <div class="card main t3" data-rot="-4" style="--op:0.75">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Floating Basket</div>
+                        <div class="card-sub">Jiggle mouse</div>
+                    </div>
+                </div>
+                <div class="card t4" data-rot="7" style="--op:0.55">
+                    <div class="checkbox"></div>
+                    <div class="card-body">
+                        <div class="card-title">Peek & Hide</div>
+                        <div class="card-sub">Smooth animations</div>
+                    </div>
+                </div>
+                <div class="card main t5" data-rot="-6" style="--op:0.75">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Clipboard Manager</div>
+                        <div class="card-sub">⌘⇧Space • History</div>
+                    </div>
+                </div>
+                <div class="card t6" data-rot="4" style="--op:0.65">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Instant Search</div>
+                        <div class="card-sub">Find anything</div>
+                    </div>
+                </div>
+                <div class="card t7" data-rot="-5" style="--op:0.55">
+                    <div class="checkbox"></div>
+                    <div class="card-body">
+                        <div class="card-title">Favorites</div>
+                        <div class="card-sub">Pin important</div>
+                    </div>
+                </div>
+                <div class="card t8" data-rot="9" style="--op:0.65">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Flag Important</div>
+                        <div class="card-sub">Mark priority</div>
+                    </div>
+                </div>
+                <div class="card main t9" data-rot="-3" style="--op:0.75">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Beautiful Media HUD</div>
+                        <div class="card-sub">Album art</div>
+                    </div>
+                </div>
+                <div class="card t10" data-rot="6" style="--op:0.65">
+                    <div class="checkbox"></div>
+                    <div class="card-body">
+                        <div class="card-title">Bulk Copy</div>
+                        <div class="card-sub">Multiple items</div>
+                    </div>
+                </div>
+
+                <!-- LEFT EDGE -->
+                <div class="card main l1" data-rot="-8" style="--op:0.75">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Volume HUD</div>
+                        <div class="card-sub">Smooth animation</div>
+                    </div>
+                </div>
+                <div class="card l2" data-rot="5" style="--op:0.65">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Brightness HUD</div>
+                        <div class="card-sub">Beautiful design</div>
+                    </div>
+                </div>
+                <div class="card l3" data-rot="-4" style="--op:0.55">
+                    <div class="checkbox"></div>
+                    <div class="card-body">
+                        <div class="card-title">Battery HUD</div>
+                        <div class="card-sub">% indicator</div>
+                    </div>
+                </div>
+                <div class="card l4" data-rot="7" style="--op:0.65">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Caps Lock HUD</div>
+                        <div class="card-sub">Visual alert</div>
+                    </div>
+                </div>
+                <div class="card l5" data-rot="-6" style="--op:0.75">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Screen Unlock</div>
+                        <div class="card-sub">Notification</div>
+                    </div>
+                </div>
+                <div class="card l6" data-rot="4" style="--op:0.55">
+                    <div class="checkbox"></div>
+                    <div class="card-body">
+                        <div class="card-title">AirPods HUD</div>
+                        <div class="card-sub">Connection status</div>
+                    </div>
+                </div>
+                <div class="card main l7" data-rot="-5" style="--op:0.75">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Power Folders</div>
+                        <div class="card-sub">Drop to organize</div>
+                    </div>
+                </div>
+                <div class="card l8" data-rot="9" style="--op:0.65">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Tracked Folders</div>
+                        <div class="card-sub">Auto-watch</div>
+                    </div>
+                </div>
+
+                <!-- RIGHT EDGE -->
+                <div class="card main r1" data-rot="9" style="--op:0.75">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Audio Visualizer</div>
+                        <div class="card-sub">Live beats</div>
+                    </div>
+                </div>
+                <div class="card r2" data-rot="-5" style="--op:0.65">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Tap-to-Seek</div>
+                        <div class="card-sub">Precise control</div>
+                    </div>
+                </div>
+                <div class="card r3" data-rot="4" style="--op:0.55">
+                    <div class="checkbox"></div>
+                    <div class="card-body">
+                        <div class="card-title">Shuffle & Repeat</div>
+                        <div class="card-sub">Playback modes</div>
+                    </div>
+                </div>
+                <div class="card r4" data-rot="-6" style="--op:0.65">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Play/Pause/Skip</div>
+                        <div class="card-sub">Media controls</div>
+                    </div>
+                </div>
+                <div class="card main r5" data-rot="7" style="--op:0.75">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Dynamic Island</div>
+                        <div class="card-sub">Works on any Mac</div>
+                    </div>
+                </div>
+                <div class="card r6" data-rot="-4" style="--op:0.65">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Multi-Monitor</div>
+                        <div class="card-sub">All displays</div>
+                    </div>
+                </div>
+                <div class="card r7" data-rot="5" style="--op:0.55">
+                    <div class="checkbox"></div>
+                    <div class="card-body">
+                        <div class="card-title">Fullscreen Mode</div>
+                        <div class="card-sub">Smart detection</div>
+                    </div>
+                </div>
+                <div class="card r8" data-rot="-8" style="--op:0.65">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Transparency</div>
+                        <div class="card-sub">See-through notch</div>
+                    </div>
+                </div>
+
+                <!-- BOTTOM EDGE -->
+                <div class="card b1" data-rot="6" style="--op:0.65">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Smart Export</div>
+                        <div class="card-sub">Auto-save output</div>
+                    </div>
+                </div>
+                <div class="card main b2" data-rot="-3" style="--op:0.75">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Spotify</div>
+                        <div class="card-sub">Now Playing</div>
+                    </div>
+                </div>
+                <div class="card b3" data-rot="9" style="--op:0.55">
+                    <div class="checkbox"></div>
+                    <div class="card-body">
+                        <div class="card-title">Apple Music</div>
+                        <div class="card-sub">Full controls</div>
+                    </div>
+                </div>
+                <div class="card b4" data-rot="-5" style="--op:0.65">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">OCR Text</div>
+                        <div class="card-sub">Extract from images</div>
+                    </div>
+                </div>
+                <div class="card b5" data-rot="4" style="--op:0.75">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Compress Files</div>
+                        <div class="card-sub">ZIP/UNZIP</div>
+                    </div>
+                </div>
+                <div class="card main b6" data-rot="-6" style="--op:0.75">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Voice Transcribe</div>
+                        <div class="card-sub">Whisper AI</div>
+                    </div>
+                </div>
+                <div class="card b7" data-rot="7" style="--op:0.55">
+                    <div class="checkbox"></div>
+                    <div class="card-body">
+                        <div class="card-title">BG Removal</div>
+                        <div class="card-sub">AI powered</div>
+                    </div>
+                </div>
+                <div class="card b8" data-rot="-4" style="--op:0.65">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Video Compress</div>
+                        <div class="card-sub">Discord ready</div>
+                    </div>
+                </div>
+                <div class="card main b9" data-rot="5" style="--op:0.75">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Window Snap</div>
+                        <div class="card-sub">Keyboard shortcuts</div>
+                    </div>
+                </div>
+                <div class="card b10" data-rot="-8" style="--op:0.65">
+                    <div class="checkbox"></div>
+                    <div class="card-body">
+                        <div class="card-title">Element Capture</div>
+                        <div class="card-sub">Screenshot UI</div>
+                    </div>
+                </div>
+
+                <!-- EXTRA scattered -->
+                <div class="card" style="top:15%;left:8%;--op:0.55" data-rot="-4">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Convert Images</div>
+                        <div class="card-sub">PNG/JPG/HEIC</div>
+                    </div>
+                </div>
+                <div class="card" style="top:88%;left:42%;--op:0.65" data-rot="5">
+                    <div class="checkbox"></div>
+                    <div class="card-body">
+                        <div class="card-title">AirDrop</div>
+                        <div class="card-sub">Quick share</div>
+                    </div>
+                </div>
+                <div class="card" style="top:88%;right:42%;--op:0.55" data-rot="-5">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Quick Actions</div>
+                        <div class="card-sub">Right-click menu</div>
+                    </div>
+                </div>
+                <div class="card" style="top:15%;right:8%;--op:0.65" data-rot="5">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Rename Entries</div>
+                        <div class="card-sub">Clipboard items</div>
+                    </div>
+                </div>
+                <div class="card" style="bottom:5%;left:5%;--op:0.55" data-rot="7">
+                    <div class="checkbox"></div>
+                    <div class="card-body">
+                        <div class="card-title">Termi-Notch</div>
+                        <div class="card-sub">Quick terminal</div>
+                    </div>
+                </div>
+
+                <div class="card" style="top:92%;left:15%;--op:0.55" data-rot="9">
+                    <div class="checkbox"></div>
+                    <div class="card-body">
+                        <div class="card-title">Alfred Workflow</div>
+                        <div class="card-sub">Add from Alfred</div>
+                    </div>
+                </div>
+                <div class="card" style="top:92%;right:15%;--op:0.65" data-rot="-8">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Finder Services</div>
+                        <div class="card-sub">Right-click send</div>
+                    </div>
+                </div>
+                <div class="card" style="top:5%;left:50%;--op:0.55" data-rot="-3">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Quickshare</div>
+                        <div class="card-sub">Instant sharing</div>
+                    </div>
+                </div>
+                <div class="card" style="bottom:12%;left:3%;--op:0.65" data-rot="5">
+                    <div class="checkbox"></div>
+                    <div class="card-body">
+                        <div class="card-title">Lock Screen</div>
+                        <div class="card-sub">Widgets</div>
+                    </div>
+                </div>
+                <div class="card" style="bottom:12%;right:3%;--op:0.55" data-rot="-4">
+                    <div class="checkbox checked"><svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 13l4 4 8-9" />
+                        </svg></div>
+                    <div class="card-body">
+                        <div class="card-title">Notification HUD</div>
+                        <div class="card-sub">System alerts</div>
+                    </div>
+                </div>
+
+                <!-- Center -->
+                <div class="center">
+                    <img src="assets/images/droppy-icon-dark.png" alt="Droppy" class="logo">
+                    <p class="headline"><span class="dim">The <span class="free">free</span> native productivity
+                            layer</span>
+                        macOS is missing.</p>
+                    <div class="video-box">
+                        <video width="100%" autoplay loop muted playsinline controls>
+                            <source
+                                src="https://github.com/user-attachments/assets/813c3eea-6588-4f23-880f-135833d26a16"
+                                type="video/mp4">
+                        </video>
+                    </div>
+                    <button class="credits-btn" id="credits-btn">Credits & Acknowledgements</button>
+                </div>
+            </div>
+
+            <!-- Credits Modal -->
+            <div class="credits-modal-overlay" id="credits-modal">
+                <div class="credits-modal">
+                    <h2>Credits & Acknowledgements</h2>
+
+                    <div class="credits-section">
+                        <h3>🧑‍💻 Contributors</h3>
+                        <p>Droppy has had contributions from developers who helped create code, improve features, and
+                            build
+                            community-driven extensions. Thank you to everyone who has contributed!</p>
+                    </div>
+
+                    <div class="credits-section">
+                        <h3>✨ Alcove</h3>
+                        <p>Alcove has been a great inspiration for creating a beautiful notch app with smooth
+                            animations. One of
+                            the founding fathers of good-looking notch apps on macOS. The developer has been supportive
+                            and is
+                            behind this project.</p>
+                        <a href="https://tryalcove.com/" target="_blank">tryalcove.com →</a>
+                    </div>
+
+                    <div class="credits-section">
+                        <h3>🎯 Boringnotch</h3>
+                        <p>Thank you for pioneering notch creativity on macOS and laying the groundwork for the
+                            community.</p>
+                        <a href="https://github.com/TheBoredTeam/boring.notch"
+                            target="_blank">github.com/TheBoredTeam/boring.notch →</a>
+                    </div>
+                </div>
+            </div>
+            <!-- Donation Modal -->
+            <div class="donate-modal-overlay" id="donate-modal">
+                <div class="donate-modal">
+                    <span class="donate-modal-icon">☕</span>
+                    <h2>A Quick Note</h2>
+                    <p>Droppy is <span class="highlight">completely free</span> and <span class="highlight">open
+                            source</span>,
+                        built with love by a single developer.</p>
+                    <p>If you can afford it, a small donation would mean the world. It helps keep this project alive and
+                        makes
+                        future improvements possible.</p>
+                    <p>Droppy costs money to develop and maintain — and right now, I'm covering those costs myself to
+                        bring you
+                        great software for free.</p>
+                    <div class="donate-modal-buttons">
+                        <a href="https://buymeacoffee.com/droppy" class="donate-modal-btn primary" target="_blank">
+                            ☕ Donate a Cup of Coffee
+                        </a>
+                        <div class="donate-perks-list">
+                            <span class="donate-perk">🎖️ Discord Role</span>
+                            <span class="donate-perk">💬 Exclusive Channel</span>
+                            <span class="donate-perk">⭐ Website Credit</span>
+                        </div>
+                        <button class="donate-modal-btn secondary" id="free-download-btn">
+                            <span class="fill-bar"></span>
+                            <span>I understand, but I want it for free</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA Bar -->
+            <div class="cta-bar" id="cta-bar">
+                <button id="download-btn" class="btn btn-main">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download Droppy
                 </button>
+                <a href="https://buymeacoffee.com/droppy" class="btn btn-join-wall" target="_blank">Join the Wall</a>
+                <a href="https://buymeacoffee.com/droppy" class="btn btn-donate" target="_blank">Donate</a>
+                <a href="extensions.html" class="btn">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path
+                            d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+                    </svg>
+                    Extensions
+                </a>
+            </div>
+
+            <!-- Scroll Hint -->
+            <div class="scroll-hint"
+                onclick="document.getElementById('supporters-slide').scrollIntoView({behavior:'smooth'})">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                    <path d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+                <span>Scroll for Supporters</span>
             </div>
         </div>
-    </div>
 
-    <!-- CTA Bar -->
-    <div class="cta-bar">
-        <button id="download-btn" class="btn btn-main">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Download Droppy
-        </button>
-        <a href="https://buymeacoffee.com/droppy" class="btn btn-donate" target="_blank">☕ Donate</a>
-        <a href="extensions.html" class="btn">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path
-                    d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
-            </svg>
-            Extensions
-        </a>
+        <!-- SLIDE 2: Supporters Wall -->
+        <div class="slide slide-2 supporters-slide" id="supporters-slide">
+            <div class="supporters-content">
+                <div class="supporters-header">
+                    <h2>Supporters</h2>
+                    <p class="subtitle">Thank you for keeping Droppy free</p>
+                </div>
+
+                <div class="supporters-stats">
+                    <div class="stat">
+                        <div class="stat-value" id="total-supporters">—</div>
+                        <div class="stat-label">Supporters</div>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat">
+                        <div class="stat-value" id="total-coffees">—</div>
+                        <div class="stat-label">Coffees</div>
+                    </div>
+                </div>
+
+                <div class="top-donors" id="top-donors"></div>
+
+                <div class="testimonials-scroll-container">
+                    <div class="testimonials-scroll" id="testimonials-scroll">
+                        <div class="no-testimonials">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -1444,8 +1964,8 @@
                 const href = link.getAttribute('href');
                 if (href && !href.startsWith('#') && !href.startsWith('javascript')) {
                     e.preventDefault();
-                    document.querySelector('.page').classList.add('fade-out');
-                    document.querySelector('.cta-bar').classList.add('fade-out');
+                    document.getElementById('scroll-container').classList.add('fade-out');
+                    document.querySelectorAll('.cta-bar').forEach(bar => bar.classList.add('fade-out'));
                     setTimeout(() => window.location.href = href, 300);
                 }
             });
@@ -1595,6 +2115,129 @@
                 freeDownloadBtn.classList.remove('filling');
             }
         });
+
+        // ===== SUPPORTERS WALL =====
+        async function loadSupporters() {
+            const scroll = document.getElementById('testimonials-scroll');
+            const totalSupportersEl = document.getElementById('total-supporters');
+            const totalCoffeesEl = document.getElementById('total-coffees');
+
+            try {
+                const response = await fetch('https://anannmonpspjsnfgdglb.supabase.co/functions/v1/supporters');
+                if (!response.ok) throw new Error('Failed to fetch supporters');
+
+                const data = await response.json();
+
+                // Update stats with animation
+                animateNumber(totalSupportersEl, data.total);
+                animateNumber(totalCoffeesEl, data.total_coffees);
+
+                // Render Top 3 Podium (data is already sorted by coffees desc from API)
+                const top3 = data.supporters.slice(0, 3);
+                const topDonors = document.getElementById('top-donors');
+                const medals = ['gold', 'silver', 'bronze'];
+                const rankEmojis = ['🥇', '🥈', '🥉'];
+
+                if (top3.length >= 3) {
+                    topDonors.innerHTML = top3.map((supporter, i) => `
+                        <div class="top-donor ${medals[i]}">
+                            <div class="rank">${rankEmojis[i]}</div>
+                            <div class="avatar">${getInitials(supporter.name)}</div>
+                            <div class="name">${escapeHtml(supporter.name)}</div>
+                            <div class="coffees-count">☕ ${supporter.coffees}</div>
+                        </div>
+                    `).join('');
+                }
+
+                // Create testimonial cards for the grid
+                // Featured cards: long notes (>100 chars), Standard: shorter notes, Compact: no note
+                const allSupporters = data.supporters.slice(3); // Skip top 3
+
+                const cardsHtml = allSupporters.map(supporter => {
+                    const hasNote = supporter.note && supporter.note.trim().length > 0;
+                    const isFeatured = hasNote && supporter.note.length > 100;
+                    const cardClass = isFeatured ? 'testimonial-card featured has-quote' :
+                        hasNote ? 'testimonial-card has-quote' : 'testimonial-card';
+
+                    return `
+                        <div class="${cardClass}">
+                            <div class="testimonial-header">
+                                <div class="testimonial-avatar">${getInitials(supporter.name)}</div>
+                                <div class="testimonial-info">
+                                    <div class="testimonial-name">${escapeHtml(supporter.name)}</div>
+                                    <div class="testimonial-meta">
+                                        <span class="testimonial-coffees">☕ ${supporter.coffees}</span>
+                                        <span>•</span>
+                                        <span>${formatDate(supporter.date)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            ${hasNote ? `<div class="testimonial-quote">"${escapeHtml(supporter.note)}"</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+
+                // Duplicate for infinite scroll animation
+                scroll.innerHTML = cardsHtml + cardsHtml || '<div class="no-testimonials">No supporters yet. Be the first!</div>';
+
+            } catch (error) {
+                console.error('Error loading supporters:', error);
+                scroll.innerHTML = '<div class="no-testimonials">Unable to load supporters. <a href="https://buymeacoffee.com/droppy" target="_blank">View on Buy Me a Coffee →</a></div>';
+            }
+        }
+
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function animateNumber(el, target) {
+            let current = 0;
+            const duration = 1000;
+            const step = target / (duration / 16);
+            const animate = () => {
+                current += step;
+                if (current < target) {
+                    el.textContent = Math.floor(current);
+                    requestAnimationFrame(animate);
+                } else {
+                    el.textContent = target;
+                }
+            };
+            animate();
+        }
+
+        // Load supporters when slide comes into view
+        const supportersSlide = document.getElementById('supporters-slide');
+        const ctaBar = document.getElementById('cta-bar');
+        let supportersLoaded = false;
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                // Morph CTA bar based on visibility
+                if (entry.isIntersecting) {
+                    ctaBar.classList.add('supporters-mode');
+                    // Load supporters only once
+                    if (!supportersLoaded) {
+                        loadSupporters();
+                        supportersLoaded = true;
+                    }
+                } else {
+                    ctaBar.classList.remove('supporters-mode');
+                }
+            });
+        }, { threshold: 0.3 });
+        observer.observe(supportersSlide);
     </script>
 </body>
 

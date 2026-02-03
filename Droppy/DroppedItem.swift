@@ -9,6 +9,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import QuickLookThumbnailing
 import AppKit
+import AVKit
 
 /// Represents a file or item dropped onto the Droppy shelf
 struct DroppedItem: Identifiable, Hashable, Transferable {
@@ -106,6 +107,14 @@ struct DroppedItem: Identifiable, Hashable, Transferable {
     /// Generates a thumbnail for the file asynchronously
     /// Returns nil if no QuickLook thumbnail available - view should use NSWorkspace.icon fallback
     func generateThumbnail(size: CGSize = CGSize(width: 64, height: 64)) async -> NSImage? {
+        // SPECIAL CASE: Videos - use AVAssetImageGenerator for actual frame thumbnails
+        // QuickLook often returns generic icons instead of video frames
+        if isVideo {
+            if let videoThumbnail = await generateVideoThumbnail(size: size) {
+                return videoThumbnail
+            }
+        }
+        
         let request = QLThumbnailGenerator.Request(
             fileAt: url,
             size: size,
@@ -132,6 +141,35 @@ struct DroppedItem: Identifiable, Hashable, Transferable {
             }
             // Return nil - let view use NSWorkspace.icon fallback
             return nil
+        }
+    }
+    
+    /// Returns true if this item is a video file
+    var isVideo: Bool {
+        guard let fileType = fileType else { return false }
+        return fileType.conforms(to: .movie) || fileType.conforms(to: .video)
+    }
+    
+    /// Generates a thumbnail from video using AVAssetImageGenerator
+    /// Extracts a frame from 1 second into the video
+    private func generateVideoThumbnail(size: CGSize) async -> NSImage? {
+        return await withCheckedContinuation { continuation in
+            let asset = AVAsset(url: url)
+            let generator = AVAssetImageGenerator(asset: asset)
+            generator.appliesPreferredTrackTransform = true
+            generator.maximumSize = CGSize(width: size.width * 2, height: size.height * 2) // Retina
+            
+            // Extract frame at 1 second (or start if video is shorter)
+            let time = CMTime(seconds: 1.0, preferredTimescale: 600)
+            
+            generator.generateCGImagesAsynchronously(forTimes: [NSValue(time: time)]) { _, cgImage, _, result, error in
+                if result == .succeeded, let cgImage = cgImage {
+                    let nsImage = NSImage(cgImage: cgImage, size: size)
+                    continuation.resume(returning: nsImage)
+                } else {
+                    continuation.resume(returning: nil)
+                }
+            }
         }
     }
     
