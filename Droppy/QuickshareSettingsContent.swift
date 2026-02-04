@@ -131,6 +131,15 @@ struct QuickshareSettingsContent: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                        
+                        HStack(spacing: 6) {
+                            Image(systemName: "lock.shield")
+                                .foregroundStyle(.cyan)
+                                .frame(width: 16)
+                            Text("IP logged for abuse prevention only")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
                 .padding(.vertical, 4)
