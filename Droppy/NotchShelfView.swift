@@ -2460,45 +2460,50 @@ struct NotchShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         
-        // === TOP LEFT WING ===
-        // Start at top-left corner (screen edge)
+        // FIXED: Shape now fills the FULL WIDTH at the top edge to cover the entire physical notch
+        // The curved wings start BELOW the top line, not at the corners
+        
+        // === TOP EDGE (full width) ===
         path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
         
-        // Curve inward from screen edge to notch body
+        // === TOP RIGHT WING ===
+        // Curve from top-right corner down and inward
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + topCornerRadius))
         path.addQuadCurve(
-            to: CGPoint(x: rect.minX + topCornerRadius, y: rect.minY + topCornerRadius),
-            control: CGPoint(x: rect.minX + topCornerRadius, y: rect.minY)
-        )
-        
-        // === LEFT EDGE ===
-        path.addLine(to: CGPoint(x: rect.minX + topCornerRadius, y: rect.maxY - bottomRadius))
-        
-        // === BOTTOM LEFT CORNER ===
-        path.addQuadCurve(
-            to: CGPoint(x: rect.minX + topCornerRadius + bottomRadius, y: rect.maxY),
-            control: CGPoint(x: rect.minX + topCornerRadius, y: rect.maxY)
-        )
-        
-        // === BOTTOM EDGE ===
-        path.addLine(to: CGPoint(x: rect.maxX - topCornerRadius - bottomRadius, y: rect.maxY))
-        
-        // === BOTTOM RIGHT CORNER ===
-        path.addQuadCurve(
-            to: CGPoint(x: rect.maxX - topCornerRadius, y: rect.maxY - bottomRadius),
-            control: CGPoint(x: rect.maxX - topCornerRadius, y: rect.maxY)
+            to: CGPoint(x: rect.maxX - topCornerRadius, y: rect.minY + topCornerRadius * 2),
+            control: CGPoint(x: rect.maxX, y: rect.minY + topCornerRadius * 2)
         )
         
         // === RIGHT EDGE ===
-        path.addLine(to: CGPoint(x: rect.maxX - topCornerRadius, y: rect.minY + topCornerRadius))
+        path.addLine(to: CGPoint(x: rect.maxX - topCornerRadius, y: rect.maxY - bottomRadius))
         
-        // === TOP RIGHT WING ===
-        // Curve outward from notch body to screen edge
+        // === BOTTOM RIGHT CORNER ===
         path.addQuadCurve(
-            to: CGPoint(x: rect.maxX, y: rect.minY),
-            control: CGPoint(x: rect.maxX - topCornerRadius, y: rect.minY)
+            to: CGPoint(x: rect.maxX - topCornerRadius - bottomRadius, y: rect.maxY),
+            control: CGPoint(x: rect.maxX - topCornerRadius, y: rect.maxY)
         )
         
-        // === TOP EDGE (closing) ===
+        // === BOTTOM EDGE ===
+        path.addLine(to: CGPoint(x: rect.minX + topCornerRadius + bottomRadius, y: rect.maxY))
+        
+        // === BOTTOM LEFT CORNER ===
+        path.addQuadCurve(
+            to: CGPoint(x: rect.minX + topCornerRadius, y: rect.maxY - bottomRadius),
+            control: CGPoint(x: rect.minX + topCornerRadius, y: rect.maxY)
+        )
+        
+        // === LEFT EDGE ===
+        path.addLine(to: CGPoint(x: rect.minX + topCornerRadius, y: rect.minY + topCornerRadius * 2))
+        
+        // === TOP LEFT WING ===
+        // Curve from the wing back up to the top-left corner
+        path.addQuadCurve(
+            to: CGPoint(x: rect.minX, y: rect.minY + topCornerRadius),
+            control: CGPoint(x: rect.minX, y: rect.minY + topCornerRadius * 2)
+        )
+        
+        // === CLOSE ===
         path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
         
         path.closeSubpath()
