@@ -84,10 +84,10 @@ final class SnapPreviewWindow: NSWindow {
 struct SnapPreviewView: View {
     var body: some View {
         RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
-            .fill(Color.blue.opacity(0.15))
+            .fill(Color.cyan.opacity(0.15))
             .overlay(
                 RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
-                    .strokeBorder(Color.blue.opacity(0.5), lineWidth: 2)
+                    .strokeBorder(Color.cyan.opacity(0.5), lineWidth: 2)
             )
             .padding(DroppySpacing.xs) // Small inset from window edge
     }

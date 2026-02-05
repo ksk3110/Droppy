@@ -111,6 +111,129 @@ struct SettingsView: View {
         }
         return false
     }
+    
+    private var scrollOffsetReader: some View {
+        GeometryReader { geo in
+            Color.clear
+                .preference(
+                    key: ScrollOffsetPreferenceKey.self,
+                    value: geo.frame(in: .named("settingsScroll")).minY
+                )
+        }
+        .frame(width: 0, height: 0)
+        .opacity(0)
+        .listRowInsets(EdgeInsets())
+        .listRowSeparator(.hidden)
+        .listRowBackground(Color.clear)
+    }
+    
+    private var settingsForm: some View {
+        Form {
+            switch selectedTab {
+            case .general:
+                generalSettings
+            case .shelf:
+                shelfSettings
+            case .basket:
+                basketOnlySettings
+            case .clipboard:
+                clipboardSettings
+            case .huds:
+                hudSettings
+            case .extensions:
+                integrationsSettings
+            case .quickshare:
+                quickshareSettings
+            case .accessibility:
+                accessibilitySettings
+            case .about:
+                aboutSettings
+            }
+        }
+        .formStyle(.grouped)
+        .toggleStyle(CenteredSwitchToggleStyle())
+        .scrollContentBackground(useTransparentBackground ? .visible : .hidden)
+        .background(
+            GeometryReader { geo in
+                Color.clear
+                    .preference(
+                        key: ScrollOffsetPreferenceKey.self,
+                        value: geo.frame(in: .global).minY
+                    )
+            }
+        )
+        .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
+            scrollOffset = value
+        }
+    }
+    
+    private var topScrollScrim: some View {
+        // Top blur scrim - only visible while scrolling
+        VStack(spacing: 0) {
+            // withinWindow is required to blur content inside this window
+            SettingsVisualEffectView(material: .headerView, blendingMode: .withinWindow)
+                .frame(height: 68)
+                .frame(maxWidth: .infinity)
+                // Fade the scrim into the content
+                .mask(
+                    LinearGradient(
+                        stops: [
+                            .init(color: .white, location: 0),
+                            .init(color: .white, location: 0.55),
+                            .init(color: .clear, location: 1.0)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .allowsHitTesting(false)
+            
+            Spacer()
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .opacity(scrollOffset < -6 ? 1 : 0)
+        .animation(DroppyAnimation.hoverQuick, value: scrollOffset < -6)
+        .zIndex(10)
+    }
+    
+    private var settingsDetail: some View {
+        ZStack(alignment: .top) {
+            settingsForm
+            
+            // Blur/fade overlay at top - appears when scrolling
+            VStack(spacing: 0) {
+                Group {
+                    if useTransparentBackground {
+                        // Pure blur in transparent mode - fades fully to nothing
+                        Rectangle()
+                            .fill(.ultraThinMaterial)
+                    } else {
+                        // Black gradient in dark mode
+                        Color.black
+                    }
+                }
+                .frame(height: 80)
+                .mask(
+                    LinearGradient(
+                        stops: [
+                            .init(color: .white, location: 0),
+                            .init(color: .white, location: 0.4),
+                            .init(color: .clear, location: 1.0)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                Spacer()
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+            // Smooth fade based on scroll position - appears earlier to catch content
+            .opacity(min(1.0, max(0.0, (200 - scrollOffset) / 60)))
+            .animation(DroppyAnimation.hoverQuick, value: scrollOffset)
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -118,70 +241,7 @@ struct SettingsView: View {
                 SettingsSidebar(selectedTab: $selectedTab)
                     .background(Color.clear)
             } detail: {
-                ZStack(alignment: .top) {
-                    Form {
-                        switch selectedTab {
-                        case .general:
-                            generalSettings
-                        case .shelf:
-                            shelfSettings
-                        case .basket:
-                            basketOnlySettings
-                        case .clipboard:
-                            clipboardSettings
-                        case .huds:
-                            hudSettings
-                        case .extensions:
-                            integrationsSettings
-                        case .quickshare:
-                            quickshareSettings
-                        case .accessibility:
-                            accessibilitySettings
-                        case .about:
-                            aboutSettings
-                        }
-                    }
-                    .formStyle(.grouped)
-                    .toggleStyle(CenteredSwitchToggleStyle())  // Center all toggles vertically
-                    // In transparent mode, keep some section visibility; in dark mode, hide default background
-                    .scrollContentBackground(useTransparentBackground ? .visible : .hidden)
-                    .background(Color.clear)
-                    .background(
-                        GeometryReader { geo in
-                            Color.clear
-                                .preference(
-                                    key: ScrollOffsetPreferenceKey.self,
-                                    value: geo.frame(in: .named("settingsScroll")).minY
-                                )
-                        }
-                    )
-                    .coordinateSpace(name: "settingsScroll")
-                    .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
-                        scrollOffset = value
-                    }
-                    
-                    // Beautiful gradient fade - only shows when scrolling
-                    VStack(spacing: 0) {
-                        LinearGradient(
-                            stops: [
-                                .init(color: Color.black.opacity(useTransparentBackground ? 0 : 1), location: 0),
-                                .init(color: Color.black.opacity(useTransparentBackground ? 0 : 0.95), location: 0.3),
-                                .init(color: Color.black.opacity(useTransparentBackground ? 0 : 0.7), location: 0.6),
-                                .init(color: Color.clear, location: 1.0)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        .frame(height: 60)
-                        .allowsHitTesting(false)
-                        
-                        Spacer()
-                    }
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
-                    .opacity(scrollOffset < -10 ? 1 : 0)
-                    .animation(DroppyAnimation.hoverQuick, value: scrollOffset < -10)
-                }
+                settingsDetail
             }
         }
         .onTapGesture {
@@ -2946,6 +3006,29 @@ struct SettingsView: View {
             return FileManager.default.displayName(atPath: appURL.path)
         }
         return bundleID
+    }
+}
+
+// MARK: - Visual Effect View (Settings)
+
+private struct SettingsVisualEffectView: NSViewRepresentable {
+    let material: NSVisualEffectView.Material
+    let blendingMode: NSVisualEffectView.BlendingMode
+    var isEmphasized: Bool = true
+    
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = material
+        view.blendingMode = blendingMode
+        view.state = .active
+        view.isEmphasized = isEmphasized
+        return view
+    }
+    
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.material = material
+        nsView.blendingMode = blendingMode
+        nsView.isEmphasized = isEmphasized
     }
 }
 // MARK: - Launch Handler

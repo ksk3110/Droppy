@@ -288,8 +288,8 @@ struct CaffeineInfoView: View {
                             }
                             Spacer()
                             if isSelected {
-                                Image(systemName: "checkmark")
-                                    .foregroundStyle(.blue)
+                                    Image(systemName: "checkmark")
+                                    .foregroundStyle(.orange)
                                     .font(.caption.weight(.bold))
                             }
                         }

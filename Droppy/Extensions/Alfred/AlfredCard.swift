@@ -25,7 +25,7 @@ struct AlfredExtensionCard: View {
                 } placeholder: {
                     Image(systemName: "command.circle.fill")
                         .font(.system(size: 24))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.purple)
                 }
                 .frame(width: 44, height: 44)
                 .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous))

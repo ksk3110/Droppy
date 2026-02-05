@@ -66,6 +66,7 @@ struct Annotation: Identifiable {
     var strokeWidth: CGFloat
     var text: String = ""
     var font: String = "SF Pro"
+    var blurStrength: CGFloat = 10  // For blur tool: lower = stronger pixelation (5-30)
 }
 
 // MARK: - Window Drag View (NSViewRepresentable for reliable window dragging)
@@ -123,6 +124,9 @@ struct ScreenshotEditorView: View {
     
     // Transparent mode preference
     @AppStorage(AppPreferenceKey.useTransparentBackground) private var useTransparentBackground = PreferenceDefault.useTransparentBackground
+    
+    // Blur strength preference (5-30, lower = stronger pixelation)
+    @AppStorage(AppPreferenceKey.editorBlurStrength) private var blurStrength = PreferenceDefault.editorBlurStrength
     
     var body: some View {
         VStack(spacing: 0) {
@@ -185,6 +189,14 @@ struct ScreenshotEditorView: View {
                                     handleDragEnd(value, in: scaledSize)
                                 }
                         )
+                        .onContinuousHover { phase in
+                            switch phase {
+                            case .active:
+                                updateCursor()
+                            case .ended:
+                                NSCursor.arrow.set()
+                            }
+                        }
                     }
                     .frame(width: scaledSize.width, height: scaledSize.height)
                 }
@@ -204,9 +216,14 @@ struct ScreenshotEditorView: View {
         }
         .onAppear {
             setupKeyboardMonitor()
+            updateCursor()
         }
         .onDisappear {
             removeKeyboardMonitor()
+            NSCursor.arrow.set()  // Reset cursor on close
+        }
+        .onChange(of: selectedTool) { _, _ in
+            updateCursor()
         }
     }
     
@@ -256,6 +273,12 @@ struct ScreenshotEditorView: View {
                 }
             }
             
+            // Check for ⌘C to copy and close  
+            if keyCode == 8 && flags == .command {  // 8 = C key
+                saveAnnotatedImage()
+                return nil
+            }
+            
             return event
         }
     }
@@ -264,6 +287,18 @@ struct ScreenshotEditorView: View {
         if let monitor = keyboardMonitor {
             NSEvent.removeMonitor(monitor)
             keyboardMonitor = nil
+        }
+    }
+    
+    // MARK: - Cursor Feedback
+    
+    private func updateCursor() {
+        // Use crosshair cursor for drawing tools
+        switch selectedTool {
+        case .arrow, .line, .rectangle, .ellipse, .freehand, .highlighter, .blur:
+            NSCursor.crosshair.set()
+        case .text:
+            NSCursor.iBeam.set()
         }
     }
     
@@ -427,7 +462,7 @@ struct ScreenshotEditorView: View {
                     isOn: selectedTool == tool,
                     size: 28,
                     cornerRadius: 14,
-                    accentColor: .accentColor
+                    accentColor: .yellow
                 ))
                 .help(tool.tooltipWithShortcut)
             }
@@ -460,7 +495,7 @@ struct ScreenshotEditorView: View {
                         strokeWidth = width
                     } label: {
                         RoundedRectangle(cornerRadius: 3)
-                            .fill(strokeWidth == width ? Color.accentColor : Color.white.opacity(0.5))
+                            .fill(strokeWidth == width ? Color.yellow : Color.white.opacity(0.5))
                             .frame(width: 22, height: width + 4)
                     }
                     .buttonStyle(.plain)
@@ -490,7 +525,7 @@ struct ScreenshotEditorView: View {
             } label: {
                 Image(systemName: "textformat")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(selectedTool == .text ? .accentColor : .white.opacity(0.7))
+                    .foregroundColor(selectedTool == .text ? .yellow : .white.opacity(0.7))
                     .frame(width: 28, height: 28)
                     .background(Color.white.opacity(0.08))
                     .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
@@ -602,7 +637,7 @@ struct ScreenshotEditorView: View {
                     .overlay(
                         RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
                             .stroke(style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
-                            .foregroundColor(.accentColor.opacity(0.6))
+                            .foregroundColor(.yellow.opacity(0.6))
                     )
                 
                 // Font picker
@@ -728,6 +763,10 @@ struct ScreenshotEditorView: View {
                 color: selectedColor,
                 strokeWidth: strokeWidth
             )
+            // Capture blur strength for blur tool
+            if selectedTool == .blur {
+                annotation.blurStrength = blurStrength
+            }
             annotation.points = [normalizedStart, normalizedPoint]
             currentAnnotation = annotation
         } else {
@@ -735,9 +774,49 @@ struct ScreenshotEditorView: View {
             if selectedTool == .freehand || selectedTool == .highlighter {
                 currentAnnotation?.points.append(normalizedPoint)
             } else {
-                // For arrow, rect, ellipse - just track start and end
-                currentAnnotation?.points = [normalizedStart, normalizedPoint]
+                // For arrow, line, rect, ellipse - track start and end with Shift-constrain
+                var constrainedPoint = normalizedPoint
+                
+                // Check if Shift is held for constrain mode
+                if NSEvent.modifierFlags.contains(.shift) {
+                    constrainedPoint = applyShiftConstraint(
+                        from: normalizedStart,
+                        to: normalizedPoint,
+                        tool: selectedTool
+                    )
+                }
+                
+                currentAnnotation?.points = [normalizedStart, constrainedPoint]
             }
+        }
+    }
+    
+    /// Applies Shift-key constraints: 45° angles for lines/arrows, square/circle for rect/ellipse
+    private func applyShiftConstraint(from start: CGPoint, to end: CGPoint, tool: AnnotationTool) -> CGPoint {
+        let dx = end.x - start.x
+        let dy = end.y - start.y
+        
+        switch tool {
+        case .arrow, .line:
+            // Snap to nearest 45° angle (0°, 45°, 90°, 135°, 180°, 225°, 270°, 315°)
+            let angle = atan2(dy, dx)
+            let snappedAngle = round(angle / (.pi / 4)) * (.pi / 4)
+            let distance = hypot(dx, dy)
+            return CGPoint(
+                x: start.x + cos(snappedAngle) * distance,
+                y: start.y + sin(snappedAngle) * distance
+            )
+            
+        case .rectangle, .ellipse, .blur:
+            // Constrain to square/circle (equal width and height)
+            let size = max(abs(dx), abs(dy))
+            return CGPoint(
+                x: start.x + (dx >= 0 ? size : -size),
+                y: start.y + (dy >= 0 ? size : -size)
+            )
+            
+        default:
+            return end
         }
     }
     
@@ -772,7 +851,16 @@ struct ScreenshotEditorView: View {
             )
             
             if selectedTool != .freehand && selectedTool != .highlighter {
-                annotation.points = [normalizedStart, normalizedEnd]
+                // Apply Shift-constraint to final points if Shift is held
+                var finalEnd = normalizedEnd
+                if NSEvent.modifierFlags.contains(.shift) {
+                    finalEnd = applyShiftConstraint(
+                        from: normalizedStart,
+                        to: normalizedEnd,
+                        tool: selectedTool
+                    )
+                }
+                annotation.points = [normalizedStart, finalEnd]
             }
             
             // Only add if there's actual content
@@ -940,8 +1028,9 @@ struct ScreenshotEditorView: View {
             let rect = rectFromPoints(annotation.points[0], annotation.points.last ?? annotation.points[0], in: size)
             guard rect.width > 4 && rect.height > 4 else { return }
             
-            // Create a tiny version for pixelation (10x10 pixels max)
-            let tinySize = NSSize(width: 10, height: 10)
+            // Use annotation's blur strength (lower = stronger pixelation)
+            let pixelSize = Int(annotation.blurStrength)
+            let tinySize = NSSize(width: pixelSize, height: pixelSize)
             let tinyImage = NSImage(size: tinySize)
             tinyImage.lockFocus()
             NSGraphicsContext.current?.imageInterpolation = .none
@@ -1122,8 +1211,9 @@ struct AnnotationCanvas: View {
                 height: rect.height * scaleY
             )
             
-            // Create tiny pixelated version
-            let tinySize = NSSize(width: 10, height: 10)
+            // Use annotation's blur strength (lower = stronger pixelation)
+            let pixelSize = Int(annotation.blurStrength)
+            let tinySize = NSSize(width: pixelSize, height: pixelSize)
             let tinyImage = NSImage(size: tinySize)
             tinyImage.lockFocus()
             NSGraphicsContext.current?.imageInterpolation = .none

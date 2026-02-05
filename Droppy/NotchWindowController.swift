@@ -2362,7 +2362,7 @@ class NotchWindow: NSPanel {
         let state = DroppyState.shared
         
         let isExpanded = state.isExpanded
-        let isHovering = state.isMouseHovering
+        _ = state.isMouseHovering
         let isDropTargeted = state.isDropTargeted
         let isDraggingFiles = DragMonitor.shared.isDragging
         

@@ -110,6 +110,9 @@ enum AppPreferenceKey {
     static let didMigrateShelfAirDropDefault = "didMigrateShelfAirDropDefault"
     static let enableFinderServices = "enableFinderServices"
     
+    // MARK: - Extension: Element Capture
+    static let editorBlurStrength = "elementCapture_blurStrength"  // Blur intensity (5-30, lower = stronger pixelation)
+    
     // MARK: - Extension: Terminal Notch
     static let terminalNotchInstalled = "terminalNotch_installed"
     static let terminalNotchEnabled = "terminalNotch_enabled"  // Whether to show in HUD section
@@ -242,6 +245,9 @@ enum PreferenceDefault {
     static let startAtLogin = false
     static let hasCompletedOnboarding = false
     static let enableFinderServices = true
+    
+    // MARK: - Extension: Element Capture
+    static let editorBlurStrength: Double = 10  // 10x10 pixelation (lower = stronger blur)
     
     // MARK: - Extension: Terminal Notch
     static let terminalNotchInstalled = false

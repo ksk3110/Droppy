@@ -34,7 +34,7 @@ final class ScreenshotEditorWindowController {
             windowWidth = (maxHeight - 60) * imageAspect
         }
         
-        windowWidth = max(windowWidth, 800)
+        windowWidth = max(windowWidth, 900)  // Must fit entire toolbar
         windowHeight = max(windowHeight, 500)
         
         let cornerRadius: CGFloat = 24
@@ -75,8 +75,8 @@ final class ScreenshotEditorWindowController {
         newWindow.standardWindowButton(.miniaturizeButton)?.isHidden = true
         newWindow.standardWindowButton(.zoomButton)?.isHidden = true
         
-        // Size constraints for resizing
-        newWindow.minSize = NSSize(width: 600, height: 400)
+        // Size constraints for resizing - minWidth must fit entire toolbar
+        newWindow.minSize = NSSize(width: 900, height: 400)
         newWindow.maxSize = NSSize(width: 1600, height: 1200)
         
         newWindow.contentView = hosting

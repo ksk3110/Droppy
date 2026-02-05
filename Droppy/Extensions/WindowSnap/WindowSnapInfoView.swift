@@ -76,7 +76,7 @@ struct WindowSnapInfoView: View {
             } placeholder: {
                 Image(systemName: "rectangle.split.2x2")
                     .font(.system(size: 32, weight: .medium))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.cyan)
             }
             .frame(width: 64, height: 64)
             .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
@@ -123,7 +123,7 @@ struct WindowSnapInfoView: View {
                 // Category badge
                 Text("Productivity")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.cyan)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(
@@ -175,7 +175,7 @@ struct WindowSnapInfoView: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.blue)
+                .foregroundStyle(.cyan)
                 .frame(width: 24)
             
             Text(text)
@@ -198,7 +198,7 @@ struct WindowSnapInfoView: View {
                 } label: {
                     Text("Load Defaults")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.cyan)
                 }
                 .buttonStyle(DroppyPillButtonStyle(size: .small))
                 .onHover { h in
@@ -230,7 +230,7 @@ struct WindowSnapInfoView: View {
             // Icon
             Image(systemName: action.icon)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.blue)
+                .foregroundStyle(.cyan)
                 .frame(width: 20)
             
             // Title

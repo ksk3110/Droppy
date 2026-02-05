@@ -26,7 +26,7 @@ struct ElementCaptureCard: View {
                 } placeholder: {
                     Image(systemName: "viewfinder")
                         .font(.system(size: 22, weight: .medium))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.yellow)
                 }
                 .frame(width: 44, height: 44)
                 .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous))
@@ -107,7 +107,7 @@ struct ElementCaptureCard: View {
             }
         }
         .frame(minHeight: 160)
-        .extensionCardStyle(accentColor: .blue)
+        .extensionCardStyle(accentColor: .yellow)
         .contentShape(Rectangle())
         .onTapGesture {
             showInfoSheet = true
@@ -122,9 +122,16 @@ struct ElementCaptureCard: View {
     }
     
     private func loadShortcut() {
-        if let data = UserDefaults.standard.data(forKey: "elementCaptureShortcut"),
-           let decoded = try? JSONDecoder().decode(SavedShortcut.self, from: data) {
-            currentShortcut = decoded
+        // Check ALL capture modes - show "Installed" if ANY mode has a shortcut configured
+        for mode in ElementCaptureMode.allCases {
+            if let data = UserDefaults.standard.data(forKey: mode.shortcutKey),
+               let decoded = try? JSONDecoder().decode(SavedShortcut.self, from: data) {
+                // Found at least one shortcut, show as installed
+                currentShortcut = decoded
+                return
+            }
         }
+        // No shortcuts configured
+        currentShortcut = nil
     }
 }

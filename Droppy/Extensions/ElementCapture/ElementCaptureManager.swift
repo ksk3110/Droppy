@@ -25,6 +25,7 @@ enum ElementCaptureMode: String, CaseIterable, Identifiable {
     case area = "area"
     case fullscreen = "fullscreen"
     case window = "window"
+    case ocr = "ocr"
     
     var id: String { rawValue }
     
@@ -34,6 +35,7 @@ enum ElementCaptureMode: String, CaseIterable, Identifiable {
         case .area: return "Area"
         case .fullscreen: return "Fullscreen"
         case .window: return "Window"
+        case .ocr: return "OCR"
         }
     }
     
@@ -43,6 +45,7 @@ enum ElementCaptureMode: String, CaseIterable, Identifiable {
         case .area: return "rectangle.dashed"
         case .fullscreen: return "rectangle.inset.filled"
         case .window: return "macwindow"
+        case .ocr: return "text.viewfinder"
         }
     }
     
@@ -52,6 +55,7 @@ enum ElementCaptureMode: String, CaseIterable, Identifiable {
         case .area: return "elementCaptureAreaShortcut"
         case .fullscreen: return "elementCaptureFullscreenShortcut"
         case .window: return "elementCaptureWindowShortcut"
+        case .ocr: return "elementCaptureOCRShortcut"
         }
     }
 }
@@ -201,6 +205,9 @@ final class ElementCaptureManager: ObservableObject {
     @Published var windowShortcut: SavedShortcut? {
         didSet { saveShortcut(for: .window) }
     }
+    @Published var ocrShortcut: SavedShortcut? {
+        didSet { saveShortcut(for: .ocr) }
+    }
     @Published private(set) var isShortcutEnabled = false
     
     // MARK: - Private Properties
@@ -213,6 +220,7 @@ final class ElementCaptureManager: ObservableObject {
     private var globalHotKeys: [ElementCaptureMode: GlobalHotKey] = [:]  // Multiple hot keys
     private var escapeMonitor: Any?  // Local monitor for ESC key
     private var activeMode: ElementCaptureMode = .element  // Current capture mode
+    private var isOCRCapture = false  // Flag for OCR mode capture
     
     // MARK: - Configuration
     
@@ -249,6 +257,7 @@ final class ElementCaptureManager: ObservableObject {
         case .area: return areaShortcut
         case .fullscreen: return fullscreenShortcut
         case .window: return windowShortcut
+        case .ocr: return ocrShortcut
         }
     }
     
@@ -259,6 +268,7 @@ final class ElementCaptureManager: ObservableObject {
         case .area: areaShortcut = newShortcut
         case .fullscreen: fullscreenShortcut = newShortcut
         case .window: windowShortcut = newShortcut
+        case .ocr: ocrShortcut = newShortcut
         }
     }
     
@@ -311,6 +321,14 @@ final class ElementCaptureManager: ObservableObject {
                 await captureWindowUnderCursor()
             }
             return
+            
+        case .ocr:
+            // OCR mode: area selection then perform OCR on result
+            setupAreaSelectionOverlay(forOCR: true)
+            installEscapeMonitor()
+            NSCursor.crosshair.push()
+            print("[ElementCapture] OCR capture mode started")
+            return
         }
         
         print("[ElementCapture] Capture mode started: \\(mode.displayName)")
@@ -362,6 +380,7 @@ final class ElementCaptureManager: ObservableObject {
                 case .area: areaShortcut = decoded
                 case .fullscreen: fullscreenShortcut = decoded
                 case .window: windowShortcut = decoded
+                case .ocr: ocrShortcut = decoded
                 }
             }
         }
@@ -560,7 +579,10 @@ final class ElementCaptureManager: ObservableObject {
     
     private var areaSelectionWindow: AreaSelectionWindow?
     
-    private func setupAreaSelectionOverlay() {
+    private func setupAreaSelectionOverlay(forOCR: Bool = false) {
+        // Store OCR mode flag
+        isOCRCapture = forOCR
+        
         let mouseLocation = NSEvent.mouseLocation
         
         guard let screen = NSScreen.screens.first(where: { $0.frame.contains(mouseLocation) }) ?? NSScreen.main else {
@@ -591,11 +613,12 @@ final class ElementCaptureManager: ObservableObject {
         }
         
         areaSelectionWindow?.onCancel = { [weak self] in
+            self?.isOCRCapture = false
             self?.stopCaptureMode()
         }
         
         areaSelectionWindow?.orderFrontRegardless()
-        print("[ElementCapture] Created area selection window, frame: \(screen.frame)")
+        print("[ElementCapture] Created area selection window, frame: \(screen.frame)\(forOCR ? " (OCR mode)" : "")")
     }
     
     private func captureArea(_ rect: CGRect, on screen: NSScreen) async {
@@ -980,8 +1003,10 @@ final class ElementCaptureManager: ObservableObject {
     
     private func captureCurrentElement() async {
         let frameToCapture = currentElementFrame
+        let performOCR = isOCRCapture  // Capture flag value before reset
         
         guard frameToCapture.width > 0 && frameToCapture.height > 0 else {
+            isOCRCapture = false
             stopCaptureMode()
             return
         }
@@ -1003,16 +1028,32 @@ final class ElementCaptureManager: ObservableObject {
             let image = try await captureRect(frameToCapture)
             let nsImage = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
             
-            // Copy to clipboard
-            copyToClipboard(image)
-            
-            // Play screenshot sound
-            playScreenshotSound()
-            print("[ElementCapture] Element captured successfully")
-            
-            // Show preview window with actions
-            await MainActor.run {
-                CapturePreviewWindowController.shared.show(with: nsImage)
+            if performOCR {
+                // OCR mode: extract text from image
+                do {
+                    let text = try await OCRService.shared.performOCR(on: nsImage)
+                    if !text.isEmpty {
+                        await MainActor.run {
+                            OCRWindowController.shared.show(with: text)
+                        }
+                        playScreenshotSound()
+                        print("[ElementCapture] OCR completed successfully")
+                    } else {
+                        print("[ElementCapture] OCR returned empty text")
+                    }
+                } catch {
+                    print("[ElementCapture] OCR failed: \(error)")
+                }
+            } else {
+                // Normal capture mode
+                copyToClipboard(image)
+                playScreenshotSound()
+                print("[ElementCapture] Element captured successfully")
+                
+                // Show preview window with actions
+                await MainActor.run {
+                    CapturePreviewWindowController.shared.show(with: nsImage)
+                }
             }
             
         } catch {
@@ -1021,7 +1062,8 @@ final class ElementCaptureManager: ObservableObject {
             // (invalid rect, window closed, etc.) not just permissions
         }
         
-        // 6. Stop capture mode
+        // 6. Stop capture mode and reset flag
+        isOCRCapture = false
         stopCaptureMode()
     }
     

@@ -18,6 +18,7 @@ struct ElementCaptureInfoView: View {
     @State private var isHoveringClose = false
     @State private var showReviewsSheet = false
     @State private var isHoveringReviews = false
+    @State private var showOCRInfo = false
     
     // Recording state per capture mode
     @State private var recordingMode: ElementCaptureMode? = nil
@@ -28,12 +29,16 @@ struct ElementCaptureInfoView: View {
     @State private var areaShortcut: SavedShortcut?
     @State private var fullscreenShortcut: SavedShortcut?
     @State private var windowShortcut: SavedShortcut?
+    @State private var ocrShortcut: SavedShortcut?
     
     // Editor shortcuts state
     @State private var editorShortcuts: [EditorShortcut: SavedShortcut] = [:]
     @State private var recordingEditorShortcut: EditorShortcut? = nil
     @State private var editorRecordMonitor: Any?
     @State private var isHoveringEditorShortcut: [EditorShortcut: Bool] = [:]
+    
+    // Editor settings
+    @AppStorage(AppPreferenceKey.editorBlurStrength) private var blurStrength = PreferenceDefault.editorBlurStrength
     
     var body: some View {
         VStack(spacing: 0) {
@@ -49,11 +54,13 @@ struct ElementCaptureInfoView: View {
                     // Features + Screenshot
                     featuresSection
                     
-                    // Keyboard Shortcuts Section (all modes)
                     shortcutsSection
                     
                     // Editor shortcuts reference
                     editorShortcutsSection
+                    
+                    // Editor settings (blur strength, etc.)
+                    editorSettingsSection
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 20)
@@ -95,7 +102,7 @@ struct ElementCaptureInfoView: View {
             }
             .frame(width: 64, height: 64)
             .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
-            .shadow(color: Color.blue.opacity(0.3), radius: 8, y: 4)
+            .shadow(color: Color.yellow.opacity(0.4), radius: 8, y: 4)
             
             Text("Element Capture")
                 .font(.title2.bold())
@@ -138,12 +145,12 @@ struct ElementCaptureInfoView: View {
                 // Category badge
                 Text("Productivity")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.yellow)
+                    .foregroundStyle(.white)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(
                         Capsule()
-                            .fill(Color.blue.opacity(0.15))
+                            .fill(Color(hue: 0.13, saturation: 0.85, brightness: 0.75))
                     )
             }
             
@@ -216,6 +223,7 @@ struct ElementCaptureInfoView: View {
                 shortcutRow(mode: .area, shortcut: $areaShortcut)
                 shortcutRow(mode: .fullscreen, shortcut: $fullscreenShortcut)
                 shortcutRow(mode: .window, shortcut: $windowShortcut)
+                shortcutRow(mode: .ocr, shortcut: $ocrShortcut)
             }
         }
         .padding(DroppySpacing.lg)
@@ -282,6 +290,70 @@ struct ElementCaptureInfoView: View {
                     }
                 }
             }
+        }
+        .padding(DroppySpacing.lg)
+        .background(AdaptiveColors.buttonBackgroundAuto.opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DroppyRadius.ml, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+    
+    // MARK: - Editor Settings Section
+    
+    private var editorSettingsSection: some View {
+        VStack(spacing: 12) {
+            HStack {
+                Text("Editor Settings")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                
+                Spacer()
+            }
+            
+            // Blur strength slider
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "eye.slash.fill")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.yellow)
+                    
+                    Text("Blur Strength")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.primary)
+                    
+                    Spacer()
+                    
+                    Text(blurStrength <= 8 ? "Strong" : blurStrength >= 20 ? "Subtle" : "Medium")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+                
+                HStack(spacing: 8) {
+                    Text("Strong")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.tertiary)
+                    
+                    Slider(value: $blurStrength, in: 5...30, step: 1)
+                        .tint(.yellow)
+                    
+                    Text("Subtle")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.tertiary)
+                }
+                
+                Text("Lower values create stronger pixelation blur.")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(12)
+            .background(AdaptiveColors.buttonBackgroundAuto)
+            .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: DroppyRadius.small, style: .continuous)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            )
         }
         .padding(DroppySpacing.lg)
         .background(AdaptiveColors.buttonBackgroundAuto.opacity(0.5))
@@ -363,14 +435,40 @@ struct ElementCaptureInfoView: View {
             HStack(spacing: 8) {
                 Image(systemName: mode.icon)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.cyan)
+                    .foregroundStyle(.yellow)
                     .frame(width: 20)
                 
                 Text(mode.displayName)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.primary)
+                
+                // Info tooltip for OCR mode
+                if mode == .ocr {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .onTapGesture { showOCRInfo.toggle() }
+                        .onHover { hovering in showOCRInfo = hovering }
+                        .popover(isPresented: $showOCRInfo, arrowEdge: .trailing) {
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "text.viewfinder")
+                                        .font(.system(size: 20))
+                                        .foregroundStyle(.yellow)
+                                    Text("Text Recognition")
+                                        .font(.headline)
+                                }
+                                
+                                Text("Extract text from any selected area using Apple's on-device OCR. Recognized text is copied to clipboard.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding()
+                            .frame(width: 240)
+                        }
+                }
             }
-            .frame(width: 100, alignment: .leading)
+            .frame(width: 120, alignment: .leading)
             
             // Shortcut display
             Text(shortcut.wrappedValue?.description ?? "None")
@@ -382,7 +480,7 @@ struct ElementCaptureInfoView: View {
                 .clipShape(Capsule())
                 .overlay(
                     Capsule()
-                        .stroke(isRecording ? Color.blue : AdaptiveColors.subtleBorderAuto, lineWidth: isRecording ? 2 : 1)
+                        .stroke(isRecording ? Color.orange : AdaptiveColors.subtleBorderAuto, lineWidth: isRecording ? 2 : 1)
                 )
             
             // Record button
@@ -396,7 +494,7 @@ struct ElementCaptureInfoView: View {
                 Text(isRecording ? "Press..." : "Record")
                     .font(.system(size: 11, weight: .medium))
             }
-            .buttonStyle(DroppyAccentButtonStyle(color: isRecording ? .red : .blue, size: .small))
+            .buttonStyle(DroppyAccentButtonStyle(color: isRecording ? .red : .yellow, size: .small))
             .frame(width: 70)
             
             // Clear button
@@ -445,6 +543,7 @@ struct ElementCaptureInfoView: View {
         areaShortcut = ElementCaptureManager.shared.areaShortcut
         fullscreenShortcut = ElementCaptureManager.shared.fullscreenShortcut
         windowShortcut = ElementCaptureManager.shared.windowShortcut
+        ocrShortcut = ElementCaptureManager.shared.ocrShortcut
         // Sync with binding for legacy compatibility
         currentShortcut = elementShortcut
         // Also load editor shortcuts
@@ -495,6 +594,8 @@ struct ElementCaptureInfoView: View {
             fullscreenShortcut = shortcut
         case .window:
             windowShortcut = shortcut
+        case .ocr:
+            ocrShortcut = shortcut
         }
         
         // Persist to UserDefaults
@@ -528,6 +629,8 @@ struct ElementCaptureInfoView: View {
             fullscreenShortcut = nil
         case .window:
             windowShortcut = nil
+        case .ocr:
+            ocrShortcut = nil
         }
         
         // Remove from UserDefaults

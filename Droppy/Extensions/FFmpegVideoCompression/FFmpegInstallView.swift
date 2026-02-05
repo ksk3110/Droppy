@@ -116,7 +116,7 @@ struct FFmpegInstallView: View {
                 // Success glow ring when complete
                 if manager.isInstalled && !manager.isInstalling {
                     Circle()
-                        .stroke(Color.green.opacity(0.6), lineWidth: 3)
+                        .stroke(Color.blue.opacity(0.6), lineWidth: 3)
                         .frame(width: 76, height: 76)
                         .scaleEffect(showSuccessGlow ? 1.3 : 1.0)
                         .opacity(showSuccessGlow ? 0 : 1)
@@ -128,7 +128,7 @@ struct FFmpegInstallView: View {
                     Circle()
                         .fill(
                             LinearGradient(
-                                colors: [.green.opacity(0.3), .yellow.opacity(0.3)],
+                                colors: [.blue.opacity(0.3), .cyan.opacity(0.3)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -147,7 +147,7 @@ struct FFmpegInstallView: View {
                 }
                 .frame(width: 64, height: 64)
                 .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
-                .shadow(color: manager.isInstalled ? .green.opacity(0.4) : .green.opacity(0.3), radius: 8, y: 4)
+                .shadow(color: manager.isInstalled ? .blue.opacity(0.4) : .blue.opacity(0.3), radius: 8, y: 4)
                 .scaleEffect(manager.isInstalled ? 1.05 : 1.0)
                 .animation(DroppyAnimation.stateEmphasis, value: manager.isInstalled)
             }
@@ -275,7 +275,7 @@ struct FFmpegInstallView: View {
                     .frame(width: 8, height: 8)
                 Text("Installed & Ready")
                     .font(.callout.weight(.medium))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.green)
             }
             
             // Smart Export info card - clickable to open settings
@@ -366,10 +366,10 @@ struct FFmpegInstallView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.orange)
                 Text("Homebrew Required")
                     .font(.callout.weight(.semibold))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.primary)
             }
             
             Text("Homebrew is a package manager for macOS. Install it first by running this command in Terminal:")
@@ -419,7 +419,7 @@ struct FFmpegInstallView: View {
         HStack(spacing: 12) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 16))
-                .foregroundStyle(.blue)
+                .foregroundStyle(.green)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text("Homebrew Detected")

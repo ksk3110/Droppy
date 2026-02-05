@@ -26,7 +26,7 @@ struct SpotifyExtensionCard: View {
                 } placeholder: {
                     Image(systemName: "music.note.list")
                         .font(.system(size: 24))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(Color(red: 0.12, green: 0.84, blue: 0.38))
                 }
                 .frame(width: 44, height: 44)
                 .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous))
