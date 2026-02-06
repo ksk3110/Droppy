@@ -38,63 +38,12 @@
 <div align="center">
 <table>
 <tr>
-<td width="50%" align="center">
-
-**📂 File Shelf**<br>
-Drop files into your notch for quick access.
-
-• Drag files, folders, or URLs into the notch<br>
-• Interact with items inside folder previews<br>
-• Tracked folders auto-sync with Finder<br>
-• ZIP, unzip, convert, and compress files<br>
-• Create new folders with auto-rename<br>
-• Rename items directly in shelf or basket
-
-</td>
-<td width="50%" align="center">
-
-**🧺 Floating Basket**<br>
-A floating drop zone that appears anywhere.
-
-• Appears anywhere — drag to position<br>
-• Switch between grid and list views<br>
-• Batch actions: delete, open, share all<br>
-• App-specific autofade timers<br>
-• Display-specific autofade rules<br>
-• Expands naturally to fit content<br>
-• Keyboard shortcuts for quick actions
-
-</td>
+<td width="50%" align="center"><img src="docs/assets/images/feature-shelf.png" width="300" alt="File Shelf" /></td>
+<td width="50%" align="center"><img src="docs/assets/images/feature-basket.png" width="300" alt="Floating Basket" /></td>
 </tr>
 <tr>
-<td width="50%" align="center">
-
-**📋 Clipboard Manager**<br>
-`⌘⇧Space` opens your clipboard history.
-
-• Configurable history limit (default 50)<br>
-• Search clips by title or content<br>
-• Favorite frequently used items<br>
-• Tag clips with custom labels<br>
-• Rich previews for images and files<br>
-• One-click paste any previous clip<br>
-• Clear history or individual items
-
-</td>
-<td width="50%" align="center">
-
-**🎨 Beautiful HUDs**<br>
-System indicators reimagined for your notch.
-
-• Volume & brightness with visual bars<br>
-• Now Playing with album art & controls<br>
-• Audio visualizer in the notch<br>
-• AirPods connection & battery status<br>
-• Focus/DND mode indicator<br>
-• Hide incognito browser media<br>
-• Hide physical notch with black bar
-
-</td>
+<td width="50%" align="center"><img src="docs/assets/images/feature-clipboard.png" width="300" alt="Clipboard Manager" /></td>
+<td width="50%" align="center"><img src="docs/assets/images/feature-huds.png" width="300" alt="Beautiful HUDs" /></td>
 </tr>
 </table>
 </div>
