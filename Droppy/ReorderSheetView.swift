@@ -22,6 +22,7 @@ struct ReorderSheetView: View {
     @Bindable var state: DroppyState
     @Binding var isPresented: Bool
     var target: ReorderTarget = .shelf
+    var basketState: BasketState? = nil
     
     @AppStorage(AppPreferenceKey.useTransparentBackground) private var useTransparentBackground = PreferenceDefault.useTransparentBackground
     
@@ -34,7 +35,7 @@ struct ReorderSheetView: View {
     private var sourceItems: [DroppedItem] {
         switch target {
         case .shelf: state.shelfItems
-        case .basket: state.basketItems
+        case .basket: basketState?.items ?? FloatingBasketWindowController.shared.basketState.items
         }
     }
     
@@ -163,7 +164,11 @@ struct ReorderSheetView: View {
                 case .shelf:
                     state.shelfItems = reorderableItems
                 case .basket:
-                    state.basketItems = reorderableItems
+                    if let basketState {
+                        basketState.items = reorderableItems
+                    } else {
+                        FloatingBasketWindowController.shared.basketState.items = reorderableItems
+                    }
                 }
                 isPresented = false
             } label: {
@@ -423,6 +428,7 @@ class ReorderWindowController {
     
     private var window: NSPanel?
     private var currentTarget: ReorderTarget?
+    private weak var hiddenBasketController: FloatingBasketWindowController?
     
     private init() {}
     
@@ -432,16 +438,25 @@ class ReorderWindowController {
     ///   - target: .shelf or .basket
     ///   - anchorFrame: Screen-space frame of the anchor element (shelf or basket window frame)
     @MainActor
-    func show(state: DroppyState, target: ReorderTarget, anchorFrame: NSRect? = nil) {
+    func show(
+        state: DroppyState,
+        target: ReorderTarget,
+        anchorFrame: NSRect? = nil,
+        basketState: BasketState? = nil,
+        basketController: FloatingBasketWindowController? = nil
+    ) {
         // Dismiss any existing window
         dismiss()
         
         // Store target for dismiss logic
         self.currentTarget = target
+        self.hiddenBasketController = nil
         
         // Hide basket while reordering (cleaner than z-fighting)
         if target == .basket {
-            FloatingBasketWindowController.shared.basketWindow?.orderOut(nil)
+            let controllerToHide = basketController ?? FloatingBasketWindowController.shared
+            self.hiddenBasketController = controllerToHide
+            controllerToHide.basketWindow?.orderOut(nil)
         }
         
         var isPresented = true
@@ -458,7 +473,8 @@ class ReorderWindowController {
         let reorderView = ReorderSheetView(
             state: state,
             isPresented: isPresentedBinding,
-            target: target
+            target: target,
+            basketState: basketState
         )
         
         let hostingView = NSHostingView(rootView: reorderView.preferredColorScheme(.dark))
@@ -571,8 +587,13 @@ class ReorderWindowController {
         
         // Restore basket if we were reordering basket items
         if currentTarget == .basket {
-            FloatingBasketWindowController.shared.basketWindow?.orderFront(nil)
+            if let hiddenBasketController {
+                hiddenBasketController.basketWindow?.orderFront(nil)
+            } else {
+                FloatingBasketWindowController.shared.basketWindow?.orderFront(nil)
+            }
         }
+        hiddenBasketController = nil
         currentTarget = nil
     }
 }

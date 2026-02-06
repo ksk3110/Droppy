@@ -1052,9 +1052,7 @@ struct ClipboardManagerView: View {
     private func moveItemToBasket(_ item: ClipboardItem) {
         guard let fileURL = clipboardItemToTempFile(item) else { return }
         let droppedItem = DroppedItem(url: fileURL, isTemporary: true)
-        DroppyState.shared.addBasketItem(droppedItem)
-        // Show the basket so user sees the item
-        FloatingBasketWindowController.shared.showBasket()
+        FloatingBasketWindowController.addDroppedItemFromExternalSource(droppedItem)
     }
     
     /// Moves clipboard item to the Shelf

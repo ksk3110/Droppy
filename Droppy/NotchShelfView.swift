@@ -1893,13 +1893,13 @@ struct NotchShelfView: View {
         let targetDisplayID = targetScreen?.displayID ?? 0
         let notInFullscreen = !notchController.fullscreenDisplayIDs.contains(targetDisplayID)
         let shouldShowForced = musicManager.isMediaHUDForced && !musicManager.isPlayerIdle && showMediaPlayer && noHUDsVisible && notExpanded && notInFullscreen
-        let mediaIsPlaying = musicManager.isPlaying && !musicManager.songTitle.isEmpty
+        let mediaIsActive = (musicManager.isPlaying || musicManager.wasRecentlyPlaying) && !musicManager.songTitle.isEmpty
         let notFadedOrTransitioning = !(autoFadeMediaHUD && mediaHUDFadedOut) && !isSongTransitioning
         let debounceOk = !debounceMediaChanges || isMediaStable
         let bypassSafeguards = musicManager.isMediaSourceForced
         let hasContent = !musicManager.songTitle.isEmpty
         let shouldShowNormal = showMediaPlayer && noHUDsVisible && notExpanded && notInFullscreen &&
-                              (bypassSafeguards ? hasContent : (mediaIsPlaying && notFadedOrTransitioning && debounceOk))
+                              (bypassSafeguards ? hasContent : (mediaIsActive && notFadedOrTransitioning && debounceOk))
         return shouldShowForced || shouldShowNormal
     }
     

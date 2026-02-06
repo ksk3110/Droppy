@@ -155,7 +155,7 @@ struct BasketQuickActionsBar: View {
         // Note: Main collapse logic is handled by onChange(of: isBarAreaTargeted) above
         // This handler is just for when buttons lose targeting but bar area keeps it
         // COLLAPSE when basket becomes targeted (drag moved to basket area)
-        .onChange(of: DroppyState.shared.isBasketTargeted) { _, targeted in
+        .onChange(of: basketState.isTargeted) { _, targeted in
             if targeted && isExpanded {
                 // Drag moved to basket - collapse back to bolt and clear quick actions state
                 basketState.isQuickActionsTargeted = false
@@ -172,26 +172,30 @@ struct BasketQuickActionsBar: View {
     private func shareViaAirDrop(_ urls: [URL]) {
         guard !urls.isEmpty else { return }
         NSSharingService(named: .sendViaAirDrop)?.perform(withItems: urls)
-        FloatingBasketWindowController.shared.hideBasket()
+        basketState.ownerController?.hideBasketPreservingState()
+            ?? FloatingBasketWindowController.shared.hideBasket(preserveState: true)
     }
     
     private func shareViaMessages(_ urls: [URL]) {
         guard !urls.isEmpty else { return }
         NSSharingService(named: .composeMessage)?.perform(withItems: urls)
-        FloatingBasketWindowController.shared.hideBasket()
+        basketState.ownerController?.hideBasketPreservingState()
+            ?? FloatingBasketWindowController.shared.hideBasket(preserveState: true)
     }
     
     private func shareViaMail(_ urls: [URL]) {
         guard !urls.isEmpty else { return }
         NSSharingService(named: .composeEmail)?.perform(withItems: urls)
-        FloatingBasketWindowController.shared.hideBasket()
+        basketState.ownerController?.hideBasketPreservingState()
+            ?? FloatingBasketWindowController.shared.hideBasket(preserveState: true)
     }
     
     /// Droppy Quickshare - uploads files to 0x0.st and copies shareable link to clipboard
     /// Multiple files are automatically zipped into a single archive
     private func quickShareTo0x0(_ urls: [URL]) {
         DroppyQuickshare.share(urls: urls) {
-            FloatingBasketWindowController.shared.hideBasket()
+            basketState.ownerController?.hideBasketPreservingState()
+                ?? FloatingBasketWindowController.shared.hideBasket(preserveState: true)
         }
     }
 }
@@ -267,4 +271,3 @@ struct QuickDropActionButton: View {
         }
     }
 }
-

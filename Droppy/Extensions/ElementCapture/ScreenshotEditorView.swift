@@ -606,8 +606,7 @@ struct ScreenshotEditorView: View {
            let pngData = bitmap.representation(using: .png, properties: [:]) {
             let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("screenshot_\(UUID().uuidString).png")
             try? pngData.write(to: tempURL)
-            // Add to basket
-            DroppyState.shared.addBasketItems(from: [tempURL])
+            FloatingBasketWindowController.addItemsFromExternalSource([tempURL])
         }
         onCancel() // Close editor
     }

@@ -245,7 +245,7 @@ struct FolderPreviewPopover: View {
     /// Add selected items to basket
     private func addSelectedToBasket() {
         let urls = contents.filter { selectedItems.contains($0.id) }.map { $0.url }
-        DroppyState.shared.addBasketItems(from: urls)
+        FloatingBasketWindowController.addItemsFromExternalSource(urls)
         selectedItems.removeAll()
         HapticFeedback.pop()
     }

@@ -306,8 +306,9 @@ final class ThumbnailCache {
     /// Get cached thumbnail for a file URL (synchronous, returns nil if not cached)
     /// Used for drag previews where async is not possible - shows actual thumbnail if already generated
     func getCachedThumbnail(for url: URL, size: CGSize = CGSize(width: 120, height: 120)) -> NSImage? {
-        // First, try to find the item in DroppyState by URL (thumbnails are cached by item UUID)
-        let allItems = DroppyState.shared.items + DroppyState.shared.basketItems
+        // First, try to find the item by URL (thumbnails are cached by item UUID).
+        let basketItems = FloatingBasketWindowController.basketsWithItems.flatMap { $0.basketState.items }
+        let allItems = DroppyState.shared.items + basketItems
         if let item = allItems.first(where: { $0.url == url }) {
             let cacheKey = item.id.uuidString as NSString
             if let cached = fileCache.object(forKey: cacheKey) {

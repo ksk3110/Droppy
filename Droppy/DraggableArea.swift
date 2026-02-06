@@ -289,9 +289,12 @@ class DraggableAreaView<Content: View>: NSView, NSDraggingSource {
                     // Check if this is a folder (use custom FolderIcon for visual consistency)
                     var isDirectory: ObjCBool = false
                     if FileManager.default.fileExists(atPath: fileURL.path, isDirectory: &isDirectory), isDirectory.boolValue {
-                        // Folder: Check if it's pinned by looking it up in DroppyState
+                        // Folder: Check if it's pinned on shelf or in any basket instance.
+                        let isPinnedInAnyBasket = FloatingBasketWindowController.basketsWithItems.contains { basket in
+                            basket.basketState.items.contains(where: { $0.url == fileURL && $0.isPinned })
+                        }
                         let isPinned = DroppyState.shared.items.contains(where: { $0.url == fileURL && $0.isPinned }) ||
-                                       DroppyState.shared.basketItems.contains(where: { $0.url == fileURL && $0.isPinned })
+                                       isPinnedInAnyBasket
                         usedImage = ThumbnailCache.shared.renderFolderIcon(size: frameSize.width, isPinned: isPinned)
                     } else {
                         // File: Try to get cached THUMBNAIL first (for PDFs, videos, images, etc.)

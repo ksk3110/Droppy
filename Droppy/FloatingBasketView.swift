@@ -32,8 +32,8 @@ struct FloatingBasketView: View {
     @AppStorage(AppPreferenceKey.showClipboardButton) private var showClipboardButton = PreferenceDefault.showClipboardButton
     @AppStorage(AppPreferenceKey.enableNotchShelf) private var enableNotchShelf = PreferenceDefault.enableNotchShelf
     @AppStorage(AppPreferenceKey.enableAutoClean) private var enableAutoClean = PreferenceDefault.enableAutoClean
-    @AppStorage(AppPreferenceKey.enableAirDropZone) private var enableAirDropZone = PreferenceDefault.enableAirDropZone
     @AppStorage(AppPreferenceKey.enableQuickActions) private var enableQuickActions = PreferenceDefault.enableQuickActions
+    @AppStorage(AppPreferenceKey.enableMultiBasket) private var enableMultiBasket = PreferenceDefault.enableMultiBasket
     
     // MARK: - Dropover-Style State
     /// Whether the basket is expanded to show the full grid view
@@ -65,6 +65,15 @@ struct FloatingBasketView: View {
     
     /// Owning controller for this basket instance.
     private var ownerController: FloatingBasketWindowController? { basketState.ownerController }
+
+    /// Show accent colors only when at least two baskets are visible.
+    private var shouldShowAccentColor: Bool {
+        ownerController?.shouldShowAccentColor ?? FloatingBasketWindowController.shouldShowAccentColors
+    }
+
+    private var effectiveAccentColor: Color {
+        shouldShowAccentColor ? accentColor.color : Color.white
+    }
     
     private let cornerRadius: CGFloat = 28
     
@@ -220,22 +229,40 @@ struct FloatingBasketView: View {
             if !isExpanded && basketState.hoveredQuickAction == nil {
                 VStack {
                     HStack {
-                        BasketCloseButton {
-                            closeBasket()
-                        }
+                        // Close button - always xmark (deletes items and closes)
+                        BasketCloseButton(iconName: "xmark", action: closeBasket)
                         Spacer()
-                        
-                        // Menu button (only when items exist and not hovering quick action)
+                        // Right button: In multi-basket mode with items shows eye.slash (hide)
+                        // Otherwise shows chevron menu (when items exist)
                         if basketState.items.count > 0 && basketState.hoveredQuickAction == nil {
-                            Menu {
-                                basketContextMenuContent
-                            } label: {
-                                BasketMenuButton { }
-                                    .allowsHitTesting(false)
+                            if enableMultiBasket {
+                                // Multi-basket mode: eye.slash button to hide (preserve items)
+                                Button {
+                                    hideBasket()
+                                } label: {
+                                    Image(systemName: "eye.slash")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundStyle(.white.opacity(0.6))
+                                        .frame(width: 32, height: 32)
+                                        .background(
+                                            Circle()
+                                                .fill(.white.opacity(0.08))
+                                        )
+                                }
+                                .buttonStyle(.plain)
+                                .help("Hide basket (keep items)")
+                            } else {
+                                // Single-basket mode: menu button
+                                Menu {
+                                    basketContextMenuContent
+                                } label: {
+                                    BasketMenuButton(action: { })
+                                        .allowsHitTesting(false)
+                                }
+                                .menuStyle(.borderlessButton)
+                                .menuIndicator(.hidden)
+                                .frame(width: 32, height: 32)
                             }
-                            .menuStyle(.borderlessButton)
-                            .menuIndicator(.hidden)
-                            .frame(width: 32, height: 32) // Match close button size exactly for symmetry
                         }
                     }
                     .padding(.horizontal, 18)
@@ -275,7 +302,13 @@ struct FloatingBasketView: View {
             if !basketState.items.isEmpty {
                 Button {
                     let basketFrame = ownerController?.basketWindow?.frame
-                    ReorderWindowController.shared.show(state: DroppyState.shared, target: .basket, anchorFrame: basketFrame)
+                    ReorderWindowController.shared.show(
+                        state: DroppyState.shared,
+                        target: .basket,
+                        anchorFrame: basketFrame,
+                        basketState: basketState,
+                        basketController: ownerController
+                    )
                 } label:{
                     Label("Reorder Items", systemImage: "arrow.up.arrow.down")
                 }
@@ -422,7 +455,11 @@ struct FloatingBasketView: View {
             // Sleek drag handle at top (only when files present)
             .overlay(alignment: .top) {
                 if basketState.items.count > 0 {
-                    BasketDragHandle(controller: ownerController, accentColor: accentColor)
+                    BasketDragHandle(
+                        controller: ownerController,
+                        accentColor: accentColor,
+                        showAccentColor: shouldShowAccentColor
+                    )
                 }
             }
             // Pressed effect when targeted (scale is handled by mainBasketContainer)
@@ -433,7 +470,7 @@ struct FloatingBasketView: View {
                         RoundedRectangle(cornerRadius: cornerRadius - 4, style: .continuous)
                             .strokeBorder(
                                 LinearGradient(
-                                    colors: [accentColor.color.opacity(0.4), accentColor.color.opacity(0.15)],
+                                    colors: [effectiveAccentColor.opacity(0.4), effectiveAccentColor.opacity(0.15)],
                                     startPoint: .top,
                                     endPoint: .bottom
                                 ),
@@ -1079,8 +1116,15 @@ struct FloatingBasketView: View {
     }
 
     private func closeBasket() {
+        // Close button always clears items and closes the basket
         basketState.clearAll()
         ownerController?.hideBasket()
+    }
+    
+    /// Hides the basket without clearing items (used in multi-basket mode)
+    /// Items remain accessible via the basket switcher
+    private func hideBasket() {
+        ownerController?.hideBasketPreservingState()
     }
 
     private func dropSelectedToFinder() {

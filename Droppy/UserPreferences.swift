@@ -78,7 +78,6 @@ enum AppPreferenceKey {
     
     // MARK: - Basket Behavior
     static let enableBasketAutoHide = "enableBasketAutoHide"
-    static let basketAutoHideEdge = "basketAutoHideEdge"
     static let basketAutoHideDelay = "basketAutoHideDelay"  // Delay in seconds before basket hides after cursor leaves
     static let instantBasketOnDrag = "instantBasketOnDrag"
     static let instantBasketDelay = "instantBasketDelay"
@@ -86,11 +85,11 @@ enum AppPreferenceKey {
     static let basketDragRevealShortcut = "basketDragRevealShortcut"  // JSON-encoded SavedShortcut data
     static let enableAutoClean = "enableAutoClean"
     static let alwaysCopyOnDrag = "alwaysCopyOnDrag"
-    static let enableAirDropZone = "enableAirDropZone"
     static let enablePowerFolders = "enablePowerFolders"
     static let enableQuickActions = "enableQuickActions"
     static let enableTrackedFolders = "enableTrackedFolders"
     static let enableMultiBasket = "enableMultiBasket"  // Allow spawning multiple baskets simultaneously
+    static let basketSwitcherShortcut = "basketSwitcherShortcut"  // Custom shortcut to show basket switcher
     
     // MARK: - Clipboard
     static let clipboardAutoFocusSearch = "clipboardAutoFocusSearch"
@@ -223,14 +222,12 @@ enum PreferenceDefault {
     
     // MARK: - Basket Behavior
     static let enableBasketAutoHide = false
-    static let basketAutoHideEdge = "right"
     static let basketAutoHideDelay: Double = 2.0  // 2 seconds delay before hiding
     static let instantBasketOnDrag = false
     static let instantBasketDelay: Double = 0.15  // Seconds, minimum 0.15 to let drag settle
     static let basketJiggleSensitivity: Double = 3.0
     static let enableAutoClean = false
     static let alwaysCopyOnDrag = false  // Off by default (standard macOS behavior), advanced users enable for protection
-    static let enableAirDropZone = true
     static let enablePowerFolders = true
     static let enableQuickActions = false  // Advanced feature, opt-in
     static let enableTrackedFolders = false  // Advanced feature, opt-in

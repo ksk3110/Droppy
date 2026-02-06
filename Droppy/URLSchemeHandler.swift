@@ -75,17 +75,7 @@ struct URLSchemeHandler {
         
         switch target.lowercased() {
         case "basket":
-            // Add to floating basket
-            state.addBasketItems(from: paths)
-            
-            // Show the basket if it's not visible
-            if !state.isBasketVisible {
-                state.isBasketVisible = true
-                state.isBasketExpanded = true
-            }
-            
-            // Ensure the basket window is shown
-            FloatingBasketWindowController.shared.showBasket()
+            FloatingBasketWindowController.addItemsFromExternalSource(paths)
             
             print("✅ URLSchemeHandler: Added \(paths.count) file(s) to basket")
             

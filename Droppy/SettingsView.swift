@@ -13,10 +13,8 @@ struct SettingsView: View {
     @AppStorage(AppPreferenceKey.enableBasketAutoHide) private var enableBasketAutoHide = PreferenceDefault.enableBasketAutoHide
     @AppStorage(AppPreferenceKey.enableAutoClean) private var enableAutoClean = PreferenceDefault.enableAutoClean
     @AppStorage(AppPreferenceKey.alwaysCopyOnDrag) private var alwaysCopyOnDrag = PreferenceDefault.alwaysCopyOnDrag
-    @AppStorage(AppPreferenceKey.enableAirDropZone) private var enableAirDropZone = PreferenceDefault.enableAirDropZone
     @AppStorage(AppPreferenceKey.enablePowerFolders) private var enablePowerFolders = PreferenceDefault.enablePowerFolders
     @AppStorage(AppPreferenceKey.enableQuickActions) private var enableQuickActions = PreferenceDefault.enableQuickActions
-    @AppStorage(AppPreferenceKey.basketAutoHideEdge) private var basketAutoHideEdge = PreferenceDefault.basketAutoHideEdge
     @AppStorage(AppPreferenceKey.basketAutoHideDelay) private var basketAutoHideDelay = PreferenceDefault.basketAutoHideDelay
     @AppStorage(AppPreferenceKey.instantBasketOnDrag) private var instantBasketOnDrag = PreferenceDefault.instantBasketOnDrag
     @AppStorage(AppPreferenceKey.instantBasketDelay) private var instantBasketDelay = PreferenceDefault.instantBasketDelay
@@ -85,6 +83,7 @@ struct SettingsView: View {
     @State private var showAutoFocusSearchWarning = false  // Warning when enabling Auto-Focus Search
     @State private var showQuickActionsWarning = false  // Warning when enabling Quick Actions
     @State private var basketDragRevealShortcut: SavedShortcut?
+    @State private var basketSwitcherShortcut: SavedShortcut?
     
     // Hover states for special buttons
     @State private var isCoffeeHovering = false
@@ -145,16 +144,53 @@ struct SettingsView: View {
             basketDragRevealShortcut = nil
             return
         }
-        basketDragRevealShortcut = decoded
+        basketDragRevealShortcut = sanitizeShortcut(decoded)
+    }
+    
+    private func sanitizeShortcut(_ shortcut: SavedShortcut?) -> SavedShortcut? {
+        guard let shortcut else { return nil }
+        let allowedFlags = NSEvent.ModifierFlags(rawValue: shortcut.modifiers)
+            .intersection([.command, .shift, .option, .control])
+        return SavedShortcut(keyCode: shortcut.keyCode, modifiers: allowedFlags.rawValue)
     }
     
     private func saveBasketDragRevealShortcut(_ shortcut: SavedShortcut?) {
-        if let shortcut, let encoded = try? JSONEncoder().encode(shortcut) {
+        let sanitizedShortcut = sanitizeShortcut(shortcut)
+        if let sanitizedShortcut, let encoded = try? JSONEncoder().encode(sanitizedShortcut) {
             UserDefaults.standard.set(encoded, forKey: AppPreferenceKey.basketDragRevealShortcut)
         } else {
             UserDefaults.standard.removeObject(forKey: AppPreferenceKey.basketDragRevealShortcut)
         }
         DragMonitor.shared.reloadShortcutConfiguration()
+    }
+    
+    private func loadBasketSwitcherShortcut() {
+        guard let data = UserDefaults.standard.data(forKey: AppPreferenceKey.basketSwitcherShortcut),
+              let decoded = try? JSONDecoder().decode(SavedShortcut.self, from: data) else {
+            basketSwitcherShortcut = nil
+            return
+        }
+        basketSwitcherShortcut = sanitizeShortcut(decoded)
+    }
+    
+    private func saveBasketSwitcherShortcut(_ shortcut: SavedShortcut?) {
+        let sanitizedShortcut = sanitizeShortcut(shortcut)
+        if let sanitizedShortcut, let encoded = try? JSONEncoder().encode(sanitizedShortcut) {
+            UserDefaults.standard.set(encoded, forKey: AppPreferenceKey.basketSwitcherShortcut)
+        } else {
+            UserDefaults.standard.removeObject(forKey: AppPreferenceKey.basketSwitcherShortcut)
+        }
+        // Reload the shortcut monitor to pick up new binding
+        BasketSwitcherWindowController.shared.reloadShortcutConfiguration()
+    }
+
+    private func setMultiBasketMode(_ isEnabled: Bool) {
+        guard enableMultiBasket != isEnabled else { return }
+        enableMultiBasket = isEnabled
+        if !isEnabled {
+            FloatingBasketWindowController.enforceSingleBasketMode()
+        }
+        BasketSwitcherWindowController.shared.reloadShortcutConfiguration()
     }
     
     private var basketJiggleSensitivityLabel: String {
@@ -445,6 +481,7 @@ struct SettingsView: View {
         // Handle deep links to open specific extensions
         .onAppear {
             loadBasketDragRevealShortcut()
+            loadBasketSwitcherShortcut()
             // Check if there's a pending tab to open (e.g., from menu bar "Manage Uploads")
             if let pendingTab = SettingsWindowController.shared.pendingTabToOpen {
                 selectedTab = pendingTab
@@ -976,8 +1013,9 @@ struct SettingsView: View {
                 }
                 .onChange(of: enableFloatingBasket) { oldValue, newValue in
                     if !newValue {
-                        FloatingBasketWindowController.shared.hideBasket()
+                        FloatingBasketWindowController.closeAllBaskets()
                     }
+                    BasketSwitcherWindowController.shared.reloadShortcutConfiguration()
                 }
                 
                 if enableFloatingBasket {
@@ -1057,17 +1095,62 @@ struct SettingsView: View {
                 
                 // MARK: Multi-Basket
                 Section {
-                    Picker(selection: $enableMultiBasket) {
-                        Text("Single Basket").tag(false)
-                        Text("Multi-Basket").tag(true)
-                    } label: {
-                        VStack(alignment: .leading) {
-                            Text("Basket Mode")
-                            Text(enableMultiBasket 
-                                ? "Jiggling while a basket is open spawns another basket"
-                                : "Only one basket at a time")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                    nativePickerRow(
+                        title: "Basket Mode",
+                        subtitle: enableMultiBasket
+                            ? "Jiggling while a basket is open spawns another basket"
+                            : "Only one basket at a time"
+                    ) {
+                        SettingsSegmentButtonWithContent(
+                            label: "Single Basket",
+                            isSelected: !enableMultiBasket,
+                            action: { setMultiBasketMode(false) }
+                        ) {
+                            Image(systemName: "tray")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundStyle(!enableMultiBasket ? Color.blue : Color.white.opacity(0.5))
+                        }
+                        
+                        SettingsSegmentButtonWithContent(
+                            label: "Multi-Basket",
+                            isSelected: enableMultiBasket,
+                            action: { setMultiBasketMode(true) }
+                        ) {
+                            Image(systemName: "square.stack.3d.up")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundStyle(enableMultiBasket ? Color.blue : Color.white.opacity(0.5))
+                        }
+                    }
+                    
+                    // Basket Switcher Shortcut (only shown when multi-basket enabled)
+                    if enableMultiBasket {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text("Basket Switcher")
+                                Text("Shortcut to show all baskets and switch between them")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .fixedSize(horizontal: true, vertical: false)
+                            Spacer()
+                            KeyShortcutRecorder(shortcut: Binding(
+                                get: { basketSwitcherShortcut },
+                                set: { newValue in
+                                    basketSwitcherShortcut = newValue
+                                    saveBasketSwitcherShortcut(newValue)
+                                }
+                            ))
+                            
+                            if basketSwitcherShortcut != nil {
+                                Button {
+                                    basketSwitcherShortcut = nil
+                                    saveBasketSwitcherShortcut(nil)
+                                } label: {
+                                    Image(systemName: "arrow.counterclockwise")
+                                }
+                                .buttonStyle(DroppyCircleButtonStyle(size: 32))
+                                .help("Reset Shortcut")
+                            }
                         }
                     }
                 } header: {
@@ -1459,8 +1542,9 @@ struct SettingsView: View {
             }
             .onChange(of: enableFloatingBasket) { oldValue, newValue in
                 if !newValue {
-                    FloatingBasketWindowController.shared.hideBasket()
+                    FloatingBasketWindowController.closeAllBaskets()
                 }
+                BasketSwitcherWindowController.shared.reloadShortcutConfiguration()
             }
             
             if enableFloatingBasket {
@@ -1513,8 +1597,8 @@ struct SettingsView: View {
                     PeekModeInfoButton()
                     Toggle(isOn: $enableBasketAutoHide) {
                         VStack(alignment: .leading) {
-                            Text("Auto-Hide with Peek")
-                            Text("Basket slides to edge when cursor leaves, hover to reveal")
+                            Text("Auto-Hide (Jiggle to Show)")
+                            Text("Basket hides after delay, jiggle without file to show again")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -1522,36 +1606,18 @@ struct SettingsView: View {
                 }
                 
                 if enableBasketAutoHide {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Hide Edge")
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Hide Delay")
+                            Spacer()
+                            Text(String(format: "%.1fs", basketAutoHideDelay))
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                        Slider(value: $basketAutoHideDelay, in: 0.5...5.0, step: 0.5)
+                        Text("Time before basket auto-hides when cursor leaves")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                        
-                        HStack(spacing: 8) {
-                            SettingsSegmentButton(
-                                icon: "arrow.left.to.line",
-                                label: "Left",
-                                isSelected: basketAutoHideEdge == "left"
-                            ) {
-                                basketAutoHideEdge = "left"
-                            }
-                            
-                            SettingsSegmentButton(
-                                icon: "arrow.right.to.line",
-                                label: "Right",
-                                isSelected: basketAutoHideEdge == "right"
-                            ) {
-                                basketAutoHideEdge = "right"
-                            }
-                            
-                            SettingsSegmentButton(
-                                icon: "arrow.down.to.line",
-                                label: "Bottom",
-                                isSelected: basketAutoHideEdge == "bottom"
-                            ) {
-                                basketAutoHideEdge = "bottom"
-                            }
-                        }
                     }
                 }
             } header: {
@@ -1614,8 +1680,9 @@ struct SettingsView: View {
                 }
                 .onChange(of: enableFloatingBasket) { oldValue, newValue in
                     if !newValue {
-                        FloatingBasketWindowController.shared.hideBasket()
+                        FloatingBasketWindowController.closeAllBaskets()
                     }
+                    BasketSwitcherWindowController.shared.reloadShortcutConfiguration()
                 }
                 
                 if enableFloatingBasket {
@@ -1669,46 +1736,27 @@ struct SettingsView: View {
                         PeekModeInfoButton()
                         Toggle(isOn: $enableBasketAutoHide) {
                             VStack(alignment: .leading) {
-                                Text("Auto-Hide with Peek")
-                                Text("Basket slides to edge when cursor leaves, hover to reveal")
+                                Text("Auto-Hide (Jiggle to Show)")
+                                Text("Basket hides after delay, jiggle without file to show again")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
                         }
                     }
                     
-                    // Edge picker (only when auto-hide is enabled)
                     if enableBasketAutoHide {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Hide Edge")
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text("Hide Delay")
+                                Spacer()
+                                Text(String(format: "%.1fs", basketAutoHideDelay))
+                                    .foregroundStyle(.secondary)
+                                    .monospacedDigit()
+                            }
+                            Slider(value: $basketAutoHideDelay, in: 0.5...5.0, step: 0.5)
+                            Text("Time before basket auto-hides when cursor leaves")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
-                            
-                            HStack(spacing: 8) {
-                                SettingsSegmentButton(
-                                    icon: "arrow.left.to.line",
-                                    label: "Left",
-                                    isSelected: basketAutoHideEdge == "left"
-                                ) {
-                                    basketAutoHideEdge = "left"
-                                }
-                                
-                                SettingsSegmentButton(
-                                    icon: "arrow.right.to.line",
-                                    label: "Right",
-                                    isSelected: basketAutoHideEdge == "right"
-                                ) {
-                                    basketAutoHideEdge = "right"
-                                }
-                                
-                                SettingsSegmentButton(
-                                    icon: "arrow.down.to.line",
-                                    label: "Bottom",
-                                    isSelected: basketAutoHideEdge == "bottom"
-                                ) {
-                                    basketAutoHideEdge = "bottom"
-                                }
-                            }
                         }
                     }
                 } header: {

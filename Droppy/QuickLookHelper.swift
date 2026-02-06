@@ -89,13 +89,18 @@ class QuickLookHelper: NSObject, QLPreviewPanelDataSource, QLPreviewPanelDelegat
             return
         }
         
-        let selectedItems = DroppyState.shared.basketItems.filter { 
-            DroppyState.shared.selectedBasketItems.contains($0.id) 
+        let targetBasket = FloatingBasketWindowController.visibleBaskets.first
+            ?? FloatingBasketWindowController.basketsWithItems.first
+        let basketState = targetBasket?.basketState ?? FloatingBasketWindowController.shared.basketState
+        let basketItems = basketState.items
+        let selectedIDs = basketState.selectedItems
+        let selectedItems = basketItems.filter {
+            selectedIDs.contains($0.id)
         }
         
         if selectedItems.isEmpty {
             // If nothing selected, preview first item
-            if let first = DroppyState.shared.basketItems.first {
+            if let first = basketItems.first {
                 preview(urls: [first.url])
             }
         } else {

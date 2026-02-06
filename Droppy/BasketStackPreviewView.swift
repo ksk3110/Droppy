@@ -308,11 +308,13 @@ struct BasketFileCountLabel: View {
 
 /// Close button (X) for top-left of basket - uses DroppyCircleButtonStyle
 struct BasketCloseButton: View {
+    /// Icon to display: "xmark" for delete, "eye.slash" for hide
+    var iconName: String = "xmark"
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
-            Image(systemName: "xmark")
+            Image(systemName: iconName)
         }
         .buttonStyle(DroppyCircleButtonStyle(size: 32))
     }
@@ -352,17 +354,32 @@ struct BasketBackButton: View {
 struct BasketDragHandle: View {
     let controller: FloatingBasketWindowController?
     var accentColor: BasketAccentColor = .teal
+    var showAccentColor: Bool = true
 
-    init(controller: FloatingBasketWindowController? = nil, accentColor: BasketAccentColor = .teal) {
+    init(
+        controller: FloatingBasketWindowController? = nil,
+        accentColor: BasketAccentColor = .teal,
+        showAccentColor: Bool = true
+    ) {
         self.controller = controller
         self.accentColor = accentColor
+        self.showAccentColor = showAccentColor
     }
     @State private var isHovering = false
     @State private var isDragging = false
     @State private var initialMouseOffset: CGPoint = .zero // Offset from window origin to mouse
     
-    /// Capsule fill color - ALWAYS uses accent color for multi-basket distinction
+    /// Capsule fill color - accent is only used when multiple baskets are visible.
     private var capsuleFill: Color {
+        if !showAccentColor {
+            if isDragging {
+                return Color.white.opacity(0.52)
+            } else if isHovering {
+                return Color.white.opacity(0.40)
+            } else {
+                return Color.white.opacity(0.28)
+            }
+        }
         if isDragging {
             return accentColor.color.opacity(0.75)
         } else if isHovering {
@@ -430,7 +447,7 @@ struct BasketDragHandle: View {
         VStack(spacing: 20) {
             // Header buttons
             HStack {
-                BasketCloseButton { }
+                BasketCloseButton(action: { })
                 Spacer()
                 BasketMenuButton { }
             }

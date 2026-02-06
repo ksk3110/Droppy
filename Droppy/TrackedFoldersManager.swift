@@ -285,8 +285,14 @@ final class TrackedFoldersManager: ObservableObject {
             
         case .basket:
             // Check if multi-basket mode is on and we have 2+ baskets
-            let multiBasketEnabled = UserDefaults.standard.bool(forKey: AppPreferenceKey.enableMultiBasket)
-            let allBaskets = FloatingBasketWindowController.visibleBaskets
+            let multiBasketEnabled = UserDefaults.standard.preference(
+                AppPreferenceKey.enableMultiBasket,
+                default: PreferenceDefault.enableMultiBasket
+            )
+            var allBaskets: [FloatingBasketWindowController] = FloatingBasketWindowController.visibleBaskets
+            for basket in FloatingBasketWindowController.basketsWithItems where !allBaskets.contains(where: { $0 === basket }) {
+                allBaskets.append(basket)
+            }
             
             if multiBasketEnabled && allBaskets.count >= 2 {
                 // Show switcher so user can pick which basket to add to
@@ -297,20 +303,12 @@ final class TrackedFoldersManager: ObservableObject {
                     pendingFiles: pendingURLs
                 ) { selectedBasket in
                     selectedBasket.basketState.addItems(from: pendingURLs)
-                    selectedBasket.basketWindow?.orderFrontRegardless()
+                    selectedBasket.showBasket(atLastPosition: true)
                 }
                 print("TrackedFolders: Showing switcher for \(urlArray.count) file(s)")
             } else {
                 // Single basket or only 1 basket active - add directly
-                if let activeBasket = allBaskets.first {
-                    activeBasket.basketState.addItems(from: urlArray)
-                    activeBasket.showBasket(atLastPosition: true)
-                } else {
-                    // No visible basket - use primary shared basket
-                    state.addBasketItems(from: urlArray)
-                    state.isBasketVisible = true
-                    FloatingBasketWindowController.shared.showBasket(atLastPosition: true)
-                }
+                FloatingBasketWindowController.addItemsFromExternalSource(urlArray, showAtLastPosition: true)
                 print("TrackedFolders: Added \(urlArray.count) file(s) to Basket")
             }
         }

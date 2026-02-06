@@ -100,7 +100,7 @@ struct KeyShortcutRecorder: View {
             
             // Capture
             DispatchQueue.main.async {
-                let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                let flags = event.modifierFlags.intersection([.command, .shift, .option, .control])
                 self.shortcut = SavedShortcut(keyCode: Int(event.keyCode), modifiers: flags.rawValue)
                 self.stopRecording()
             }

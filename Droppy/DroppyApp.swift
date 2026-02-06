@@ -260,6 +260,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             AppPreferenceKey.enableHUDReplacement: PreferenceDefault.enableHUDReplacement,
             AppPreferenceKey.showMediaPlayer: PreferenceDefault.showMediaPlayer,
             AppPreferenceKey.enableClipboard: PreferenceDefault.enableClipboard,
+            AppPreferenceKey.enableMultiBasket: PreferenceDefault.enableMultiBasket,
         ])
         
         
@@ -303,6 +304,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _ = DragMonitor.shared
         _ = NotchWindowController.shared
         _ = FloatingBasketWindowController.shared
+        _ = BasketSwitcherWindowController.shared
         _ = UpdateChecker.shared
         _ = ClipboardManager.shared
         _ = ClipboardWindowController.shared

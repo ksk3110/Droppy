@@ -36,9 +36,7 @@ class ServiceProvider: NSObject {
                     state.expandShelf(for: mainDisplayID)
                 }
             } else {
-                state.addBasketItems(from: fileURLs)
-                // Show the basket
-                FloatingBasketWindowController.shared.showBasket()
+                FloatingBasketWindowController.addItemsFromExternalSource(fileURLs)
             }
         }
     }

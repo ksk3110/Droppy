@@ -41,10 +41,12 @@ final class DragMonitor: ObservableObject {
     
     // IDLE JIGGLE: Monitor mouse movement when NOT dragging to show hidden baskets
     private var idleJiggleMonitor: Any?
+    private var idleLocalJiggleMonitor: Any?
     private var lastIdleLocation: CGPoint = .zero
     private var lastIdleDirection: CGPoint = .zero
     private var idleDirectionChanges: [Date] = []
     private var idleJiggleNotified = false
+    private var idleJiggleLastTriggeredAt: Date = .distantPast
     
     // Optional shortcut to reveal basket during active drag
     private var dragRevealHotKey: GlobalHotKey?
@@ -126,13 +128,19 @@ final class DragMonitor: ObservableObject {
     /// Starts monitoring mouse movement for jiggle when baskets are hidden
     /// Call this when baskets are auto-hidden and we want jiggle to reveal them
     func startIdleJiggleMonitoring() {
-        guard idleJiggleMonitor == nil else { return }
+        guard idleJiggleMonitor == nil, idleLocalJiggleMonitor == nil else { return }
+        guard FloatingBasketWindowController.hasHiddenBasketsWithItems else { return }
         
         lastIdleLocation = NSEvent.mouseLocation
         resetIdleJiggle()
         
-        idleJiggleMonitor = NSEvent.addGlobalMonitorForEvents(matching: .mouseMoved) { [weak self] event in
+        idleJiggleMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] _ in
             self?.detectIdleJiggle(currentLocation: NSEvent.mouseLocation)
+        }
+        
+        idleLocalJiggleMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] event in
+            self?.detectIdleJiggle(currentLocation: NSEvent.mouseLocation)
+            return event
         }
     }
     
@@ -142,11 +150,33 @@ final class DragMonitor: ObservableObject {
             NSEvent.removeMonitor(monitor)
             idleJiggleMonitor = nil
         }
+        if let monitor = idleLocalJiggleMonitor {
+            NSEvent.removeMonitor(monitor)
+            idleLocalJiggleMonitor = nil
+        }
         resetIdleJiggle()
     }
     
     /// Detects jiggle from idle mouse movement (not during drag)
     private func detectIdleJiggle(currentLocation: CGPoint) {
+        guard !dragActive, !isDragging else { return }
+        let floatingEnabled = UserDefaults.standard.preference(
+            AppPreferenceKey.enableFloatingBasket,
+            default: PreferenceDefault.enableFloatingBasket
+        )
+        let autoHideEnabled = UserDefaults.standard.preference(
+            AppPreferenceKey.enableBasketAutoHide,
+            default: PreferenceDefault.enableBasketAutoHide
+        )
+        guard floatingEnabled, autoHideEnabled else {
+            stopIdleJiggleMonitoring()
+            return
+        }
+        guard FloatingBasketWindowController.hasHiddenBasketsWithItems else {
+            stopIdleJiggleMonitoring()
+            return
+        }
+
         let dx = currentLocation.x - lastIdleLocation.x
         let dy = currentLocation.y - lastIdleLocation.y
         let magnitude = sqrt(dx * dx + dy * dy)
@@ -156,7 +186,8 @@ final class DragMonitor: ObservableObject {
             AppPreferenceKey.basketJiggleSensitivity,
             default: PreferenceDefault.basketJiggleSensitivity
         )
-        let minimumMovement = max(3.0, min(8.0, 9.0 - (sensitivity * 1.25)))
+        // Slightly easier than drag jiggle to keep no-drag reveal reliable.
+        let minimumMovement = max(2.0, min(7.0, 8.0 - (sensitivity * 1.2)))
         
         lastIdleLocation = currentLocation
         
@@ -167,13 +198,20 @@ final class DragMonitor: ObservableObject {
         if lastIdleDirection != .zero {
             let dot = currentDirection.x * lastIdleDirection.x + currentDirection.y * lastIdleDirection.y
             
-            if dot < -0.3 {
+            // Accept a broader reversal angle for idle shake detection.
+            if dot < 0.2 {
                 let now = Date()
                 idleDirectionChanges.append(now)
-                idleDirectionChanges = idleDirectionChanges.filter { now.timeIntervalSince($0) < jiggleTimeWindow }
-                let requiredDirectionChanges = max(2, min(5, Int(round(6.0 - sensitivity))))
+                let idleJiggleTimeWindow: TimeInterval = 0.85
+                idleDirectionChanges = idleDirectionChanges.filter { now.timeIntervalSince($0) < idleJiggleTimeWindow }
+                let requiredDirectionChanges = max(2, min(4, Int(round(5.0 - sensitivity))))
                 
                 if idleDirectionChanges.count >= requiredDirectionChanges && !idleJiggleNotified {
+                    // Cooldown to avoid repeated accidental triggers.
+                    guard now.timeIntervalSince(idleJiggleLastTriggeredAt) > 0.6 else {
+                        return
+                    }
+                    idleJiggleLastTriggeredAt = now
                     idleJiggleNotified = true
                     
                     // Prevent re-triggering for a bit
@@ -268,6 +306,14 @@ final class DragMonitor: ObservableObject {
             // Optimization: If mouse is not down and we are not tracking a drag, 
             // return early to avoid unnecessary NSPasteboard allocation/release (which caused crashes)
             if !mouseIsDown && !dragActive {
+                // Self-heal stale drag state (can happen after lock/unlock or monitor desync).
+                if isDragging {
+                    print("🧹 DragMonitor: Clearing stale isDragging state")
+                    isDragging = false
+                    dragEndNotified = true
+                    updateDragRevealHotKeyRegistration()
+                    resetJiggle()
+                }
                 return
             }
 
@@ -280,6 +326,7 @@ final class DragMonitor: ObservableObject {
                 let hasContent = (dragPasteboard.types?.count ?? 0) > 0
                 if hasContent && !dragActive {
                     dragActive = true
+                    stopIdleJiggleMonitoring()
                     dragStartChangeCount = currentChangeCount
                     resetJiggle()
                     dragEndNotified = false
@@ -312,9 +359,13 @@ final class DragMonitor: ObservableObject {
                                 default: PreferenceDefault.enableFloatingBasket
                             )
                             if enabled {
-                                // Option+drag: Always spawn a new basket (multi-basket mode)
+                                // Option+drag: Spawn new basket only if multi-basket mode enabled
                                 // Normal drag: Use existing basket if one is visible
-                                if optionHeld && FloatingBasketWindowController.isAnyBasketVisible {
+                                let multiBasketEnabled = UserDefaults.standard.preference(
+                                    AppPreferenceKey.enableMultiBasket,
+                                    default: PreferenceDefault.enableMultiBasket
+                                )
+                                if optionHeld && multiBasketEnabled && FloatingBasketWindowController.isAnyBasketVisible {
                                     FloatingBasketWindowController.spawnNewBasket()
                                 } else {
                                     FloatingBasketWindowController.shared.onJiggleDetected()
