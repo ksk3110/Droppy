@@ -212,7 +212,49 @@ struct KeyCodeHelper {
         case 117: return "Del"
         case 119: return "End"
         case 121: return "PgDn"
-        default: return "Key \(code)"
+        default:
+            if let layoutString = layoutAwareString(for: code) {
+                return layoutString
+            }
+            return "Key \(code)"
         }
+    }
+
+    /// Resolve key label using the active keyboard layout (AZERTY/QWERTZ/etc),
+    /// so displayed shortcuts match what the user actually pressed.
+    private static func layoutAwareString(for code: UInt16) -> String? {
+        guard let inputSource = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue(),
+              let layoutDataPointer = TISGetInputSourceProperty(inputSource, kTISPropertyUnicodeKeyLayoutData) else {
+            return nil
+        }
+
+        let layoutData = unsafeBitCast(layoutDataPointer, to: CFData.self)
+        guard let keyboardLayout = CFDataGetBytePtr(layoutData)?.withMemoryRebound(to: UCKeyboardLayout.self, capacity: 1, { $0 }) else {
+            return nil
+        }
+
+        var deadKeyState: UInt32 = 0
+        var chars = [UniChar](repeating: 0, count: 4)
+        var length = 0
+
+        let status = UCKeyTranslate(
+            keyboardLayout,
+            code,
+            UInt16(kUCKeyActionDisplay),
+            0,
+            UInt32(LMGetKbdType()),
+            OptionBits(kUCKeyTranslateNoDeadKeysBit),
+            &deadKeyState,
+            chars.count,
+            &length,
+            &chars
+        )
+
+        guard status == noErr, length > 0 else { return nil }
+
+        let raw = String(utf16CodeUnits: chars, count: length)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return nil }
+        return raw.uppercased()
     }
 }

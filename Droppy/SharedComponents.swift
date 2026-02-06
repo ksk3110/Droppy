@@ -262,12 +262,34 @@ struct SettingsSegmentButton: View {
     let icon: String
     let label: String
     let isSelected: Bool
+    let showsLabel: Bool
+    let tileWidth: CGFloat
+    let tileHeight: CGFloat
     let action: () -> Void
     
     @State private var isHovering = false
     @State private var iconBounce = false
+    @Environment(\.controlActiveState) private var controlActiveState
     
     private let accentColor = Color.blue // Droppy blue
+    
+    init(
+        icon: String,
+        label: String,
+        isSelected: Bool,
+        showsLabel: Bool = true,
+        tileWidth: CGFloat = 108,
+        tileHeight: CGFloat = 46,
+        action: @escaping () -> Void
+    ) {
+        self.icon = icon
+        self.label = label
+        self.isSelected = isSelected
+        self.showsLabel = showsLabel
+        self.tileWidth = tileWidth
+        self.tileHeight = tileHeight
+        self.action = action
+    }
     
     var body: some View {
         Button {
@@ -281,29 +303,75 @@ struct SettingsSegmentButton: View {
                 }
             }
         } label: {
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 // Button container with icon
                 ZStack {
                     RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
-                        .fill(Color.black.opacity(0.35))
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(controlActiveState == .key ? 0.14 : 0.10),
+                                    Color.white.opacity(0.04)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
+                    RoundedRectangle(cornerRadius: DroppyRadius.medium - 2, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(isSelected ? 0.08 : 0.04),
+                                    Color.clear
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .padding(1.5)
                     
                     Image(systemName: icon)
-                        .font(.system(size: 18, weight: .medium))
+                        .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(isSelected ? accentColor : .secondary)
                         .scaleEffect(iconBounce ? 1.2 : 1.0)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
-                .frame(height: 44)
+                .frame(width: tileWidth, height: tileHeight)
                 .overlay(
                     RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
-                        .stroke(isSelected ? accentColor : Color.white.opacity(0.05), lineWidth: isSelected ? 1.5 : 1)
+                        .stroke(
+                            isSelected ? accentColor.opacity(0.95) : Color.white.opacity(0.12),
+                            lineWidth: isSelected ? 1.8 : 1
+                        )
                 )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DroppyRadius.medium - 1, style: .continuous)
+                        .stroke(
+                            isSelected ? Color.white.opacity(0.22) : Color.white.opacity(0.05),
+                            lineWidth: 1
+                        )
+                        .padding(1)
+                )
+                .overlay(alignment: .topTrailing) {
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(accentColor)
+                            .padding(6)
+                    }
+                }
                 
-                // Label below button
-                Text(label)
-                    .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
-                    .foregroundStyle(isSelected ? .primary : .secondary)
+                if showsLabel {
+                    // Label below button
+                    Text(label)
+                        .font(.system(size: 11, weight: isSelected ? .bold : .semibold, design: .rounded))
+                        .foregroundStyle(isSelected ? .primary : .secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .frame(width: tileWidth)
+                }
             }
-            .frame(maxWidth: .infinity)
             .scaleEffect(isHovering ? 1.02 : 1.0)
             .animation(DroppyAnimation.hover, value: isHovering)
         }
@@ -319,16 +387,31 @@ struct SettingsSegmentButtonWithContent<Content: View>: View {
     let content: Content
     let label: String
     let isSelected: Bool
+    let showsLabel: Bool
+    let tileWidth: CGFloat
+    let tileHeight: CGFloat
     let action: () -> Void
     
     @State private var isHovering = false
     @State private var iconBounce = false
+    @Environment(\.controlActiveState) private var controlActiveState
     
     private let accentColor = Color.blue // Droppy blue
     
-    init(label: String, isSelected: Bool, action: @escaping () -> Void, @ViewBuilder content: () -> Content) {
+    init(
+        label: String,
+        isSelected: Bool,
+        showsLabel: Bool = true,
+        tileWidth: CGFloat = 108,
+        tileHeight: CGFloat = 46,
+        action: @escaping () -> Void,
+        @ViewBuilder content: () -> Content
+    ) {
         self.label = label
         self.isSelected = isSelected
+        self.showsLabel = showsLabel
+        self.tileWidth = tileWidth
+        self.tileHeight = tileHeight
         self.action = action
         self.content = content()
     }
@@ -345,27 +428,73 @@ struct SettingsSegmentButtonWithContent<Content: View>: View {
                 }
             }
         } label: {
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 // Button container with custom content
                 ZStack {
                     RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
-                        .fill(Color.black.opacity(0.35))
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(controlActiveState == .key ? 0.14 : 0.10),
+                                    Color.white.opacity(0.04)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
+                    RoundedRectangle(cornerRadius: DroppyRadius.medium - 2, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(isSelected ? 0.08 : 0.04),
+                                    Color.clear
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .padding(1.5)
                     
                     content
                         .scaleEffect(iconBounce ? 1.1 : 1.0)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 }
-                .frame(height: 44)
+                .frame(width: tileWidth, height: tileHeight)
                 .overlay(
                     RoundedRectangle(cornerRadius: DroppyRadius.medium, style: .continuous)
-                        .stroke(isSelected ? accentColor.opacity(0.6) : Color.white.opacity(0.05), lineWidth: isSelected ? 1.5 : 1)
+                        .stroke(
+                            isSelected ? accentColor.opacity(0.95) : Color.white.opacity(0.12),
+                            lineWidth: isSelected ? 1.8 : 1
+                        )
                 )
+                .overlay(
+                    RoundedRectangle(cornerRadius: DroppyRadius.medium - 1, style: .continuous)
+                        .stroke(
+                            isSelected ? Color.white.opacity(0.22) : Color.white.opacity(0.05),
+                            lineWidth: 1
+                        )
+                        .padding(1)
+                )
+                .overlay(alignment: .topTrailing) {
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(accentColor)
+                            .padding(6)
+                    }
+                }
                 
-                // Label below button
-                Text(label)
-                    .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
-                    .foregroundStyle(isSelected ? .primary : .secondary)
+                if showsLabel {
+                    // Label below button
+                    Text(label)
+                        .font(.system(size: 11, weight: isSelected ? .bold : .semibold, design: .rounded))
+                        .foregroundStyle(isSelected ? .primary : .secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .frame(width: tileWidth)
+                }
             }
-            .frame(maxWidth: .infinity)
             .scaleEffect(isHovering ? 1.02 : 1.0)
             .animation(DroppyAnimation.hover, value: isHovering)
         }

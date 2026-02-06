@@ -61,6 +61,7 @@ enum AppPreferenceKey {
     static let enableLockScreenHUD = "enableLockScreenHUD"
     static let enableDNDHUD = "enableDNDHUD"
     static let enableUpdateHUD = "enableUpdateHUD"
+    static let mediaControlTargetMode = "mediaControlTargetMode"  // "mainMacBook" or "activeDisplay"
     
     // MARK: - Lock Screen Media Widget
     static let enableLockScreenMediaWidget = "enableLockScreenMediaWidget"
@@ -78,14 +79,18 @@ enum AppPreferenceKey {
     // MARK: - Basket Behavior
     static let enableBasketAutoHide = "enableBasketAutoHide"
     static let basketAutoHideEdge = "basketAutoHideEdge"
+    static let basketAutoHideDelay = "basketAutoHideDelay"  // Delay in seconds before basket hides after cursor leaves
     static let instantBasketOnDrag = "instantBasketOnDrag"
     static let instantBasketDelay = "instantBasketDelay"
+    static let basketJiggleSensitivity = "basketJiggleSensitivity"  // 1...5 (higher = easier shake trigger)
+    static let basketDragRevealShortcut = "basketDragRevealShortcut"  // JSON-encoded SavedShortcut data
     static let enableAutoClean = "enableAutoClean"
     static let alwaysCopyOnDrag = "alwaysCopyOnDrag"
     static let enableAirDropZone = "enableAirDropZone"
     static let enablePowerFolders = "enablePowerFolders"
     static let enableQuickActions = "enableQuickActions"
     static let enableTrackedFolders = "enableTrackedFolders"
+    static let enableMultiBasket = "enableMultiBasket"  // Allow spawning multiple baskets simultaneously
     
     // MARK: - Clipboard
     static let clipboardAutoFocusSearch = "clipboardAutoFocusSearch"
@@ -200,6 +205,7 @@ enum PreferenceDefault {
     static let enableLockScreenHUD = false  // DISABLED: Lock screen features causing issues, will debug later
     static let enableDNDHUD = false  // Requires Full Disk Access
     static let enableUpdateHUD = true  // Show HUD when update is available
+    static let mediaControlTargetMode = "mainMacBook"  // Keep behavior focused on built-in display by default
     
     // MARK: - Lock Screen Media Widget
     static let enableLockScreenMediaWidget = false  // Uses private APIs, opt-in
@@ -218,14 +224,17 @@ enum PreferenceDefault {
     // MARK: - Basket Behavior
     static let enableBasketAutoHide = false
     static let basketAutoHideEdge = "right"
+    static let basketAutoHideDelay: Double = 2.0  // 2 seconds delay before hiding
     static let instantBasketOnDrag = false
     static let instantBasketDelay: Double = 0.15  // Seconds, minimum 0.15 to let drag settle
+    static let basketJiggleSensitivity: Double = 3.0
     static let enableAutoClean = false
     static let alwaysCopyOnDrag = false  // Off by default (standard macOS behavior), advanced users enable for protection
     static let enableAirDropZone = true
     static let enablePowerFolders = true
     static let enableQuickActions = false  // Advanced feature, opt-in
     static let enableTrackedFolders = false  // Advanced feature, opt-in
+    static let enableMultiBasket = true  // Multi-basket by default for spawning multiple simultaneous baskets
     
     // MARK: - Clipboard
     static let clipboardAutoFocusSearch = false

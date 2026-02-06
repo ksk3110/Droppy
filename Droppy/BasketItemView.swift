@@ -12,7 +12,7 @@ enum BasketItemLayout {
 
 struct BasketItemView: View {
     let item: DroppedItem
-    let state: DroppyState
+    let state: BasketState
     @Binding var renamingItemId: UUID?
     let onRemove: () -> Void
     var layoutMode: BasketItemLayout = .grid
@@ -108,6 +108,12 @@ struct BasketItemView: View {
             }
         } catch {}
         return "—"
+    }
+
+    /// Approximate available width for filename in list rows.
+    private var listNameWidth: CGFloat {
+        let baseWidth = listRowWidth ?? 320
+        return max(120, baseWidth - 150)
     }
     
     var body: some View {
@@ -300,11 +306,15 @@ struct BasketItemView: View {
                                     renamingText = item.url.deletingPathExtension().lastPathComponent
                                 }
                             } else {
-                                Text(item.name)
-                                    .font(.system(size: 13, weight: .medium))
-                                    .foregroundStyle(isSelected ? .white : .white.opacity(0.9))
-                                    .lineLimit(1)
-                                    .truncationMode(.tail)
+                                SubtleScrollingText(
+                                    text: item.name,
+                                    font: .system(size: 13, weight: .medium),
+                                    foregroundStyle: AnyShapeStyle(isSelected ? .white : .white.opacity(0.9)),
+                                    maxWidth: listNameWidth,
+                                    lineLimit: 1,
+                                    alignment: .leading,
+                                    externallyHovered: isHovering
+                                )
                             }
                             
                             // Status text or file size (use white text on blue selection)
@@ -644,11 +654,15 @@ struct BasketItemView: View {
                             renamingText = item.url.deletingPathExtension().lastPathComponent
                         }
                     } else {
-                        Text(item.name)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
+                        SubtleScrollingText(
+                            text: item.name,
+                            font: .system(size: 13, weight: .medium),
+                            foregroundStyle: AnyShapeStyle(.white),
+                            maxWidth: listNameWidth,
+                            lineLimit: 1,
+                            alignment: .leading,
+                            externallyHovered: isHovering
+                        )
                     }
                     
                     if isConverting {
@@ -1048,7 +1062,7 @@ struct BasketItemView: View {
                     : [item]
                 
                 for moveItem in itemsToMove {
-                    state.addItem(moveItem)
+                    DroppyState.shared.addItem(moveItem)
                     state.removeBasketItemForTransfer(moveItem)  // Transfer-safe: don't delete file
                 }
                 state.deselectAllBasket()
@@ -1736,7 +1750,7 @@ struct BasketItemView: View {
 // MARK: - Basket Item Content
 private struct BasketItemContent: View {
     let item: DroppedItem
-    let state: DroppyState
+    let state: BasketState
     let onRemove: () -> Void
     let thumbnail: NSImage?
     let isHovering: Bool
@@ -1876,8 +1890,9 @@ private struct BasketItemContent: View {
                     font: .system(size: 11),
                     foregroundStyle: AnyShapeStyle(.white),
                     maxWidth: 64,
-                    lineLimit: 2,
-                    alignment: .center
+                    lineLimit: 1,
+                    alignment: .center,
+                    externallyHovered: isHovering
                 )
                 .padding(.horizontal, 4)
                 .padding(.vertical, 2)

@@ -13,6 +13,7 @@ import UniformTypeIdentifiers
 
 struct BasketQuickActionsBar: View {
     let items: [DroppedItem]
+    var basketState: BasketState = FloatingBasketWindowController.shared.basketState
     @AppStorage(AppPreferenceKey.useTransparentBackground) private var useTransparentBackground = PreferenceDefault.useTransparentBackground
     @State private var isExpanded = false
     @State private var isHovering = false
@@ -59,67 +60,56 @@ struct BasketQuickActionsBar: View {
                             isExpanded = true
                         }
                         HapticFeedback.expand()
-                    } else if !targeted && !isHovering && !isBoltTargeted && !DroppyState.shared.isQuickActionsTargeted && !dragMonitor.isDragging {
+                    } else if !targeted && !isHovering && !isBoltTargeted && !basketState.isQuickActionsTargeted && !dragMonitor.isDragging {
                         // Drag left the bar area completely - collapse (only if not dragging)
-                        DroppyState.shared.isQuickActionsTargeted = false
-                        DroppyState.shared.hoveredQuickAction = nil
+                        basketState.isQuickActionsTargeted = false
+                        basketState.hoveredQuickAction = nil
                         withAnimation(DroppyAnimation.state) {
                             isExpanded = false
                         }
                     }
                 }
             
-            HStack(spacing: spacing) {
-                if isExpanded {
-                    // Expanded: Floating buttons only
-                    QuickDropActionButton(actionType: .airdrop, useTransparent: useTransparentBackground, shareAction: shareViaAirDrop)
-                        .transition(.asymmetric(
-                            insertion: .scale(scale: 0.5).combined(with: .opacity).animation(DroppyAnimation.itemInsertion),
-                            removal: .scale(scale: 0.5).combined(with: .opacity).animation(.easeOut(duration: 0.15))
-                        ))
-                    QuickDropActionButton(actionType: .messages, useTransparent: useTransparentBackground, shareAction: shareViaMessages)
-                        .transition(.asymmetric(
-                            insertion: .scale(scale: 0.5).combined(with: .opacity).animation(DroppyAnimation.itemInsertion.delay(0.03)),
-                            removal: .scale(scale: 0.5).combined(with: .opacity).animation(.easeOut(duration: 0.15))
-                        ))
-                    QuickDropActionButton(actionType: .mail, useTransparent: useTransparentBackground, shareAction: shareViaMail)
-                        .transition(.asymmetric(
-                            insertion: .scale(scale: 0.5).combined(with: .opacity).animation(DroppyAnimation.itemInsertion.delay(0.06)),
-                            removal: .scale(scale: 0.5).combined(with: .opacity).animation(.easeOut(duration: 0.15))
-                        ))
+            ZStack {
+                // Keep quick-action buttons mounted to avoid NSViewRepresentable transition ghosting.
+                HStack(spacing: spacing) {
+                    QuickDropActionButton(actionType: .airdrop, basketState: basketState, useTransparent: useTransparentBackground, shareAction: shareViaAirDrop)
+                    QuickDropActionButton(actionType: .messages, basketState: basketState, useTransparent: useTransparentBackground, shareAction: shareViaMessages)
+                    QuickDropActionButton(actionType: .mail, basketState: basketState, useTransparent: useTransparentBackground, shareAction: shareViaMail)
                     if isQuickshareEnabled {
-                        QuickDropActionButton(actionType: .quickshare, useTransparent: useTransparentBackground, shareAction: quickShareTo0x0)
-                            .transition(.asymmetric(
-                                insertion: .scale(scale: 0.5).combined(with: .opacity).animation(DroppyAnimation.itemInsertion.delay(0.09)),
-                                removal: .scale(scale: 0.5).combined(with: .opacity).animation(.easeOut(duration: 0.15))
-                            ))
+                        QuickDropActionButton(actionType: .quickshare, basketState: basketState, useTransparent: useTransparentBackground, shareAction: quickShareTo0x0)
                     }
-                } else {
-                    // Collapsed: Zap button - matches quick action icons with glass material
-                    Circle()
-                        .fill(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
-                        .frame(width: buttonSize, height: buttonSize)
-                        .overlay(
-                            Circle()
-                                .stroke(Color.white.opacity(isBoltTargeted ? 0.3 : (useTransparentBackground ? 0.12 : 0.06)), lineWidth: 1)
-                        )
-                        .overlay(
-                            Image(systemName: "bolt.fill")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundStyle(.white.opacity(isBoltTargeted ? 1.0 : 0.85))
-                        )
-                        .scaleEffect(isBoltTargeted ? 1.15 : 1.0)
-                        .contentShape(Circle().scale(1.3))
-                        // DRAG-TO-EXPAND: Detect when files are dragged over the collapsed bolt
-                        // Include file promise types for Photos.app compatibility
-                        .onDrop(of: [UTType.fileURL, UTType.image, UTType.movie, UTType.data], isTargeted: $isBoltTargeted) { _ in
-                            // Don't handle the drop here - just expand so user can drop on specific action
-                            return false
-                        }
-                        .transition(.scale(scale: 0.5).combined(with: .opacity))
-                        .animation(DroppyAnimation.hoverBouncy, value: isBoltTargeted)
                 }
+                .opacity(isExpanded ? 1 : 0)
+                .scaleEffect(isExpanded ? 1 : 0.92)
+                .allowsHitTesting(isExpanded)
+                
+                // Collapsed: Zap button
+                Circle()
+                    .fill(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
+                    .frame(width: buttonSize, height: buttonSize)
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white.opacity(isBoltTargeted ? 0.3 : (useTransparentBackground ? 0.12 : 0.06)), lineWidth: 1)
+                    )
+                    .overlay(
+                        Image(systemName: "bolt.fill")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(.white.opacity(isBoltTargeted ? 1.0 : 0.85))
+                    )
+                    .opacity(isExpanded ? 0 : 1)
+                    .scaleEffect(isExpanded ? 0.92 : (isBoltTargeted ? 1.15 : 1.0))
+                    .allowsHitTesting(!isExpanded)
+                    .contentShape(Circle().scale(1.3))
+                    // DRAG-TO-EXPAND: Detect when files are dragged over the collapsed bolt
+                    // Include file promise types for Photos.app compatibility
+                    .onDrop(of: [UTType.fileURL, UTType.image, UTType.movie, UTType.data], isTargeted: $isBoltTargeted) { _ in
+                        // Don't handle the drop here - just expand so user can drop on specific action
+                        return false
+                    }
+                    .animation(DroppyAnimation.hoverBouncy, value: isBoltTargeted)
             }
+            .frame(width: isExpanded ? expandedBarWidth : buttonSize, height: buttonSize + 14)
         }
         .animation(DroppyAnimation.state, value: isExpanded)
         .onHover { hovering in
@@ -136,7 +126,7 @@ struct BasketQuickActionsBar: View {
             }
             // Clear hovered action when collapsing
             if !hovering {
-                DroppyState.shared.hoveredQuickAction = nil
+                basketState.hoveredQuickAction = nil
             }
             if hovering && !isExpanded {
                 HapticFeedback.expand()
@@ -155,11 +145,11 @@ struct BasketQuickActionsBar: View {
             if dragging {
                 return
             }
-            if !isHovering && !isBarAreaTargeted && !isBoltTargeted && !DroppyState.shared.isQuickActionsTargeted {
+            if !isHovering && !isBarAreaTargeted && !isBoltTargeted && !basketState.isQuickActionsTargeted {
                 withAnimation(DroppyAnimation.state) {
                     isExpanded = false
                 }
-                DroppyState.shared.hoveredQuickAction = nil
+                basketState.hoveredQuickAction = nil
             }
         }
         // Note: Main collapse logic is handled by onChange(of: isBarAreaTargeted) above
@@ -168,8 +158,8 @@ struct BasketQuickActionsBar: View {
         .onChange(of: DroppyState.shared.isBasketTargeted) { _, targeted in
             if targeted && isExpanded {
                 // Drag moved to basket - collapse back to bolt and clear quick actions state
-                DroppyState.shared.isQuickActionsTargeted = false
-                DroppyState.shared.hoveredQuickAction = nil
+                basketState.isQuickActionsTargeted = false
+                basketState.hoveredQuickAction = nil
                 withAnimation(DroppyAnimation.state) {
                     isExpanded = false
                 }
@@ -210,6 +200,7 @@ struct BasketQuickActionsBar: View {
 
 struct QuickDropActionButton: View {
     let actionType: QuickActionType
+    var basketState: BasketState
     var useTransparent: Bool = false
     let shareAction: ([URL]) -> Void
     
@@ -250,25 +241,25 @@ struct QuickDropActionButton: View {
         }
         .onHover { hovering in
             isHovering = hovering
-            // Update shared state for basket explanation overlay
+            // Update basket state for explanation overlay
             if hovering {
-                DroppyState.shared.hoveredQuickAction = actionType
-            } else if DroppyState.shared.hoveredQuickAction == actionType {
-                DroppyState.shared.hoveredQuickAction = nil
+                basketState.hoveredQuickAction = actionType
+            } else if basketState.hoveredQuickAction == actionType {
+                basketState.hoveredQuickAction = nil
             }
         }
         .frame(width: size, height: size)
-        // CRITICAL: Update shared state when this button is targeted
+        // CRITICAL: Update basket state when this button is targeted
         // Only SET the state - clearing is handled by capsule exit or basket targeting
         .onChange(of: isTargeted) { _, targeted in
             if targeted {
-                DroppyState.shared.isQuickActionsTargeted = true
-                DroppyState.shared.hoveredQuickAction = actionType
+                basketState.isQuickActionsTargeted = true
+                basketState.hoveredQuickAction = actionType
             }
             // Don't clear here - let capsule/basket handle it
         }
         .onTapGesture {
-            let urls = DroppyState.shared.basketItems.map(\.url)
+            let urls = basketState.items.map(\.url)
             if !urls.isEmpty {
                 HapticFeedback.select()
                 shareAction(urls)
@@ -276,3 +267,4 @@ struct QuickDropActionButton: View {
         }
     }
 }
+

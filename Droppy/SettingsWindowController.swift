@@ -54,8 +54,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             .preferredColorScheme(.dark) // Force dark mode always
         let hostingView = NSHostingView(rootView: settingsView)
         
-        // SettingsView base width (15% narrower than previous 737)
-        let windowWidth: CGFloat = 626
+        // Keep all settings tabs at extensions width for layout consistency
+        let windowWidth: CGFloat = 920
         let windowHeight: CGFloat = 650
         
         // Create the window
@@ -163,10 +163,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     // MARK: - Window Sizing
     
     /// Base width for regular settings tabs
-    static let baseWidth: CGFloat = 626
+    static let baseWidth: CGFloat = 920
     
-    /// Extended width for extensions tab (15% wider than old 737)
-    static let extensionsWidth: CGFloat = 848
+    /// Extended width for extensions tab
+    static let extensionsWidth: CGFloat = 920
     
     /// Resize the settings window based on the current tab
     /// - Parameter isExtensions: Whether the extensions tab is selected

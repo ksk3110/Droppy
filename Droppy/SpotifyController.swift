@@ -38,6 +38,10 @@ final class SpotifyController {
     /// Spotify bundle identifier
     static let spotifyBundleId = "com.spotify.client"
     
+    /// Serial queue for AppleScript execution - NSAppleScript is NOT thread-safe
+    /// Concurrent AppleScript calls crash the AppleScript runtime
+    private let appleScriptQueue = DispatchQueue(label: "com.droppy.SpotifyController.applescript")
+    
     // MARK: - Repeat Mode
     
     enum RepeatMode: String, CaseIterable {
@@ -401,7 +405,9 @@ final class SpotifyController {
     // MARK: - AppleScript Execution
     
     private func runAppleScript(_ source: String, completion: @escaping (Any?) -> Void) {
-        DispatchQueue.global(qos: .userInitiated).async {
+        // Use serial queue to prevent concurrent AppleScript execution  
+        // NSAppleScript is NOT thread-safe and concurrent calls crash the runtime
+        appleScriptQueue.async {
             var error: NSDictionary?
             
             guard let script = NSAppleScript(source: source) else {

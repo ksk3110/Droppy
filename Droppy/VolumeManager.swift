@@ -17,10 +17,16 @@ import Foundation
 final class VolumeManager: NSObject, ObservableObject {
     static let shared = VolumeManager()
     
+    private enum MediaControlTargetMode: String {
+        case mainMacBook
+        case activeDisplay
+    }
+    
     // MARK: - Published Properties
     @Published private(set) var rawVolume: Float = 0
     @Published private(set) var isMuted: Bool = false
     @Published private(set) var lastChangeAt: Date = .distantPast
+    @Published private(set) var lastChangeDisplayID: CGDirectDisplayID?
     
     // MARK: - Configuration
     let visibleDuration: TimeInterval = 1.5
@@ -47,6 +53,12 @@ final class VolumeManager: NSObject, ObservableObject {
         Date().timeIntervalSince(lastChangeAt) < visibleDuration
     }
     
+    private var mediaControlTargetMode: MediaControlTargetMode {
+        let raw = UserDefaults.standard.string(forKey: AppPreferenceKey.mediaControlTargetMode)
+            ?? PreferenceDefault.mediaControlTargetMode
+        return MediaControlTargetMode(rawValue: raw) ?? .mainMacBook
+    }
+    
     /// Whether the current output device supports volume control via CoreAudio
     /// Checks both VirtualMainVolume (preferred, works with USB devices) and VolumeScalar
     var supportsVolumeControl: Bool {
@@ -57,26 +69,27 @@ final class VolumeManager: NSObject, ObservableObject {
     // MARK: - Public Control API
     
     /// Increase volume by one step
-    @MainActor func increase(stepDivisor: Float = 1.0) {
+    @MainActor func increase(stepDivisor: Float = 1.0, screenHint: NSScreen? = nil) {
         let divisor = max(stepDivisor, 0.25)
         let delta = step / Float32(divisor)
         let current = readVolumeInternal() ?? rawVolume
         let target = max(0, min(1, current + delta))
-        setAbsolute(target)
+        setAbsolute(target, screenHint: screenHint)
     }
     
     /// Decrease volume by one step
-    @MainActor func decrease(stepDivisor: Float = 1.0) {
+    @MainActor func decrease(stepDivisor: Float = 1.0, screenHint: NSScreen? = nil) {
         let divisor = max(stepDivisor, 0.25)
         let delta = step / Float32(divisor)
         let current = readVolumeInternal() ?? rawVolume
         let target = max(0, min(1, current - delta))
-        setAbsolute(target)
+        setAbsolute(target, screenHint: screenHint)
     }
     
     /// Toggle mute state
-    @MainActor func toggleMute() {
+    @MainActor func toggleMute(screenHint: NSScreen? = nil) {
         let deviceID = systemOutputDeviceID()
+        let targetDisplayID = resolveHUDTargetDisplayID(screenHint: screenHint)
         
         if deviceID == kAudioObjectUnknown {
             // Software mute fallback
@@ -84,7 +97,7 @@ final class VolumeManager: NSObject, ObservableObject {
             // Hardware mute
         }
         
-        toggleMuteInternal()
+        toggleMuteInternal(displayID: targetDisplayID)
     }
     
     /// Refresh volume from system
@@ -93,26 +106,27 @@ final class VolumeManager: NSObject, ObservableObject {
     }
     
     /// Set volume to absolute value (0.0 - 1.0)
-    @MainActor func setAbsolute(_ value: Float32) {
+    @MainActor func setAbsolute(_ value: Float32, screenHint: NSScreen? = nil) {
         let clamped = max(0, min(1, value))
         let currentlyMuted = isMutedInternal()
         let previousVolume = rawVolume
+        let targetDisplayID = resolveHUDTargetDisplayID(screenHint: screenHint)
         
         // Detect "unmute" transition: going from 0 (or muted) to first audible step
         let wasEffectivelyMuted = currentlyMuted || previousVolume < 0.01
         let isNowAudible = clamped >= step * 0.5  // At least ~half a step (first audible)
         
         if currentlyMuted && clamped > 0 {
-            toggleMuteInternal()
+            toggleMuteInternal(displayID: targetDisplayID)
         }
         
         writeVolumeInternal(clamped)
         
         if clamped == 0 && !currentlyMuted {
-            toggleMuteInternal()
+            toggleMuteInternal(displayID: targetDisplayID)
         }
         
-        publish(volume: clamped, muted: isMutedInternal(), touchDate: true)
+        publish(volume: clamped, muted: isMutedInternal(), touchDate: true, displayID: targetDisplayID)
         
         // Haptic feedback: bumpy feel when coming out of silence (0 → first step)
         if wasEffectivelyMuted && isNowAudible {
@@ -195,6 +209,7 @@ final class VolumeManager: NSObject, ObservableObject {
                 if self.rawVolume != clampedAvg {
                     if self.didInitialFetch {
                         self.lastChangeAt = Date()
+                        self.lastChangeDisplayID = self.resolveHUDTargetDisplayID()
                         
                         // Haptic feedback: bumpy feel when coming out of silence (0 → first step)
                         if wasEffectivelyMuted && isNowAudible {
@@ -224,7 +239,10 @@ final class VolumeManager: NSObject, ObservableObject {
                 if AudioObjectGetPropertyData(deviceID, &muteAddr, 0, nil, &mSize, &muted) == noErr {
                     let newMuted = muted != 0
                     DispatchQueue.main.async {
-                        if self.isMuted != newMuted { self.lastChangeAt = Date() }
+                        if self.isMuted != newMuted {
+                            self.lastChangeAt = Date()
+                            self.lastChangeDisplayID = self.resolveHUDTargetDisplayID()
+                        }
                         self.isMuted = newMuted
                     }
                 }
@@ -469,10 +487,10 @@ final class VolumeManager: NSObject, ObservableObject {
         return softwareMuted
     }
     
-    private func toggleMuteInternal() {
+    private func toggleMuteInternal(displayID: CGDirectDisplayID?) {
         let deviceID = systemOutputDeviceID()
         if deviceID == kAudioObjectUnknown {
-            performSoftwareMuteToggle(currentVolume: rawVolume)
+            performSoftwareMuteToggle(currentVolume: rawVolume, displayID: displayID)
             return
         }
         
@@ -483,14 +501,14 @@ final class VolumeManager: NSObject, ObservableObject {
         )
         
         if !AudioObjectHasProperty(deviceID, &muteAddr) {
-            performSoftwareMuteToggle(currentVolume: readVolumeInternal() ?? rawVolume)
+            performSoftwareMuteToggle(currentVolume: readVolumeInternal() ?? rawVolume, displayID: displayID)
             return
         }
         
         var sizeNeeded: UInt32 = 0
         guard AudioObjectGetPropertyDataSize(deviceID, &muteAddr, 0, nil, &sizeNeeded) == noErr,
               sizeNeeded == UInt32(MemoryLayout<UInt32>.size) else {
-            performSoftwareMuteToggle(currentVolume: readVolumeInternal() ?? rawVolume)
+            performSoftwareMuteToggle(currentVolume: readVolumeInternal() ?? rawVolume, displayID: displayID)
             return
         }
         
@@ -500,23 +518,23 @@ final class VolumeManager: NSObject, ObservableObject {
             var newVal: UInt32 = muted == 0 ? 1 : 0
             AudioObjectSetPropertyData(deviceID, &muteAddr, 0, nil, size, &newVal)
             let vol = readVolumeInternal() ?? rawVolume
-            publish(volume: vol, muted: newVal != 0, touchDate: true)
+            publish(volume: vol, muted: newVal != 0, touchDate: true, displayID: displayID)
         } else {
-            performSoftwareMuteToggle(currentVolume: readVolumeInternal() ?? rawVolume)
+            performSoftwareMuteToggle(currentVolume: readVolumeInternal() ?? rawVolume, displayID: displayID)
         }
     }
     
-    private func performSoftwareMuteToggle(currentVolume: Float32) {
+    private func performSoftwareMuteToggle(currentVolume: Float32, displayID: CGDirectDisplayID?) {
         if softwareMuted {
             let restore = max(0, min(1, previousVolumeBeforeMute))
             writeVolumeInternal(restore)
             softwareMuted = false
-            publish(volume: restore, muted: false, touchDate: true)
+            publish(volume: restore, muted: false, touchDate: true, displayID: displayID)
         } else {
             if currentVolume > 0.001 { previousVolumeBeforeMute = currentVolume }
             writeVolumeInternal(0)
             softwareMuted = true
-            publish(volume: 0, muted: true, touchDate: true)
+            publish(volume: 0, muted: true, touchDate: true, displayID: displayID)
         }
     }
     
@@ -552,13 +570,32 @@ final class VolumeManager: NSObject, ObservableObject {
         return status == noErr
     }
     
-    private func publish(volume: Float32, muted: Bool, touchDate: Bool) {
+    private func publish(volume: Float32, muted: Bool, touchDate: Bool, displayID: CGDirectDisplayID?) {
         DispatchQueue.main.async {
             if self.rawVolume != volume || self.isMuted != muted || touchDate {
-                if touchDate { self.lastChangeAt = Date() }
+                if touchDate {
+                    self.lastChangeAt = Date()
+                    self.lastChangeDisplayID = displayID
+                }
                 self.rawVolume = volume
                 self.isMuted = muted
             }
+        }
+    }
+    
+    private func resolveHUDTargetDisplayID(screenHint: NSScreen? = nil) -> CGDirectDisplayID? {
+        switch mediaControlTargetMode {
+        case .mainMacBook:
+            return NSScreen.builtIn?.displayID
+                ?? NSScreen.builtInWithNotch?.displayID
+                ?? NSScreen.main?.displayID
+                ?? NSScreen.screens.first?.displayID
+        case .activeDisplay:
+            let resolvedScreen = screenHint
+                ?? NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) })
+                ?? NSScreen.main
+                ?? NSScreen.screens.first
+            return resolvedScreen?.displayID
         }
     }
 }

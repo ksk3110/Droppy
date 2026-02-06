@@ -7,6 +7,12 @@ import UniformTypeIdentifiers
 
 class BasketDragContainer: NSView {
     
+    /// Per-basket state (for multi-basket support - each container adds to its own basket)
+    var basketState: BasketState
+    
+    /// Owning basket controller (weak to avoid retain cycles)
+    weak var controller: FloatingBasketWindowController?
+    
     /// Track if a drop occurred during current drag session
     private var dropDidOccur = false
     
@@ -30,12 +36,12 @@ class BasketDragContainer: NSView {
     
     /// Whether AirDrop zone should be shown (always enabled, shown when basket is empty)
     private var showAirDropZone: Bool {
-        DroppyState.shared.basketItems.isEmpty
+        basketState.items.isEmpty
     }
     
     /// Calculate base width (without AirDrop zone)
     private var baseWidth: CGFloat {
-        if DroppyState.shared.basketItems.isEmpty {
+        if basketState.items.isEmpty {
             return 200
         } else {
             return CGFloat(columnsPerRow) * itemWidth + CGFloat(columnsPerRow - 1) * itemSpacing + horizontalPadding * 2
@@ -53,7 +59,9 @@ class BasketDragContainer: NSView {
         return queue
     }()
     
-    override init(frame frameRect: NSRect) {
+    init(frame frameRect: NSRect, basketState: BasketState, controller: FloatingBasketWindowController? = nil) {
+        self.basketState = basketState
+        self.controller = controller
         super.init(frame: frameRect)
         
         var types: [NSPasteboard.PasteboardType] = [
@@ -98,11 +106,11 @@ class BasketDragContainer: NSView {
     override func mouseEntered(with event: NSEvent) {
         super.mouseEntered(with: event)
         // Mouse entered basket: prevent auto-hide
-        FloatingBasketWindowController.shared.cancelHideTimer()
+        controller?.cancelHideTimer()
         
         // If peeking, reveal
-        if FloatingBasketWindowController.shared.isInPeekMode {
-            FloatingBasketWindowController.shared.revealFromEdge()
+        if controller?.isInPeekMode == true {
+            controller?.revealFromEdge()
         }
     }
     
@@ -110,12 +118,16 @@ class BasketDragContainer: NSView {
         super.mouseExited(with: event)
         // Mouse exited basket: start auto-hide
         // Only if not dragging something
-        FloatingBasketWindowController.shared.onBasketHoverExit() 
+        controller?.onBasketHoverExit()
     }
     
 
     
     required init?(coder: NSCoder) {
+        // Initialize required properties before calling super
+        self.basketState = BasketState()
+        self.controller = nil
+        super.init(coder: coder)
         fatalError("init(coder:) has not been implemented")
     }
     
@@ -171,11 +183,11 @@ class BasketDragContainer: NSView {
             print("🎯 Zone: point.x=\(Int(point.x)) basket=[\(Int(basketLeftEdge))...\(Int(airDropLeftEdge))] airdrop=[\(Int(airDropLeftEdge))...\(Int(basketRightEdge))] isAirDrop=\(isOverAirDrop) isBasket=\(isOverBasket)")
             
             // Synchronous update for responsive feedback
-            DroppyState.shared.isAirDropZoneTargeted = isOverAirDrop
-            DroppyState.shared.isBasketTargeted = isOverBasket
+            basketState.isAirDropZoneTargeted = isOverAirDrop
+            basketState.isTargeted = isOverBasket
         } else {
-            DroppyState.shared.isBasketTargeted = true
-            DroppyState.shared.isAirDropZoneTargeted = false
+            basketState.isTargeted = true
+            basketState.isAirDropZoneTargeted = false
         }
     }
 
@@ -221,21 +233,21 @@ class BasketDragContainer: NSView {
     }
     
     override func draggingExited(_ sender: NSDraggingInfo?) {
-        DroppyState.shared.isBasketTargeted = false
-        DroppyState.shared.isAirDropZoneTargeted = false
+        basketState.isTargeted = false
+        basketState.isAirDropZoneTargeted = false
     }
     
     override func draggingEnded(_ sender: NSDraggingInfo) {
-        DroppyState.shared.isBasketTargeted = false
-        DroppyState.shared.isAirDropZoneTargeted = false
+        basketState.isTargeted = false
+        basketState.isAirDropZoneTargeted = false
         
         // Don't hide during file operations
         guard !DroppyState.shared.isFileOperationInProgress else { return }
         
         // Only hide if NO drop occurred during this drag session
         // and basket is still empty
-        if !dropDidOccur && DroppyState.shared.basketItems.isEmpty {
-            FloatingBasketWindowController.shared.hideBasket()
+        if !dropDidOccur && basketState.items.isEmpty {
+            controller?.hideBasket()
         }
     }
     
@@ -302,7 +314,7 @@ class BasketDragContainer: NSView {
                         if let airDropService = NSSharingService(named: .sendViaAirDrop),
                            airDropService.canPerform(withItems: receivedURLs) {
                             airDropService.perform(withItems: receivedURLs)
-                            FloatingBasketWindowController.shared.hideBasket()
+                            self.controller?.hideBasket()
                         } else {
                             print("📡 AirDrop: Cannot perform with promised files")
                             Task {
@@ -345,7 +357,7 @@ class BasketDragContainer: NSView {
         if airDropService.canPerform(withItems: urls) {
             airDropService.perform(withItems: urls)
             // Hide basket immediately after triggering AirDrop
-            FloatingBasketWindowController.shared.hideBasket()
+            controller?.hideBasket()
             return true
         }
         
@@ -360,8 +372,8 @@ class BasketDragContainer: NSView {
         
         let point = convert(sender.draggingLocation, from: nil)
         
-        DroppyState.shared.isBasketTargeted = false
-        DroppyState.shared.isAirDropZoneTargeted = false
+        basketState.isTargeted = false
+        basketState.isAirDropZoneTargeted = false
         
         // Mark that a drop occurred - don't hide on drag end
         dropDidOccur = true
@@ -392,7 +404,7 @@ class BasketDragContainer: NSView {
                 let savedFiles = await MailHelper.shared.exportSelectedEmails(to: dropLocation)
                 
                 if !savedFiles.isEmpty {
-                    DroppyState.shared.addBasketItems(from: savedFiles)
+                    basketState.addItems(from: savedFiles)
                 } else {
                     print("📧 Basket: No emails exported")
                 }
@@ -460,8 +472,8 @@ class BasketDragContainer: NSView {
                     completionLock.unlock()
                     
                     print("📦 Basket: Successfully received \(fileURL.lastPathComponent)")
-                    DispatchQueue.main.async {
-                        DroppyState.shared.addBasketItems(from: [fileURL])
+                    DispatchQueue.main.async { [weak self] in
+                        self?.basketState.addItems(from: [fileURL])
                         // End file operation after last promise completes
                         if isLastPromise {
                             DroppyState.shared.endFileOperation()
@@ -474,7 +486,7 @@ class BasketDragContainer: NSView {
         
         // Handle File URLs
         if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty {
-            DroppyState.shared.addBasketItems(from: urls)
+            basketState.addItems(from: urls)
             return true
         }
         
@@ -493,7 +505,7 @@ class BasketDragContainer: NSView {
             
             do {
                 try text.write(to: fileURL, atomically: true, encoding: .utf8)
-                DroppyState.shared.addBasketItems(from: [fileURL])
+                basketState.addItems(from: [fileURL])
                 return true
             } catch {
                 print("Error saving text file: \(error)")

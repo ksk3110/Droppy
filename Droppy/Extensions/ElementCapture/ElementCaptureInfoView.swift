@@ -463,6 +463,9 @@ struct ElementCaptureInfoView: View {
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(nil)
+                            .fixedSize(horizontal: false, vertical: true)
                             .padding()
                             .frame(width: 240)
                         }

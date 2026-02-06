@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import Combine
 
 // MARK: - Notch Shelf View
 
@@ -96,6 +97,10 @@ struct NotchShelfView: View {
     @State private var selectionRect: CGRect? = nil
     @State private var initialSelection: Set<UUID> = []
     @State private var itemFrames: [UUID: CGRect] = [:]
+    @State private var shelfScrollView: NSScrollView?
+    @State private var shelfScrollViewportFrame: CGRect = .zero
+    @State private var shelfAutoScrollVelocity: CGFloat = 0
+    private let shelfAutoScrollTicker = Timer.publish(every: 1.0 / 90.0, on: .main, in: .common).autoconnect()
     
     // Global rename state
     @State private var renamingItemId: UUID?
@@ -259,6 +264,32 @@ struct NotchShelfView: View {
             return state.isMouseHovering  // Fallback to global check if no displayID
         }
         return state.isHovering(for: displayID)
+    }
+    
+    /// Display ID represented by this specific NotchShelfView instance.
+    private var thisDisplayID: CGDirectDisplayID? {
+        targetScreen?.displayID
+            ?? NSScreen.builtIn?.displayID
+            ?? NSScreen.builtInWithNotch?.displayID
+            ?? NSScreen.main?.displayID
+            ?? NSScreen.screens.first?.displayID
+    }
+    
+    /// Gate media-key HUD updates so only the target display renders volume/brightness changes.
+    private func shouldShowMediaKeyHUD(on changedDisplayID: CGDirectDisplayID?) -> Bool {
+        guard let currentDisplayID = thisDisplayID else { return true }
+        
+        if let changedDisplayID {
+            return currentDisplayID == changedDisplayID
+        }
+        
+        // Legacy fallback for events that don't carry target display metadata.
+        let fallbackDisplayID = NSScreen.builtIn?.displayID
+            ?? NSScreen.builtInWithNotch?.displayID
+            ?? NSScreen.main?.displayID
+            ?? currentDisplayID
+        
+        return currentDisplayID == fallbackDisplayID
     }
     
     /// Top margin for Dynamic Island from SSOT - creates floating effect like iPhone
@@ -908,10 +939,12 @@ struct NotchShelfView: View {
         shelfContentWithItemObservers
             .onChange(of: volumeManager.lastChangeAt) { _, _ in
                 guard enableHUDReplacement, !isExpandedOnThisScreen else { return }
+                guard shouldShowMediaKeyHUD(on: volumeManager.lastChangeDisplayID) else { return }
                 triggerVolumeHUD()
             }
             .onChange(of: brightnessManager.lastChangeAt) { _, _ in
                 guard enableHUDReplacement, !isExpandedOnThisScreen else { return }
+                guard shouldShowMediaKeyHUD(on: brightnessManager.lastChangeDisplayID) else { return }
                 triggerBrightnessHUD()
             }
             .onChange(of: batteryManager.lastChangeAt) { _, _ in
@@ -1291,9 +1324,9 @@ struct NotchShelfView: View {
                 targetScreen: targetScreen,
                 onValueChange: { newValue in
                     if hudType == .volume {
-                        volumeManager.setAbsolute(Float32(newValue))
+                        volumeManager.setAbsolute(Float32(newValue), screenHint: targetScreen)
                     } else {
-                        brightnessManager.setAbsolute(value: Float(newValue))
+                        brightnessManager.setAbsolute(value: Float(newValue), screenHint: targetScreen)
                     }
                 }
             )
@@ -2328,10 +2361,74 @@ struct NotchShelfView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
     }
+
+    private func updateShelfAutoScrollVelocity(at location: CGPoint) {
+        guard selectionRect != nil else {
+            shelfAutoScrollVelocity = 0
+            return
+        }
+        guard shelfScrollViewportFrame != .zero else {
+            shelfAutoScrollVelocity = 0
+            return
+        }
+
+        let threshold: CGFloat = 40
+        let topEdge = shelfScrollViewportFrame.minY + threshold
+        let bottomEdge = shelfScrollViewportFrame.maxY - threshold
+
+        if location.y < topEdge {
+            let distance = min(topEdge - location.y, threshold)
+            shelfAutoScrollVelocity = -(distance / threshold)
+        } else if location.y > bottomEdge {
+            let distance = min(location.y - bottomEdge, threshold)
+            shelfAutoScrollVelocity = distance / threshold
+        } else {
+            shelfAutoScrollVelocity = 0
+        }
+    }
+
+    private func updateShelfSelection(using rect: CGRect) {
+        var newSelection = initialSelection
+        for (id, frame) in itemFrames where rect.intersects(frame) {
+            newSelection.insert(id)
+        }
+        if newSelection != state.selectedItems {
+            state.selectedItems = newSelection
+        }
+    }
+
+    private func performShelfAutoScrollTick() {
+        guard selectionRect != nil else { return }
+        guard shelfAutoScrollVelocity != 0 else { return }
+        guard shelfScrollViewportFrame != .zero, let scrollView = shelfScrollView else { return }
+        guard let documentView = scrollView.documentView else { return }
+
+        let minStep: CGFloat = 4
+        let maxStep: CGFloat = 12
+        let logicalDelta = shelfAutoScrollVelocity * (minStep + (maxStep - minStep) * abs(shelfAutoScrollVelocity))
+        let deltaY = documentView.isFlipped ? logicalDelta : -logicalDelta
+
+        let clipView = scrollView.contentView
+        let currentY = clipView.bounds.origin.y
+        let maxY = max(0, documentView.bounds.height - clipView.bounds.height)
+        let newY = min(max(currentY + deltaY, 0), maxY)
+
+        guard abs(newY - currentY) > 0.5 else {
+            shelfAutoScrollVelocity = 0
+            return
+        }
+
+        clipView.scroll(to: NSPoint(x: clipView.bounds.origin.x, y: newY))
+        scrollView.reflectScrolledClipView(clipView)
+
+        if let rect = selectionRect {
+            updateShelfSelection(using: rect)
+        }
+    }
     
     private var itemsGridView: some View {
         return ScrollView(.vertical, showsIndicators: false) {
-            ZStack {
+            ZStack(alignment: .top) {
                 // Background tap handler - acts as a "canvas" to catch clicks
                 Color.clear
                     .contentShape(Rectangle())
@@ -2362,20 +2459,16 @@ struct NotchShelfView: View {
                                      height: abs(value.location.y - value.startLocation.y)
                                  )
                                  selectionRect = rect
+                                 updateShelfAutoScrollVelocity(at: value.location)
                                  
                                  // Update Selection
-                                 var newSelection = initialSelection
-                                 for (id, frame) in itemFrames {
-                                     if rect.intersects(frame) {
-                                         newSelection.insert(id)
-                                     }
-                                 }
-                                 state.selectedItems = newSelection
+                                 updateShelfSelection(using: rect)
                              }
                               .onEnded { _ in
                                    // Finalize selection
                                    selectionRect = nil
                                   initialSelection = []
+                                  shelfAutoScrollVelocity = 0
                               }
                      )
                 
@@ -2421,6 +2514,9 @@ struct NotchShelfView: View {
                         transaction.animation = nil
                     }
                 }
+                .background(ShelfScrollViewResolver { scrollView in
+                    self.shelfScrollView = scrollView
+                })
                 // SSOT: Top padding clears physical notch in built-in notch mode
                 // External displays and DI mode use smaller symmetrical padding
                 .padding(.top, contentLayoutNotchHeight == 0 ? 8 : contentLayoutNotchHeight + 4)
@@ -2428,9 +2524,25 @@ struct NotchShelfView: View {
                 // Horizontal padding: 20pt for DI mode, 30pt for notch modes
                 .padding(.horizontal, isDynamicIslandMode ? NotchLayoutConstants.contentPadding : NotchLayoutConstants.contentPadding + NotchLayoutConstants.wingCornerCompensation)
             }
+            .frame(maxWidth: .infinity, minHeight: max(shelfScrollViewportFrame.height, 1), alignment: .top)
         }
         // Enable scrolling when more than 3 rows, disable otherwise
         .scrollDisabled(state.shelfDisplaySlotCount <= 15)  // 5 items per row * 3 rows = 15
+        .coordinateSpace(name: "shelfGrid")
+        .background(
+            GeometryReader { proxy in
+                Color.clear
+                    .onAppear {
+                        shelfScrollViewportFrame = proxy.frame(in: .named("shelfGrid"))
+                    }
+                    .onChange(of: proxy.frame(in: .named("shelfGrid"))) { _, newFrame in
+                        shelfScrollViewportFrame = newFrame
+                    }
+            }
+        )
+        .onReceive(shelfAutoScrollTicker) { _ in
+            performShelfAutoScrollTick()
+        }
         .clipped() // Prevent hover effects from bleeding past shelf edges
         .contentShape(Rectangle())
         // Removed .onTapGesture from here to prevent swallowing touches on children
@@ -2444,9 +2556,37 @@ struct NotchShelfView: View {
                     .allowsHitTesting(false)
             }
         }
-        .coordinateSpace(name: "shelfGrid")
         .onPreferenceChange(ItemFramePreferenceKey.self) { frames in
             self.itemFrames = frames
+        }
+    }
+}
+
+private struct ShelfScrollViewResolver: NSViewRepresentable {
+    let onResolve: (NSScrollView) -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            resolveScrollView(from: view)
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async {
+            resolveScrollView(from: nsView)
+        }
+    }
+
+    private func resolveScrollView(from view: NSView) {
+        var current: NSView? = view
+        while let candidate = current {
+            if let scroll = candidate.enclosingScrollView {
+                onResolve(scroll)
+                return
+            }
+            current = candidate.superview
         }
     }
 }

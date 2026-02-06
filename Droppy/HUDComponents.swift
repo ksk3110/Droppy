@@ -495,70 +495,96 @@ struct SubtleScrollingText: View {
     var font: Font = .system(size: 10, weight: .medium)
     var foregroundStyle: AnyShapeStyle = AnyShapeStyle(.white.opacity(0.9))
     var maxWidth: CGFloat = 72
-    var lineLimit: Int = 1  // For horizontal scroll: single line
+    var lineLimit: Int = 1
     var alignment: TextAlignment = .center
+    /// Optional external hover state (e.g. whole-card hover). If nil, uses internal text hover.
+    var externallyHovered: Bool? = nil
     
     @State private var textWidth: CGFloat = 0
     @State private var containerWidth: CGFloat = 0
     @State private var scrollOffset: CGFloat = 0
     @State private var isHovering: Bool = false
-    @State private var scrollPhase: ScrollPhase = .idle
-    @State private var scrollTimer: Timer?
+    @State private var scrollTask: Task<Void, Never>?
+    @State private var isReturningToStart: Bool = false  // Keep scrolling view visible during return animation
     
-    private enum ScrollPhase {
-        case idle           // Not scrolling (static)
-        case waitingToScroll // Hover started, waiting before scroll
-        case scrollingEnd   // Scrolling to show end of text
-        case pausingEnd     // Paused at end
-        case scrollingStart // Scrolling back to start
-    }
+    /// Points per second for marquee movement.
+    private let marqueeSpeed: CGFloat = 34
     
     /// Whether text overflows the container (needs fade/scrolling)
-    /// CRITICAL: Require containerWidth > 0 to ensure measurements are ready
-    private var needsFade: Bool {
-        textWidth > containerWidth && containerWidth > 0 && textWidth > 0
+    private var needsScroll: Bool {
+        overflowWidth > 1 && containerWidth > 0 && textWidth > 0
     }
     
-    /// Maximum scroll offset (how far to scroll)
-    private var maxScrollOffset: CGFloat {
+    private var overflowWidth: CGFloat {
         max(0, textWidth - containerWidth)
     }
     
-    /// Effective alignment: centered when text fits, leading when overflowing
+    /// Keep center alignment when the text fits. Overflowing text anchors leading.
     private var effectiveAlignment: Alignment {
-        needsFade ? .leading : (alignment == .center ? .center : .leading)
+        needsScroll ? .leading : (alignment == .center ? .center : .leading)
+    }
+    
+    private var isActiveHover: Bool {
+        externallyHovered ?? isHovering
+    }
+    
+    /// Preserve requested static line limit, but force single-line during marquee.
+    private var effectiveLineLimit: Int {
+        (needsScroll && isActiveHover) ? 1 : max(1, lineLimit)
     }
     
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                // Text with measurement and fade mask (matches MarqueeText approach)
-                Text(text)
-                    .font(font)
-                    .foregroundStyle(foregroundStyle)
-                    .lineLimit(1)
-                    .fixedSize()
-                    .background(
-                        GeometryReader { textGeo in
-                            Color.clear
-                                .onAppear {
-                                    textWidth = textGeo.size.width
-                                }
-                                .onChange(of: text) { _, _ in
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                                        textWidth = textGeo.size.width
-                                        resetScroll()
-                                    }
-                                }
+                Group {
+                    if (isActiveHover || isReturningToStart) && needsScroll {
+                        // Seamless marquee: duplicate label back-to-back and wrap offset continuously.
+                        HStack(spacing: 0) {
+                            Text(text)
+                                .font(font)
+                                .foregroundStyle(foregroundStyle)
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+                            Text(text)
+                                .font(font)
+                                .foregroundStyle(foregroundStyle)
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
                         }
+                        .offset(x: -scrollOffset)
+                        .frame(maxWidth: geo.size.width, alignment: .leading)
+                    } else {
+                        Text(text)
+                            .font(font)
+                            .foregroundStyle(foregroundStyle)
+                            .lineLimit(effectiveLineLimit)
+                            .fixedSize(horizontal: effectiveLineLimit == 1, vertical: false)
+                            .frame(maxWidth: geo.size.width, alignment: effectiveAlignment)
+                    }
+                }
+                    .clipped()
+                    .background(
+                        // Measure intrinsic single-line width for overflow/marquee decisions.
+                        Text(text)
+                            .font(font)
+                            .lineLimit(1)
+                            .fixedSize()
+                            .hidden()
+                            .background(
+                                GeometryReader { textGeo in
+                                    Color.clear
+                                        .onAppear {
+                                            textWidth = textGeo.size.width
+                                        }
+                                        .onChange(of: textGeo.size.width) { _, newWidth in
+                                            textWidth = newWidth
+                                        }
+                                }
+                            )
                     )
-                    .offset(x: -scrollOffset)
-                    .frame(maxWidth: geo.size.width, alignment: effectiveAlignment)
-                    // PREMIUM: Gradient mask to fade out right edge (matches MarqueeText)
                     .mask(
                         HStack(spacing: 0) {
-                            // Left fade - only when scrolled away from start
-                            if scrollOffset > 0 {
+                            if isActiveHover && needsScroll && scrollOffset > 0.5 {
                                 LinearGradient(
                                     colors: [.clear, .white],
                                     startPoint: .leading,
@@ -569,8 +595,8 @@ struct SubtleScrollingText: View {
                             
                             Rectangle()
                             
-                            // Right fade - always show when text overflows
-                            if needsFade {
+                            // Keep right fade whenever overflowing.
+                            if needsScroll {
                                 LinearGradient(
                                     stops: [
                                         .init(color: .white, location: 0),
@@ -586,102 +612,123 @@ struct SubtleScrollingText: View {
             }
             .onAppear {
                 containerWidth = geo.size.width
+                resetScroll(animated: false)
+                if isActiveHover && needsScroll {
+                    startHoverScroll()
+                }
             }
-            .onChange(of: geo.size) { _, newSize in
-                containerWidth = newSize.width
-            }
-            .onDisappear {
-                scrollTimer?.invalidate()
-                scrollTimer = nil
-            }
-            .onHover { hovering in
-                isHovering = hovering
-                if hovering && needsFade {
+            .onChange(of: geo.size.width) { _, newWidth in
+                containerWidth = newWidth
+                if isActiveHover && needsScroll {
                     startHoverScroll()
                 } else {
-                    stopScrollAndReset()
+                    stopHoverScroll()
+                }
+            }
+            .onChange(of: text) { _, _ in
+                resetScroll(animated: false)
+                if isActiveHover && needsScroll {
+                    startHoverScroll()
+                }
+            }
+            .onChange(of: textWidth) { _, _ in
+                if isActiveHover && needsScroll {
+                    startHoverScroll()
+                } else {
+                    stopHoverScroll()
+                }
+            }
+            .onChange(of: externallyHovered ?? false) { _, hovered in
+                if hovered && needsScroll {
+                    startHoverScroll()
+                } else {
+                    stopHoverScroll()
+                }
+            }
+            .onDisappear {
+                scrollTask?.cancel()
+                scrollTask = nil
+            }
+            .onHover { hovering in
+                // Ignore local text hover if an external hover source is driving this component.
+                guard externallyHovered == nil else { return }
+                isHovering = hovering
+                if hovering && needsScroll {
+                    startHoverScroll()
+                } else {
+                    stopHoverScroll()
                 }
             }
         }
-        .frame(width: maxWidth, height: 14) // Single line height
+        .frame(width: maxWidth, height: 14)
     }
     
-    private func resetScroll() {
-        scrollTimer?.invalidate()
-        scrollTimer = nil
-        scrollOffset = 0
-        scrollPhase = .idle
-    }
-    
-    private func stopScrollAndReset() {
-        scrollTimer?.invalidate()
-        scrollTimer = nil
-        scrollPhase = .idle
-        // Gently scroll back to start
-        withAnimation(.easeOut(duration: 0.6)) {
+    private func resetScroll(animated: Bool) {
+        scrollTask?.cancel()
+        scrollTask = nil
+        if animated {
+            let progress = scrollOffset / max(1, textWidth)
+            let duration = min(0.35, max(0.14, 0.12 + Double(progress) * 0.22))
+            withAnimation(.easeOut(duration: duration)) {
+                scrollOffset = 0
+            }
+        } else {
             scrollOffset = 0
         }
     }
     
-    private func startHoverScroll() {
-        guard needsFade && isHovering else { return }
+    private func stopHoverScroll() {
+        scrollTask?.cancel()
+        scrollTask = nil
         
-        scrollPhase = .waitingToScroll
-        
-        // Wait 1 second after hover before starting scroll
-        scrollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { _ in
-            guard isHovering else { return }
-            advanceScrollPhase()
-        }
-    }
-    
-    private func advanceScrollPhase() {
-        guard isHovering else {
-            stopScrollAndReset()
+        // Skip animation if already at start
+        guard scrollOffset > 0.5 else {
+            scrollOffset = 0
+            isReturningToStart = false
             return
         }
         
-        switch scrollPhase {
-        case .idle, .waitingToScroll:
-            // Start scrolling to end - VERY SLOW (4 seconds for full scroll)
-            scrollPhase = .scrollingEnd
-            withAnimation(.easeInOut(duration: 4.0)) {
-                scrollOffset = maxScrollOffset
-            }
-            // After scroll completes, pause at end
-            scrollTimer = Timer.scheduledTimer(withTimeInterval: 4.2, repeats: false) { _ in
-                advanceScrollPhase()
-            }
+        // SMOOTH RETURN: Keep the scrolling view structure visible during animation
+        isReturningToStart = true
+        
+        let progress = scrollOffset / max(1, textWidth)
+        let duration = min(0.4, max(0.18, 0.15 + Double(progress) * 0.25))
+        withAnimation(.easeOut(duration: duration)) {
+            scrollOffset = 0
+        }
+        
+        // Clear isReturningToStart after animation completes
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.02) { [self] in
+            isReturningToStart = false
+        }
+    }
+    
+    private func startHoverScroll() {
+        guard isActiveHover && needsScroll else {
+            stopHoverScroll()
+            return
+        }
+        
+        scrollTask?.cancel()
+        scrollTask = Task { @MainActor in
+            let hoverDelayNanos: UInt64 = 60_000_000
+            let frameDelayNanos: UInt64 = 16_666_667
+            try? await Task.sleep(nanoseconds: hoverDelayNanos)
             
-        case .scrollingEnd:
-            // Pause at end for 2 seconds
-            scrollPhase = .pausingEnd
-            scrollTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { _ in
-                advanceScrollPhase()
-            }
-            
-        case .pausingEnd:
-            // Scroll back to start - also slow (3 seconds)
-            scrollPhase = .scrollingStart
-            withAnimation(.easeInOut(duration: 3.0)) {
-                scrollOffset = 0
-            }
-            // After scroll completes, restart cycle if still hovering
-            scrollTimer = Timer.scheduledTimer(withTimeInterval: 3.2, repeats: false) { _ in
-                if isHovering {
-                    scrollPhase = .waitingToScroll
-                    // Wait before next cycle
-                    scrollTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: false) { _ in
-                        advanceScrollPhase()
-                    }
-                } else {
-                    scrollPhase = .idle
+            var lastTick = Date().timeIntervalSinceReferenceDate
+            while !Task.isCancelled && isActiveHover && needsScroll {
+                let now = Date().timeIntervalSinceReferenceDate
+                let dt = min(max(now - lastTick, 0), 0.05)
+                lastTick = now
+                
+                let cycleWidth = max(1, textWidth)
+                scrollOffset += CGFloat(dt) * marqueeSpeed
+                if scrollOffset >= cycleWidth {
+                    scrollOffset.formTruncatingRemainder(dividingBy: cycleWidth)
                 }
+                
+                try? await Task.sleep(nanoseconds: frameDelayNanos)
             }
-            
-        case .scrollingStart:
-            // Handled in pausingEnd case
-            break
         }
     }
 }

@@ -16,7 +16,6 @@ import QuickLookThumbnailing
 /// Shows up to 3 stacked cards with rotation/offset and rounded corners
 struct BasketStackPreviewView: View {
     let items: [DroppedItem]
-    let state: DroppyState
     
     // The most recent items to display (max 3 for visual stack)
     private var displayItems: [DroppedItem] {
@@ -349,15 +348,35 @@ struct BasketBackButton: View {
 
 /// Sleek capsule drag handle at top of basket for moving the window
 /// Uses large invisible hit area for easy grabbing
+/// Accent color matches basket's visual theme for multi-basket distinction
 struct BasketDragHandle: View {
+    let controller: FloatingBasketWindowController?
+    var accentColor: BasketAccentColor = .teal
+
+    init(controller: FloatingBasketWindowController? = nil, accentColor: BasketAccentColor = .teal) {
+        self.controller = controller
+        self.accentColor = accentColor
+    }
     @State private var isHovering = false
     @State private var isDragging = false
     @State private var initialMouseOffset: CGPoint = .zero // Offset from window origin to mouse
     
+    /// Capsule fill color - ALWAYS uses accent color for multi-basket distinction
+    private var capsuleFill: Color {
+        if isDragging {
+            return accentColor.color.opacity(0.75)
+        } else if isHovering {
+            return accentColor.color.opacity(0.55)
+        } else {
+            // Always visible accent color (subtle when idle)
+            return accentColor.color.opacity(0.35)
+        }
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             Capsule()
-                .fill(Color.white.opacity(isHovering || isDragging ? 0.4 : 0.22))
+                .fill(capsuleFill)
                 .frame(width: 44, height: 5)
         }
         .frame(width: 140, height: 28) // Large hit area
@@ -375,7 +394,7 @@ struct BasketDragHandle: View {
         .gesture(
             DragGesture(minimumDistance: 0, coordinateSpace: .global)
                 .onChanged { value in
-                    guard let window = FloatingBasketWindowController.shared.basketWindow else { return }
+                    guard let window = controller?.basketWindow else { return }
                     
                     let mouseLocation = NSEvent.mouseLocation
                     
@@ -400,6 +419,8 @@ struct BasketDragHandle: View {
                     NSCursor.pop()
                 }
         )
+        .animation(.easeOut(duration: 0.15), value: isHovering)
+        .animation(.easeOut(duration: 0.15), value: isDragging)
     }
 }
 

@@ -9,13 +9,68 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
+/// Accent colors for distinguishing multiple baskets
+/// Colors are subtle and designed to work well on dark backgrounds
+enum BasketAccentColor: Int, CaseIterable {
+    case teal = 0
+    case coral = 1
+    case indigo = 2
+    case amber = 3
+    case rose = 4
+    case mint = 5
+    
+    /// The SwiftUI color for this accent
+    var color: Color {
+        switch self {
+        case .teal:   return Color(hue: 0.50, saturation: 0.55, brightness: 0.75) // Teal
+        case .coral:  return Color(hue: 0.03, saturation: 0.55, brightness: 0.90) // Coral/Orange
+        case .indigo: return Color(hue: 0.72, saturation: 0.50, brightness: 0.80) // Indigo/Purple
+        case .amber:  return Color(hue: 0.12, saturation: 0.60, brightness: 0.95) // Amber/Yellow
+        case .rose:   return Color(hue: 0.92, saturation: 0.45, brightness: 0.85) // Rose/Pink
+        case .mint:   return Color(hue: 0.42, saturation: 0.45, brightness: 0.80) // Mint/Green
+        }
+    }
+    
+    /// Get the next available color based on current basket count
+    static func nextColor(for existingCount: Int) -> BasketAccentColor {
+        let index = existingCount % allCases.count
+        return allCases[index]
+    }
+}
+
 /// Manages the floating basket window that appears during file drags
 final class FloatingBasketWindowController: NSObject {
     /// The floating basket window
     var basketWindow: NSPanel?
     
-    /// Shared instance
-    static let shared = FloatingBasketWindowController()
+    /// Primary shared instance (for backwards compatibility)
+    static let shared = FloatingBasketWindowController(accentColor: .teal)
+    
+    /// All active basket instances (multi-basket support)
+    private static var activeBaskets: [FloatingBasketWindowController] = []
+    
+    /// This basket's accent color for visual distinction
+    let accentColor: BasketAccentColor
+    
+    /// Per-basket state (items, selection, targeting) - each basket is fully independent
+    let basketState = BasketState()
+    
+    /// Check if any basket is currently visible (includes shared + active baskets)
+    static var isAnyBasketVisible: Bool {
+        // Check shared instance first
+        if shared.basketWindow?.isVisible == true { return true }
+        // Then check any spawned baskets
+        return activeBaskets.contains { $0.basketWindow?.isVisible == true }
+    }
+    
+    /// Get all visible baskets (includes shared if visible)
+    static var visibleBaskets: [FloatingBasketWindowController] {
+        var result = activeBaskets.filter { $0.basketWindow?.isVisible == true }
+        if shared.basketWindow?.isVisible == true && !result.contains(where: { $0 === shared }) {
+            result.insert(shared, at: 0)
+        }
+        return result
+    }
     
     /// (Removed beta setting property)
     
@@ -52,6 +107,9 @@ final class FloatingBasketWindowController: NSObject {
     /// Stored full-size basket position for restoration
     private var fullSizeFrame: NSRect = .zero
     
+    /// Display currently owning basket positioning/peek behavior.
+    private var activeBasketDisplayID: CGDirectDisplayID?
+    
     /// Last used basket position (for tracked folders to reopen at same spot)
     private var lastBasketFrame: NSRect = .zero
     
@@ -63,19 +121,105 @@ final class FloatingBasketWindowController: NSObject {
     /// Prevents accidental auto-hide when the drag temporarily leaves the basket bounds.
     private var isBasketSelectionDragActive: Bool = false
     
-    private override init() {
+    /// Creates a new basket controller with the specified accent color
+    init(accentColor: BasketAccentColor) {
+        self.accentColor = accentColor
         super.init()
+        basketState.ownerController = self
     }
     
     /// Called by DragMonitor when jiggle is detected
+    /// - If no basket is visible: shows the primary basket
+    /// - If 2+ baskets visible AND dragging: shows basket switcher overlay
+    /// - If multi-basket enabled AND only 1 basket: spawns a new basket
+    /// - If baskets were auto-hidden (no file being dragged): shows all hidden baskets
     func onJiggleDetected() {
-        // Only move if visible AND not currently animating (show/hide)
-        if let panel = basketWindow, panel.isVisible, !isShowingOrHiding {
-            moveBasketToMouse()
-        } else if !isShowingOrHiding {
-            // Either basketWindow is nil or it's hidden - show it
-            showBasket()
+        guard !isShowingOrHiding else { return }
+        
+        // Check if multi-basket mode is enabled (default: false for single basket)
+        let multiBasketEnabled = UserDefaults.standard.bool(forKey: AppPreferenceKey.enableMultiBasket)
+        
+        // Check if ANY basket is currently visible
+        if Self.isAnyBasketVisible {
+            if multiBasketEnabled {
+                let allBaskets = Self.visibleBaskets
+                
+                // If 2+ baskets exist and user is dragging, show the switcher
+                if allBaskets.count >= 2 && DragMonitor.shared.isDragging {
+                    // Show basket switcher overlay for selecting which basket to drop into
+                    BasketSwitcherWindowController.shared.show(baskets: allBaskets) { selectedBasket, _ in
+                        // When user drops on a basket card, focus that basket
+                        // (items already added by switcher's drop handler)
+                        selectedBasket.basketWindow?.orderFrontRegardless()
+                    }
+                } else {
+                    // Only 1 basket or not dragging - spawn a NEW basket
+                    Self.spawnNewBasket()
+                }
+            }
+            // Single-basket mode: do nothing (basket already visible)
+        } else {
+            // No basket visible - check if this is a "show all hidden baskets" jiggle
+            // If no file is being dragged and auto-hide is enabled, show all baskets with items
+            if isAutoHideEnabled && !DragMonitor.shared.isDragging {
+                Self.showAllHiddenBaskets()
+            } else {
+                // Normal jiggle while dragging - show the primary basket
+                showBasket()
+            }
         }
+    }
+    
+    /// Shows all previously auto-hidden baskets that still have items
+    /// Positions them side-by-side horizontally so they don't overlap
+    static func showAllHiddenBaskets() {
+        // Stop idle jiggle monitoring since baskets are being revealed
+        DragMonitor.shared.stopIdleJiggleMonitoring()
+        
+        // Collect all baskets that need to be shown
+        var basketsToShow: [FloatingBasketWindowController] = []
+        
+        // Check shared basket
+        if !shared.basketState.items.isEmpty && shared.isInPeekMode {
+            basketsToShow.append(shared)
+        }
+        // Check active baskets
+        for basket in activeBaskets {
+            if !basket.basketState.items.isEmpty && basket.isInPeekMode {
+                basketsToShow.append(basket)
+            }
+        }
+        
+        guard !basketsToShow.isEmpty else { return }
+        
+        // Calculate staggered positions centered around mouse
+        let mouseLocation = NSEvent.mouseLocation
+        let basketWidth: CGFloat = 220  // Collapsed basket width
+        let spacing: CGFloat = 20       // Space between baskets
+        let totalWidth = CGFloat(basketsToShow.count) * basketWidth + CGFloat(basketsToShow.count - 1) * spacing
+        let startX = mouseLocation.x - totalWidth / 2
+        
+        for (index, basket) in basketsToShow.enumerated() {
+            let xOffset = startX + CGFloat(index) * (basketWidth + spacing) + basketWidth / 2
+            let position = NSPoint(x: xOffset, y: mouseLocation.y)
+            basket.showBasket(at: position)
+        }
+    }
+    
+    /// Spawns a new basket with the next accent color
+    /// - Returns: The newly created basket controller
+    @discardableResult
+    static func spawnNewBasket() -> FloatingBasketWindowController {
+        let nextColor = BasketAccentColor.nextColor(for: visibleBaskets.count)
+        let newBasket = FloatingBasketWindowController(accentColor: nextColor)
+        activeBaskets.append(newBasket)
+        newBasket.showBasket()
+        return newBasket
+    }
+    
+    /// Removes a basket from the active collection (called when closed)
+    static func removeBasket(_ basket: FloatingBasketWindowController) {
+        activeBaskets.removeAll { $0 === basket }
     }
     
     /// Called by DragMonitor when drag ends
@@ -92,7 +236,7 @@ final class FloatingBasketWindowController: NSObject {
             // Don't hide during file operations or sharing (check again after delay)
             guard !DroppyState.shared.isFileOperationInProgress, !DroppyState.shared.isSharingInProgress else { return }
             // Only hide if basket is empty
-            if DroppyState.shared.basketItems.isEmpty {
+            if self.basketState.items.isEmpty {
                 self.hideBasket()
             }
         }
@@ -114,45 +258,92 @@ final class FloatingBasketWindowController: NSObject {
         )
     }
     
-    /// Moves the basket to follow mouse on subsequent jiggles
-    private func moveBasketToMouse() {
-        guard let panel = basketWindow else { return }
-        
-        // Don't move if in auto-hide mode and peek mode is active
-        if isAutoHideEnabled && isInPeekMode { return }
-        
-        let mouseLocation = NSEvent.mouseLocation
-        let windowWidth: CGFloat = 500
-        let windowHeight: CGFloat = 600
-        
-        // Update expand direction
-        if let screen = NSScreen.main {
-            let screenMidY = screen.frame.height / 2
-            shouldExpandUpward = mouseLocation.y < screenMidY
+    /// Resolve the display that should control basket positioning.
+    /// Preference: panel overlap -> panel center -> panel screen -> tracked display ID -> mouse screen -> fallback.
+    private func resolveBasketScreen(for panel: NSPanel? = nil) -> NSScreen? {
+        if let panel {
+            // 1) Pick the display with maximum overlap with the basket window frame.
+            // This keeps hide/peek pinned to the display where the basket actually is.
+            let panelFrame = panel.frame
+            var bestScreen: NSScreen?
+            var bestArea: CGFloat = 0
+            for screen in NSScreen.screens {
+                let intersection = panelFrame.intersection(screen.frame)
+                if !intersection.isNull && !intersection.isEmpty {
+                    let area = intersection.width * intersection.height
+                    if area > bestArea {
+                        bestArea = area
+                        bestScreen = screen
+                    }
+                }
+            }
+            if let bestScreen {
+                activeBasketDisplayID = bestScreen.displayID
+                return bestScreen
+            }
+            
+            // 2) Fallback to center-point containment.
+            let panelCenter = CGPoint(x: panel.frame.midX, y: panel.frame.midY)
+            if let centerScreen = NSScreen.screens.first(where: { $0.frame.contains(panelCenter) }) {
+                activeBasketDisplayID = centerScreen.displayID
+                return centerScreen
+            }
+            
+            // 3) Fallback to AppKit panel screen.
+            if let panelScreen = panel.screen {
+                activeBasketDisplayID = panelScreen.displayID
+                return panelScreen
+            }
         }
         
-        // Center on mouse
-        let xPosition = mouseLocation.x - windowWidth / 2
-        let yPosition = mouseLocation.y - windowHeight / 2
-        let newFrame = NSRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
+        // 4) Fallback to the last known tracked display.
+        if let activeBasketDisplayID,
+           let trackedScreen = NSScreen.screens.first(where: { $0.displayID == activeBasketDisplayID }) {
+            return trackedScreen
+        }
         
-        // Avoid starting a new animation if we are already at or near the target frame
-        // This prevents piling up _NSWindowTransformAnimation objects
-        let currentFrame = panel.frame
-        let deltaX = abs(currentFrame.origin.x - newFrame.origin.x)
-        let deltaY = abs(currentFrame.origin.y - newFrame.origin.y)
-        if deltaX < 1.0 && deltaY < 1.0 { return }
+        // 5) Fallback to mouse location.
+        let mouseLocation = NSEvent.mouseLocation
+        if let mouseScreen = NSScreen.screens.first(where: { $0.frame.contains(mouseLocation) }) {
+            activeBasketDisplayID = mouseScreen.displayID
+            return mouseScreen
+        }
         
-        // PREMIUM: Use smooth spring animation for buttery follow behavior
-        // Faster response (0.25s) with slight bounce for alive feel
-        NSAnimationContext.runAnimationGroup({ context in
-            context.duration = 0.25
-            context.timingFunction = CAMediaTimingFunction(controlPoints: 0.175, 0.885, 0.32, 1.0)  // Spring-like curve
-            context.allowsImplicitAnimation = true
-            panel.animator().setFrame(newFrame, display: true)
-        }, completionHandler: nil)
+        // 6) Final fallback.
+        let fallbackScreen = NSScreen.main ?? NSScreen.screens.first
+        if let fallbackScreen {
+            activeBasketDisplayID = fallbackScreen.displayID
+        }
+        return fallbackScreen
+    }
+    
+    // MARK: - moveBasketToMouse() REMOVED
+    // Jiggle-to-move behavior replaced with spawn-new-basket in Issue #160
+
+    
+    /// Shows the basket at a specific position (used for staggered multi-basket reveal)
+    /// - Parameter position: The center point where the basket should appear
+    func showBasket(at position: NSPoint) {
+        guard !isShowingOrHiding else { return }
         
-        panel.orderFrontRegardless()
+        let windowWidth: CGFloat = 500
+        let windowHeight: CGFloat = 600
+        let xPosition = position.x - windowWidth / 2
+        let yPosition = position.y - windowHeight / 2
+        let targetFrame = NSRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
+        
+        if let panel = basketWindow {
+            panel.animator().alphaValue = 1.0
+            panel.setFrame(targetFrame, display: true)
+            panel.orderFrontRegardless()
+            DroppyState.shared.isBasketVisible = true
+            isInPeekMode = false
+        } else {
+            // Create new window at target position (delegate to showBasket which handles creation)
+            // Set the target frame temporarily and call regular showBasket
+            lastBasketFrame = targetFrame
+            showBasket(atLastPosition: true)
+        }
     }
     
     /// Shows the basket near the current mouse location (or last position if specified)
@@ -160,16 +351,24 @@ final class FloatingBasketWindowController: NSObject {
     func showBasket(atLastPosition: Bool = false) {
         guard !isShowingOrHiding else { return }
         
-        // Defensive check: reclaim orphan window OR reuse existing hidden window
-        if let panel = basketWindow ?? NSApp.windows.first(where: { $0 is BasketPanel }) as? NSPanel {
-            basketWindow = panel
+        // Defensive check: reuse existing hidden window IF it belongs to this controller
+        // (Do NOT steal windows from other basket instances - multi-basket support)
+        if let panel = basketWindow {
             panel.animator().alphaValue = 1.0 // Ensure visible
             if atLastPosition && lastBasketFrame.width > 0 {
                 panel.setFrame(lastBasketFrame, display: true)
             } else {
-                moveBasketToMouse()
+                // Position at mouse (inline - moveBasketToMouse removed in #160)
+                let mouseLocation = NSEvent.mouseLocation
+                let windowWidth: CGFloat = 500
+                let windowHeight: CGFloat = 600
+                let xPosition = mouseLocation.x - windowWidth / 2
+                let yPosition = mouseLocation.y - windowHeight / 2
+                let newFrame = NSRect(x: xPosition, y: yPosition, width: windowWidth, height: windowHeight)
+                panel.setFrame(newFrame, display: true)
             }
             panel.orderFrontRegardless()
+            DroppyState.shared.isBasketVisible = true
             return
         }
 
@@ -190,10 +389,13 @@ final class FloatingBasketWindowController: NSObject {
         initialBasketOrigin = CGPoint(x: mouseLocation.x, y: mouseLocation.y)
         
         // Calculate expand direction once (basket expands upward if low on screen, downward if high)
-        if let screen = NSScreen.main {
+        let windowCenter = CGPoint(x: windowFrame.midX, y: windowFrame.midY)
+        if let screen = NSScreen.screens.first(where: { $0.frame.contains(mouseLocation) })
+            ?? NSScreen.screens.first(where: { $0.frame.contains(windowCenter) }) {
             let screenMidY = screen.frame.height / 2
             // Use actual window position for expand direction
             shouldExpandUpward = windowFrame.midY < screenMidY
+            activeBasketDisplayID = screen.displayID
         } else {
             shouldExpandUpward = true
         }
@@ -222,16 +424,20 @@ final class FloatingBasketWindowController: NSObject {
         // Ensure manual memory management is stable
         panel.isReleasedWhenClosed = false
         
-        // Create SwiftUI view
-        let basketView = FloatingBasketView(state: DroppyState.shared)
+        // Create SwiftUI view with this basket's state (fully independent)
+        let basketView = FloatingBasketView(basketState: basketState, accentColor: accentColor)
             .preferredColorScheme(.dark) // Force dark mode always
         let hostingView = NSHostingView(rootView: basketView)
         
         
 
         
-        // Create drag container
-        let dragContainer = BasketDragContainer(frame: NSRect(origin: .zero, size: windowFrame.size))
+        // Create drag container with this basket's state
+        let dragContainer = BasketDragContainer(
+            frame: NSRect(origin: .zero, size: windowFrame.size),
+            basketState: basketState,
+            controller: self
+        )
         dragContainer.addSubview(hostingView)
         
         hostingView.translatesAutoresizingMaskIntoConstraints = false
@@ -325,19 +531,28 @@ final class FloatingBasketWindowController: NSObject {
         // Local monitor - catches events when basket is key window
         keyboardMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard self?.basketWindow?.isVisible == true,
-                  !DroppyState.shared.basketItems.isEmpty else {
+                  !(self?.basketState.items.isEmpty ?? true) else {
                 return event
             }
             
             // Spacebar triggers Quick Look (but not during rename)
             if event.keyCode == 49, !DroppyState.shared.isRenaming {
-                QuickLookHelper.shared.previewSelectedBasketItems()
+                let selectedItems = self?.basketState.items.filter { self?.basketState.selectedItems.contains($0.id) == true } ?? []
+                let urls: [URL]
+                if selectedItems.isEmpty {
+                    urls = self?.basketState.items.first.map { [$0.url] } ?? []
+                } else {
+                    urls = selectedItems.map(\.url)
+                }
+                if !urls.isEmpty {
+                    QuickLookHelper.shared.preview(urls: urls, from: self?.basketWindow)
+                }
                 return nil // Consume the event
             }
             
             // Cmd+A selects all basket items
             if event.keyCode == 0, event.modifierFlags.contains(.command) {
-                DroppyState.shared.selectAllBasket()
+                self?.basketState.selectedItems = Set(self?.basketState.items.map(\.id) ?? [])
                 return nil // Consume the event
             }
             
@@ -348,7 +563,7 @@ final class FloatingBasketWindowController: NSObject {
         // This ensures spacebar works even when clicking on items briefly loses focus
         globalKeyboardMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard self?.basketWindow?.isVisible == true,
-                  !DroppyState.shared.basketItems.isEmpty else {
+                  !(self?.basketState.items.isEmpty ?? true) else {
                 return
             }
             
@@ -359,7 +574,16 @@ final class FloatingBasketWindowController: NSObject {
                     let mouseLocation = NSEvent.mouseLocation
                     let expandedFrame = basketFrame.insetBy(dx: -20, dy: -20) // Small margin
                     if expandedFrame.contains(mouseLocation) {
-                        QuickLookHelper.shared.previewSelectedBasketItems()
+                        let selectedItems = self?.basketState.items.filter { self?.basketState.selectedItems.contains($0.id) == true } ?? []
+                        let urls: [URL]
+                        if selectedItems.isEmpty {
+                            urls = self?.basketState.items.first.map { [$0.url] } ?? []
+                        } else {
+                            urls = selectedItems.map(\.url)
+                        }
+                        if !urls.isEmpty {
+                            QuickLookHelper.shared.preview(urls: urls, from: self?.basketWindow)
+                        }
                     }
                 }
             }
@@ -383,14 +607,14 @@ final class FloatingBasketWindowController: NSObject {
         guard let panel = basketWindow, !isShowingOrHiding else { return }
         
         // Block hiding during file operations UNLESS basket is empty (user cleared it manually)
-        if (DroppyState.shared.isFileOperationInProgress || DroppyState.shared.isSharingInProgress) && !DroppyState.shared.basketItems.isEmpty {
+        if (DroppyState.shared.isFileOperationInProgress || DroppyState.shared.isSharingInProgress) && !basketState.items.isEmpty {
             return 
         }
         
         isShowingOrHiding = true
-        
-        DroppyState.shared.isBasketVisible = false
-        DroppyState.shared.isBasketTargeted = false
+        basketState.isTargeted = false
+        basketState.isAirDropZoneTargeted = false
+        basketState.isQuickActionsTargeted = false
         
         // Stop keyboard monitoring
         stopKeyboardMonitor()
@@ -416,8 +640,13 @@ final class FloatingBasketWindowController: NSObject {
         }, completionHandler: { [weak self] in
             panel.orderOut(nil)
             panel.contentView?.layer?.transform = CATransform3DIdentity // Reset for next show
-            self?.basketWindow = nil
-            self?.isShowingOrHiding = false
+            if let self = self {
+                Self.removeBasket(self) // Clean up from multi-basket tracking
+                self.basketWindow = nil
+                DroppyState.shared.isBasketVisible = Self.isAnyBasketVisible
+                DroppyState.shared.isBasketTargeted = false
+                self.isShowingOrHiding = false
+            }
         })
     }
     
@@ -428,7 +657,13 @@ final class FloatingBasketWindowController: NSObject {
         UserDefaults.standard.bool(forKey: "enableBasketAutoHide")
     }
     
-    /// Gets the configured edge for auto-hide
+    /// Gets the configured auto-hide delay in seconds
+    private var autoHideDelay: Double {
+        let delay = UserDefaults.standard.double(forKey: AppPreferenceKey.basketAutoHideDelay)
+        return delay > 0 ? delay : PreferenceDefault.basketAutoHideDelay
+    }
+    
+    /// Gets the configured edge for auto-hide (legacy, kept for compatibility)
     private var autoHideEdge: String {
         UserDefaults.standard.string(forKey: "basketAutoHideEdge") ?? "right"
     }
@@ -471,7 +706,7 @@ final class FloatingBasketWindowController: NSObject {
 
         // Only reveal when the cursor is actually inside the visible sliver
         // This prevents early reveal from near-edge proximity
-        let visibleFrame = panel.screen?.visibleFrame ?? .zero
+        let visibleFrame = resolveBasketScreen(for: panel)?.visibleFrame ?? .zero
         let sliverFrame = currentFrame.intersection(visibleFrame)
         let isMouseOverBasket = !sliverFrame.isNull && sliverFrame.contains(mouseLocation)
         
@@ -484,7 +719,7 @@ final class FloatingBasketWindowController: NSObject {
         // If we are peeking, we are essentially "already hidden".
     }
     
-    /// Starts the delayed hide timer (0.5 second delay)
+    /// Starts the delayed hide timer (configurable delay, default 2 seconds)
     func startHideTimer() {
         guard isAutoHideEnabled, !isInPeekMode else { return }
         guard !isBasketSelectionDragActive else { return }
@@ -495,10 +730,10 @@ final class FloatingBasketWindowController: NSObject {
         cancelHideTimer()
         
         let workItem = DispatchWorkItem { [weak self] in
-            self?.slideToEdge()
+            self?.autoHideBasket()
         }
         hideDelayWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
+        DispatchQueue.main.asyncAfter(deadline: .now() + autoHideDelay, execute: workItem)
     }
     
     /// Cancels any pending hide timer
@@ -507,91 +742,54 @@ final class FloatingBasketWindowController: NSObject {
         hideDelayWorkItem = nil
     }
     
-    /// Slides the basket to the configured edge in peek mode
-    func slideToEdge() {
+    /// Auto-hides the basket (replaces slideToEdge peek behavior)
+    /// Simply hides the basket - can be restored via jiggle
+    func autoHideBasket() {
         guard let panel = basketWindow, !isInPeekMode, !isShowingOrHiding, !isPeekAnimating else { return }
         
-        // Don't slide away during file operations
+        // Don't hide during file operations
         guard !DroppyState.shared.isFileOperationInProgress else { return }
         
-        guard let screen = NSScreen.main else { return }
+        guard let screen = resolveBasketScreen(for: panel) else { return }
+        activeBasketDisplayID = screen.displayID
+        
         // Store current position for restoration
         fullSizeFrame = panel.frame
         
-        // Calculate peek position based on edge - preserve current axis to avoid jumps
-        var peekFrame = panel.frame
-        let basketWidth = panel.frame.width
-        let basketHeight = panel.frame.height
-        let visibleFrame = screen.visibleFrame
-
-        func clampedOriginY(_ proposed: CGFloat) -> CGFloat {
-            min(max(proposed, visibleFrame.minY), visibleFrame.maxY - basketHeight)
-        }
-
-        func clampedOriginX(_ proposed: CGFloat) -> CGFloat {
-            min(max(proposed, visibleFrame.minX), visibleFrame.maxX - basketWidth)
-        }
-        
-        switch autoHideEdge {
-        case "left":
-            peekFrame.origin.x = visibleFrame.minX - basketWidth + peekSize
-            peekFrame.origin.y = clampedOriginY(peekFrame.origin.y)
-        case "right":
-            peekFrame.origin.x = visibleFrame.maxX - peekSize
-            peekFrame.origin.y = clampedOriginY(peekFrame.origin.y)
-        case "bottom":
-            peekFrame.origin.y = visibleFrame.minY - basketHeight + peekSize
-            peekFrame.origin.x = clampedOriginX(peekFrame.origin.x)
-        default:
-            peekFrame.origin.x = visibleFrame.maxX - peekSize
-            peekFrame.origin.y = clampedOriginY(peekFrame.origin.y)
-        }
-        
+        // Mark as auto-hidden so jiggle can restore it
         isInPeekMode = true
         isPeekAnimating = true
         
-        // CRITICAL: Start global monitoring to detect hover over the peek sliver
-        startMouseTrackingMonitor()
+        // Start idle jiggle monitoring so user can jiggle without files to reveal
+        DragMonitor.shared.startIdleJiggleMonitoring()
         
-        // Apple-style spring curve (aggressive ease-out with slight overshoot feel)
-        let springCurve = CAMediaTimingFunction(controlPoints: 0.2, 0.9, 0.3, 1.0)
-        
-        // Unified animation
+        // Fade out animation
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.55
-            context.timingFunction = springCurve
+            context.duration = 0.3
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
             context.allowsImplicitAnimation = true
             
-            panel.animator().setFrame(peekFrame, display: true)
+            panel.animator().alphaValue = 0
         } completionHandler: { [weak self] in
-            self?.isPeekAnimating = false
+            guard let self = self else { return }
+            self.isPeekAnimating = false
+            panel.orderOut(nil)
+            panel.alphaValue = 1  // Reset alpha for when it shows again
         }
     }
     
-    /// Reveals the basket from peek mode back to full size
+    /// Legacy slideToEdge - kept for compatibility, now just calls autoHideBasket
+    func slideToEdge() {
+        autoHideBasket()
+    }
+    
+    /// Reveals the basket from auto-hidden mode
+    /// Since we now fully hide instead of peeking, this just shows the basket
     func revealFromEdge() {
-        guard let panel = basketWindow, isInPeekMode, !isPeekAnimating else { return }
-        guard fullSizeFrame.width > 0 else { return }
-
+        guard isInPeekMode, !isPeekAnimating else { return }
+        
         isInPeekMode = false
-        isPeekAnimating = true
-        
-        // CRITICAL: Stop global monitoring - rely on BasketDragContainer efficiently
-        stopMouseTrackingMonitor()
-        
-        // Very snappy curve for instant feel
-        let revealCurve = CAMediaTimingFunction(controlPoints: 0.0, 0.0, 0.2, 1.0)
-        
-        // Shorter duration for responsive reveal
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.25
-            context.timingFunction = revealCurve
-            context.allowsImplicitAnimation = true
-            
-            panel.animator().setFrame(fullSizeFrame, display: true)
-        } completionHandler: { [weak self] in
-            self?.isPeekAnimating = false
-        }
+        showBasket()
     }
     
     /// Called when cursor enters the basket area (from FloatingBasketView)
@@ -605,7 +803,7 @@ final class FloatingBasketWindowController: NSObject {
     
     /// Called when cursor exits the basket area (from FloatingBasketView)
     func onBasketHoverExit() {
-        guard isAutoHideEnabled, !DroppyState.shared.basketItems.isEmpty else { return }
+        guard isAutoHideEnabled, !basketState.items.isEmpty else { return }
         guard !isBasketSelectionDragActive else { return }
 
         // If cursor is still inside the basket window, don't start hide
@@ -636,7 +834,7 @@ final class FloatingBasketWindowController: NSObject {
     func endBasketSelectionDrag() {
         isBasketSelectionDragActive = false
 
-        guard isAutoHideEnabled, !DroppyState.shared.basketItems.isEmpty else { return }
+        guard isAutoHideEnabled, !basketState.items.isEmpty else { return }
         guard !isInPeekMode, !isPeekAnimating else { return }
         guard !DroppyState.shared.isFileOperationInProgress else { return }
         guard let panel = basketWindow else { return }

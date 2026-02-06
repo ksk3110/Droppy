@@ -46,45 +46,6 @@ final class MediaKeyInterceptor {
     var onBrightnessUp: (() -> Void)?
     var onBrightnessDown: (() -> Void)?
     
-    // MARK: - Brightness Control App Detection
-    
-    /// Bundle identifiers for known external display brightness control apps
-    private static let brightnessAppBundleIDs: Set<String> = [
-        "me.guillaumeb.MonitorControl",           // MonitorControl
-        "software.betterdisplay.BetterDisplay",   // BetterDisplay
-        "fyi.lunar.Lunar",                        // Lunar
-        "com.thnkdev.DisplayBuddy"                // DisplayBuddy
-    ]
-    
-    /// Cached result of brightness app detection (refreshed every 30 seconds)
-    private static var cachedBrightnessAppRunning: Bool?
-    private static var cacheTimestamp: Date?
-    private static let cacheDuration: TimeInterval = 30  // 30 seconds
-    
-    /// Checks if a brightness control app (MonitorControl, BetterDisplay, Lunar) is running
-    /// Uses caching to avoid expensive process enumeration on every key press
-    static func isBrightnessControlAppRunning() -> Bool {
-        // Check cache validity
-        if let cached = cachedBrightnessAppRunning,
-           let timestamp = cacheTimestamp,
-           Date().timeIntervalSince(timestamp) < cacheDuration {
-            return cached
-        }
-        
-        // Enumerate running apps and check for known brightness control apps
-        let runningApps = NSWorkspace.shared.runningApplications
-        let isRunning = runningApps.contains { app in
-            guard let bundleID = app.bundleIdentifier else { return false }
-            return brightnessAppBundleIDs.contains(bundleID)
-        }
-        
-        // Update cache
-        cachedBrightnessAppRunning = isRunning
-        cacheTimestamp = Date()
-        
-        return isRunning
-    }
-    
     private init() {}
     
     /// Start intercepting media keys
@@ -192,6 +153,9 @@ final class MediaKeyInterceptor {
     /// Returns true if the event was handled (should be suppressed)
     /// Returns false if the event should pass through to the system
     fileprivate func handleMediaKey(keyCode: UInt32, keyDown: Bool) -> Bool {
+        let mouseLocation = NSEvent.mouseLocation
+        let screenUnderMouse = NSScreen.screens.first(where: { $0.frame.contains(mouseLocation) })
+        
         // Check if this is a volume key and device doesn't support software control
         let isVolumeKey = keyCode == NX_KEYTYPE_SOUND_UP ||
                           keyCode == NX_KEYTYPE_SOUND_DOWN ||
@@ -201,33 +165,13 @@ final class MediaKeyInterceptor {
             // Let the system handle volume for USB devices without software volume control
             return false
         }
-        
-        // MONITORCONTROL COMPATIBILITY (v9.2):
-        // Check if this is a brightness key and mouse is on an external display
-        // If so, AND a brightness control app (MonitorControl/BetterDisplay) is running,
-        // let the event pass through so that app can control external display brightness via DDC
+
         let isBrightnessKey = keyCode == NX_KEYTYPE_BRIGHTNESS_UP ||
                               keyCode == NX_KEYTYPE_BRIGHTNESS_DOWN
         
         if isBrightnessKey {
-            // Check which display the mouse cursor is currently on
-            let mouseLocation = NSEvent.mouseLocation
-            if let screenUnderMouse = NSScreen.screens.first(where: { $0.frame.contains(mouseLocation) }) {
-                // If mouse is on an external display, check if a brightness control app is running
-                if !screenUnderMouse.isBuiltIn {
-                    // Only passthrough if MonitorControl or BetterDisplay is running
-                    // Otherwise, Droppy handles brightness (even though it only works on built-in)
-                    if Self.isBrightnessControlAppRunning() {
-                        // Passthrough: Let MonitorControl/BetterDisplay handle external display brightness
-                        return false
-                    }
-                }
-            }
-            
-            // Check if brightness is supported on built-in display
-            // Bug #125: Try re-init if initial detection failed shortly after boot
-            BrightnessManager.shared.attemptReInitIfNeeded()
-            if !BrightnessManager.shared.isSupported {
+            // Let system handle brightness when Droppy cannot control the selected target.
+            if !BrightnessManager.shared.canHandleBrightness(on: screenUnderMouse) {
                 return false
             }
         }
@@ -238,23 +182,23 @@ final class MediaKeyInterceptor {
         DispatchQueue.main.async {
             switch keyCode {
             case NX_KEYTYPE_SOUND_UP:
-                VolumeManager.shared.increase()
+                VolumeManager.shared.increase(screenHint: screenUnderMouse)
                 self.onVolumeUp?()
                 
             case NX_KEYTYPE_SOUND_DOWN:
-                VolumeManager.shared.decrease()
+                VolumeManager.shared.decrease(screenHint: screenUnderMouse)
                 self.onVolumeDown?()
                 
             case NX_KEYTYPE_MUTE:
-                VolumeManager.shared.toggleMute()
+                VolumeManager.shared.toggleMute(screenHint: screenUnderMouse)
                 self.onMute?()
                 
             case NX_KEYTYPE_BRIGHTNESS_UP:
-                BrightnessManager.shared.increase()
+                BrightnessManager.shared.increase(screenHint: screenUnderMouse)
                 self.onBrightnessUp?()
                 
             case NX_KEYTYPE_BRIGHTNESS_DOWN:
-                BrightnessManager.shared.decrease()
+                BrightnessManager.shared.decrease(screenHint: screenUnderMouse)
                 self.onBrightnessDown?()
                 
             default:

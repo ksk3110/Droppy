@@ -145,6 +145,10 @@ final class MusicManager: ObservableObject {
     // MARK: - Apple Music Metadata Sync
     /// Periodic AppleScript sync to keep Apple Music metadata accurate
     private var appleMusicMetadataSyncTimer: Timer?
+    
+    /// Serial queue for AppleScript execution - NSAppleScript is NOT thread-safe
+    /// Concurrent AppleScript calls crash the AppleScript runtime
+    private let appleScriptQueue = DispatchQueue(label: "com.droppy.MusicManager.applescript")
 
     // MARK: - Media Source Filter
 
@@ -262,10 +266,16 @@ final class MusicManager: ObservableObject {
             return false
         }
         
-        // Execute synchronously to check incognito status
+        // Execute synchronously on serial queue to check incognito status
+        // Note: This still blocks caller but ensures thread safety
         var error: NSDictionary?
-        if let appleScript = NSAppleScript(source: script),
-           let result = appleScript.executeAndReturnError(&error).stringValue {
+        var result: String?
+        appleScriptQueue.sync {
+            if let appleScript = NSAppleScript(source: script) {
+                result = appleScript.executeAndReturnError(&error).stringValue
+            }
+        }
+        if let result = result {
             return result == "incognito" || result == "private"
         }
         
@@ -471,7 +481,9 @@ final class MusicManager: ObservableObject {
 
     /// Run AppleScript asynchronously
     private func runAppleScriptAsync(_ source: String) {
-        DispatchQueue.global(qos: .userInitiated).async {
+        // Use serial queue to prevent concurrent AppleScript execution
+        // NSAppleScript is NOT thread-safe and concurrent calls crash the runtime
+        appleScriptQueue.async {
             var error: NSDictionary?
             if let appleScript = NSAppleScript(source: source) {
                 appleScript.executeAndReturnError(&error)
@@ -1662,7 +1674,9 @@ final class MusicManager: ObservableObject {
     
     /// Run AppleScript asynchronously with fallback to just opening the app
     private func runAppleScript(_ source: String, appName: String, bundleId: String? = nil) {
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+        // Use serial queue to prevent concurrent AppleScript execution
+        // NSAppleScript is NOT thread-safe and concurrent calls crash the runtime
+        appleScriptQueue.async { [weak self] in
             var error: NSDictionary?
             if let script = NSAppleScript(source: source) {
                 let result = script.executeAndReturnError(&error)

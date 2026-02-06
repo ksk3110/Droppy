@@ -284,11 +284,35 @@ final class TrackedFoldersManager: ObservableObject {
             print("TrackedFolders: Added \(urlArray.count) file(s) to Shelf")
             
         case .basket:
-            // Add all pending files to basket
-            state.addBasketItems(from: urlArray)
-            state.isBasketVisible = true
-            FloatingBasketWindowController.shared.showBasket(atLastPosition: true)
-            print("TrackedFolders: Added \(urlArray.count) file(s) to Basket")
+            // Check if multi-basket mode is on and we have 2+ baskets
+            let multiBasketEnabled = UserDefaults.standard.bool(forKey: AppPreferenceKey.enableMultiBasket)
+            let allBaskets = FloatingBasketWindowController.visibleBaskets
+            
+            if multiBasketEnabled && allBaskets.count >= 2 {
+                // Show switcher so user can pick which basket to add to
+                // Store the URLs to add after user selects a basket
+                let pendingURLs = urlArray
+                BasketSwitcherWindowController.shared.showForTrackedFolder(
+                    baskets: allBaskets,
+                    pendingFiles: pendingURLs
+                ) { selectedBasket in
+                    selectedBasket.basketState.addItems(from: pendingURLs)
+                    selectedBasket.basketWindow?.orderFrontRegardless()
+                }
+                print("TrackedFolders: Showing switcher for \(urlArray.count) file(s)")
+            } else {
+                // Single basket or only 1 basket active - add directly
+                if let activeBasket = allBaskets.first {
+                    activeBasket.basketState.addItems(from: urlArray)
+                    activeBasket.showBasket(atLastPosition: true)
+                } else {
+                    // No visible basket - use primary shared basket
+                    state.addBasketItems(from: urlArray)
+                    state.isBasketVisible = true
+                    FloatingBasketWindowController.shared.showBasket(atLastPosition: true)
+                }
+                print("TrackedFolders: Added \(urlArray.count) file(s) to Basket")
+            }
         }
     }
     

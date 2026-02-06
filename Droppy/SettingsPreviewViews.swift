@@ -471,12 +471,14 @@ struct MediaPlayerPreview: View {
 
 /// Clipboard Preview - realistic mock matching ClipboardManagerView list items
 struct ClipboardPreview: View {
+    @AppStorage(AppPreferenceKey.useTransparentBackground) private var useTransparentBackground = PreferenceDefault.useTransparentBackground
+
     var body: some View {
         VStack(spacing: 6) {
             // Flagged items section - 2-column grid with subtle red
             HStack(spacing: 6) {
-                ClipboardMockGridItem(icon: "doc.text", title: "Meeting Notes", isFlagged: true)
-                ClipboardMockGridItem(icon: "key.fill", title: "API Key", isFlagged: true)
+                ClipboardMockGridItem(icon: "doc.text", title: "Meeting Notes", isFlagged: true, useTransparentBackground: useTransparentBackground)
+                ClipboardMockGridItem(icon: "key.fill", title: "API Key", isFlagged: true, useTransparentBackground: useTransparentBackground)
             }
             
             // Divider between flagged and regular
@@ -486,16 +488,16 @@ struct ClipboardPreview: View {
                 .padding(.horizontal, 4)
             
             // Regular items
-            ClipboardMockRow(icon: "text.alignleft", title: "Hello World", subtitle: "Safari • 10:42", isSelected: true)
-            ClipboardMockRow(icon: "link", title: "https://getdroppy.app", subtitle: "Chrome • 10:38", isSelected: false)
-            ClipboardMockRow(icon: "photo", title: "Screenshot.png", subtitle: "Finder • 10:35", isSelected: false, showStar: true)
+            ClipboardMockRow(icon: "text.alignleft", title: "Hello World", subtitle: "Safari • 10:42", isSelected: true, useTransparentBackground: useTransparentBackground)
+            ClipboardMockRow(icon: "link", title: "https://getdroppy.app", subtitle: "Chrome • 10:38", isSelected: false, useTransparentBackground: useTransparentBackground)
+            ClipboardMockRow(icon: "photo", title: "Screenshot.png", subtitle: "Finder • 10:35", isSelected: false, showStar: true, useTransparentBackground: useTransparentBackground)
         }
         .padding(DroppySpacing.sm)
-        .background(Color.black)
+        .background(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
         .clipShape(RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DroppyRadius.large, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
+                .strokeBorder(Color.white.opacity(useTransparentBackground ? 0.22 : 0.15), lineWidth: 1)
         )
         .frame(width: 240)
         .frame(maxWidth: .infinity)
@@ -508,6 +510,7 @@ private struct ClipboardMockGridItem: View {
     let icon: String
     let title: String
     var isFlagged: Bool = false
+    var useTransparentBackground: Bool = false
     
     var body: some View {
         HStack(spacing: 6) {
@@ -532,7 +535,7 @@ private struct ClipboardMockGridItem: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
-                .fill(Color.red.opacity(0.15))
+                .fill(Color.red.opacity(useTransparentBackground ? 0.2 : 0.15))
         )
     }
 }
@@ -544,13 +547,14 @@ private struct ClipboardMockRow: View {
     let subtitle: String
     var isSelected: Bool = false
     var showStar: Bool = false
+    var useTransparentBackground: Bool = false
     
     var body: some View {
         HStack(spacing: 8) {
             // Icon in squircle - matches real 32x32 squircle
             ZStack {
                 RoundedRectangle(cornerRadius: DroppyRadius.sm, style: .continuous)
-                    .fill(Color.white.opacity(0.1))
+                    .fill(Color.white.opacity(useTransparentBackground ? 0.14 : 0.1))
                     .frame(width: 24, height: 24)
                 
                 Image(systemName: icon)
@@ -584,8 +588,8 @@ private struct ClipboardMockRow: View {
         .background(
             RoundedRectangle(cornerRadius: DroppyRadius.ms, style: .continuous)
                 .fill(isSelected
-                      ? Color.blue.opacity(0.8)
-                      : Color.white.opacity(0.12))
+                      ? Color.blue.opacity(useTransparentBackground ? 0.72 : 0.8)
+                      : Color.white.opacity(useTransparentBackground ? 0.16 : 0.12))
         )
     }
 }
@@ -973,6 +977,8 @@ struct FocusModeHUDPreview: View {
 
 /// Floating Basket Preview - realistic mock matching FloatingBasketView COLLAPSED state
 struct FloatingBasketPreview: View {
+    @AppStorage(AppPreferenceKey.useTransparentBackground) private var useTransparentBackground = PreferenceDefault.useTransparentBackground
+
     private let cornerRadius: CGFloat = 20
     private let previewWidth: CGFloat = 180
     private let previewHeight: CGFloat = 200
@@ -982,9 +988,9 @@ struct FloatingBasketPreview: View {
     
     var body: some View {
         ZStack {
-            // Background - solid black matching real basket
+            // Background follows current style mode
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(Color.black)
+                .fill(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
             
             VStack(spacing: 0) {
                 // Drag handle - matches BasketDragHandle (44x5 capsule)
@@ -1000,7 +1006,7 @@ struct FloatingBasketPreview: View {
                         .font(.system(size: buttonSize * 0.4, weight: .bold))
                         .foregroundStyle(.white.opacity(0.8))
                         .frame(width: buttonSize, height: buttonSize)
-                        .background(Circle().fill(Color.white.opacity(0.12)))
+                        .background(Circle().fill(Color.white.opacity(useTransparentBackground ? 0.18 : 0.12)))
                     
                     Spacer()
                     
@@ -1009,7 +1015,7 @@ struct FloatingBasketPreview: View {
                         .font(.system(size: buttonSize * 0.4, weight: .bold))
                         .foregroundStyle(.white.opacity(0.8))
                         .frame(width: buttonSize, height: buttonSize)
-                        .background(Circle().fill(Color.white.opacity(0.12)))
+                        .background(Circle().fill(Color.white.opacity(useTransparentBackground ? 0.18 : 0.12)))
                 }
                 .padding(.horizontal, 14)
                 .padding(.top, 6)
@@ -1041,7 +1047,7 @@ struct FloatingBasketPreview: View {
                 .padding(.vertical, 10)
                 .background(
                     Capsule()
-                        .fill(Color.white.opacity(0.12))
+                        .fill(Color.white.opacity(useTransparentBackground ? 0.18 : 0.12))
                 )
                 .padding(.bottom, 12)
             }
@@ -1050,7 +1056,7 @@ struct FloatingBasketPreview: View {
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                .stroke(Color.white.opacity(useTransparentBackground ? 0.22 : 0.15), lineWidth: 1)
         )
         .droppyCardShadow()
         .frame(maxWidth: .infinity)
@@ -1312,69 +1318,52 @@ private struct MockFileItem: View {
 
 /// Notch Shelf Preview - realistic mock matching NotchShelfView expanded state
 struct NotchShelfPreview: View {
-    @State private var bounce = false
+    @AppStorage(AppPreferenceKey.useTransparentBackground) private var useTransparentBackground = PreferenceDefault.useTransparentBackground
+    @State private var dropZoneDashPhase: CGFloat = 0
     
-    // Notch dimensions
-    private let notchWidth: CGFloat = 180
-    private let notchHeight: CGFloat = 32
-    private let shelfWidth: CGFloat = 280
-    private let shelfHeight: CGFloat = 70
+    private let shelfWidth: CGFloat = 392
+    private let shelfHeight: CGFloat = 110
+    
+    private let contentInsets = EdgeInsets(top: 18, leading: 24, bottom: 18, trailing: 24)
     
     var body: some View {
-        VStack(spacing: 0) {
+        ZStack {
+            NotchShape(bottomRadius: 40)
+                .fill(useTransparentBackground ? AnyShapeStyle(.ultraThinMaterial) : AnyShapeStyle(Color.black))
+                .overlay(
+                    NotchShape(bottomRadius: 40)
+                        .stroke(Color.white.opacity(useTransparentBackground ? 0.22 : 0.15), lineWidth: 1)
+                )
+            
+            // Real empty shelf drop zone styling: dashed rounded rectangle + centered icon
             ZStack {
-                // Expanded shelf background with NotchShape
-                NotchShape(bottomRadius: 16)
-                    .fill(Color.black)
-                    .frame(width: shelfWidth, height: shelfHeight)
-                    // PREMIUM PRESSED EFFECT: Layered inner glow for 3D depth
-                    .overlay(
-                        ZStack {
-                            // Layer 1: Soft inner border glow - premium edge highlight
-                            NotchShape(bottomRadius: 14)
-                                .stroke(
-                                    LinearGradient(
-                                        colors: [
-                                            Color.white.opacity(0.25),
-                                            Color.white.opacity(0.1)
-                                        ],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    ),
-                                    lineWidth: 1.5
-                                )
-                                .padding(DroppySpacing.xs)
-                            
-                            // Layer 2: Vignette - clear in center, white glow on edges
-                            RadialGradient(
-                                colors: [
-                                    Color.clear,
-                                    Color.white.opacity(0.08)
-                                ],
-                                center: .center,
-                                startRadius: 30,
-                                endRadius: 100
-                            )
-                            .clipShape(NotchShape(bottomRadius: 12))
-                            .padding(DroppySpacing.xsm) // Split difference between xs(4) and sm(8)
-                        }
-                    )
-                    .overlay(
-                        NotchShape(bottomRadius: 16)
-                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                RoundedRectangle(cornerRadius: DroppyRadius.jumbo + 2, style: .continuous)
+                    .strokeBorder(
+                        Color.white.opacity(useTransparentBackground ? 0.2 : 0.16),
+                        style: StrokeStyle(
+                            lineWidth: 1.5,
+                            lineCap: .round,
+                            dash: [6, 8],
+                            dashPhase: dropZoneDashPhase
+                        )
                     )
                 
-                // DropZoneIcon - centered within the shelf
-                DropZoneIcon(type: .shelf, size: 44, isActive: bounce)
+                DropZoneIcon(type: .shelf, size: 44, isActive: false)
             }
-            .frame(width: shelfWidth, height: shelfHeight)
+            .padding(contentInsets)
         }
+        .frame(width: shelfWidth, height: shelfHeight)
+        .shadow(color: .black.opacity(0.28), radius: 7, x: 0, y: 4)
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
         .onAppear {
-            // Activate icon animation
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                bounce = true
+            withAnimation(.linear(duration: 25).repeatForever(autoreverses: false)) {
+                dropZoneDashPhase -= 280
+            }
+        }
+        .onDisappear {
+            withAnimation(.linear(duration: 0)) {
+                dropZoneDashPhase = 0
             }
         }
     }

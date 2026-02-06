@@ -234,6 +234,9 @@ struct TerminalNotchInfoView: View {
                                 .foregroundStyle(.secondary)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(nil)
+                            .fixedSize(horizontal: false, vertical: true)
                             .padding()
                             .frame(width: 280)
                         }

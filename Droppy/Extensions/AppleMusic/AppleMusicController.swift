@@ -29,6 +29,10 @@ final class AppleMusicController {
     /// Whether we're currently checking/updating loved status
     private(set) var isLoveLoading: Bool = false
     
+    /// Serial queue for AppleScript execution - NSAppleScript is NOT thread-safe
+    /// Concurrent AppleScript calls crash the AppleScript runtime
+    private let appleScriptQueue = DispatchQueue(label: "com.droppy.AppleMusicController.applescript")
+    
     /// Apple Music bundle identifier
     static let appleMusicBundleId = "com.apple.Music"
     
@@ -421,7 +425,9 @@ final class AppleMusicController {
     // MARK: - AppleScript Execution
     
     private func runAppleScript(_ source: String, completion: @escaping (Any?) -> Void) {
-        DispatchQueue.global(qos: .userInitiated).async {
+        // Use serial queue to prevent concurrent AppleScript execution
+        // NSAppleScript is NOT thread-safe and concurrent calls crash the runtime
+        appleScriptQueue.async {
             var error: NSDictionary?
             
             guard let script = NSAppleScript(source: source) else {

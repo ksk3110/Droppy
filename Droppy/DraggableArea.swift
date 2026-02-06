@@ -362,10 +362,9 @@ class DraggableAreaView<Content: View>: NSView, NSDraggingSource {
         // BUT skip if files were dropped back into a Droppy container (basket or shelf)
         // This prevents items from disappearing when just reorganizing within Droppy
         if operation != [] {
-            // Check if drop location is inside the basket window
-            if let basketWindow = FloatingBasketWindowController.shared.basketWindow {
-                let basketFrame = basketWindow.frame
-                if basketFrame.contains(screenPoint) {
+            // Check if drop location is inside any visible basket window.
+            for basket in FloatingBasketWindowController.visibleBaskets {
+                if let basketFrame = basket.basketWindow?.frame, basketFrame.contains(screenPoint) {
                     return // Internal basket drop - don't auto-clean
                 }
             }
